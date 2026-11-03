@@ -1,0 +1,115 @@
+"use client";
+
+import * as React from "react";
+import Link from "next/link";
+import { Menu, Scale, Search } from "lucide-react";
+
+import { site } from "@/config/site";
+import { LAW_UPDATED } from "@/config/navigation";
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
+import { ModeToggle } from "@/components/mode-toggle";
+import { AccountButton } from "@/components/account-button";
+import { AccountSyncStatus } from "@/components/sync/account-sync";
+import { NotificationsBell } from "@/components/notifications-bell";
+import { SiteSearchTrigger } from "@/components/site-search-trigger";
+import { CommandPalette, useCommandPalette } from "@/components/command-palette";
+import { ClientSwitcher } from "@/components/portfolio/client-switcher";
+import { MobileNav, TopNav } from "@/components/site-nav";
+
+/**
+ * The top bar owns all navigation: inline links and section menus on desktop,
+ * a slide-over below lg. A slim context bar under it carries the company
+ * switcher, which scopes every page.
+ */
+export function SiteHeader() {
+  const palette = useCommandPalette();
+  const [mobileOpen, setMobileOpen] = React.useState(false);
+
+  return (
+    <>
+      <header className="sticky top-0 z-40 px-3 pt-3 sm:px-4 print:hidden">
+        <div className="mx-auto flex h-16 w-full max-w-7xl items-center gap-3 rounded-full border border-white/60 bg-card/75 pr-2 pl-3 shadow-card backdrop-blur-xl sm:pl-4 dark:border-white/10">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="xl:hidden"
+            aria-label="Open navigation"
+            onClick={() => setMobileOpen(true)}
+          >
+            <Menu className="size-5" aria-hidden />
+          </Button>
+
+          <Brand />
+
+          {/* The menu keeps its full width and the right-hand tools never overlap it:
+              the full search box appears only once there is room for both. */}
+          <div className="ml-2 hidden shrink-0 xl:block">
+            <TopNav />
+          </div>
+
+          <div className="ml-auto flex shrink-0 items-center gap-1">
+            <SiteSearchTrigger onOpen={() => palette.setOpen(true)} className="mr-1 hidden w-56 2xl:flex" />
+            <Button
+              variant="ghost"
+              size="icon"
+              className="2xl:hidden"
+              aria-label="Search companies, SRNs, DINs and mobiles"
+              onClick={() => palette.setOpen(true)}
+            >
+              <Search className="size-4" aria-hidden />
+            </Button>
+            <AccountSyncStatus />
+            <NotificationsBell />
+            <ModeToggle />
+            <AccountButton />
+          </div>
+        </div>
+
+        <CommandPalette open={palette.open} onOpenChange={palette.setOpen} />
+      </header>
+
+      <div className="print:hidden">
+        <div className="mx-auto flex w-full max-w-7xl items-center gap-3 px-4 pt-4 sm:px-6 lg:px-8">
+          <ClientSwitcher />
+          <p className="ml-auto hidden items-center gap-2 rounded-full border bg-card/70 px-3.5 py-1.5 text-xs text-muted-foreground shadow-card backdrop-blur sm:flex">
+            <span className="size-2 rounded-full bg-emerald-500 shadow-[0_0_0_3px] shadow-emerald-500/20" aria-hidden />
+            Law updated: {LAW_UPDATED}
+            <span className="text-border" aria-hidden>
+              |
+            </span>
+            <span>{site.edition}</span>
+          </p>
+        </div>
+      </div>
+
+      <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+        <SheetContent side="left" className="w-80 rounded-r-3xl p-0">
+          <SheetTitle className="sr-only">{site.name} navigation</SheetTitle>
+          <div className="flex h-full flex-col">
+            <div className="flex h-16 shrink-0 items-center border-b px-4">
+              <Brand onNavigate={() => setMobileOpen(false)} />
+            </div>
+            <div className="min-h-0 flex-1">
+              <MobileNav onNavigate={() => setMobileOpen(false)} />
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
+    </>
+  );
+}
+
+function Brand({ onNavigate }: { onNavigate?: () => void }) {
+  return (
+    <Link href="/dashboard" onClick={onNavigate} className="flex shrink-0 items-center gap-2.5">
+      <span
+        aria-hidden
+        className="flex size-10 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-400 via-violet-500 to-pink-400 text-white shadow-md shadow-violet-500/30"
+      >
+        <Scale className="size-4" />
+      </span>
+      <span className="font-heading text-lg font-bold tracking-tight">{site.name}</span>
+    </Link>
+  );
+}
