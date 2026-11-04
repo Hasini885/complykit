@@ -3,14 +3,15 @@ import test from "node:test";
 
 import {
   ALL_DUES,
-  annualDuesRows,
   asExcelDate,
+  buildAnnualDuesRows,
   buildDuesRows,
   daysLabel,
   DUES_COLUMNS,
   filterDuesRows,
   postIncorporationRows,
 } from "@/lib/portfolio/dues-table";
+import { withAdt1Appointment } from "@/lib/portfolio/auditor";
 import { buildFilingMatrix } from "@/lib/portfolio/filing-matrix";
 import { createDuesPdf, createDuesXlsx, STATUS_COLOURS } from "@/lib/portfolio/dues-export";
 import { buildPortfolioReport } from "@/lib/portfolio/report";
@@ -69,12 +70,46 @@ test("post incorporation part: not applicable, LLPs, and a recorded filing", () 
 });
 
 test("annual part: the post incorporation forms move out, and the first year has no ADT-1", () => {
-  const fresh = { ...SEED_CLIENTS[0], id: "fresh", type: "private" as const, incorporatedOn: "2026-10-15", filings: [], dueOverrides: undefined };
-  const all = buildDuesRows([fresh], [], new Date(2026, 10, 4), { filingsOnly: true, fyEndingYear: 2027 });
-  assert.ok(all.some((r) => r.sourceId === "inc-20a"));
-  const annual = annualDuesRows(all).map((r) => r.sourceId);
+  const fresh = { ...SEED_CLIENTS[0], id: "fresh", type: "private" as const, incorporatedOn: "2026-10-15", filings: [], dueOverrides: undefined, auditorAppointedAtAgmFy: null };
+  const annual = buildAnnualDuesRows([fresh], [], new Date(2026, 10, 4), { fyEndingYear: 2027 }).map((r) => r.sourceId);
   assert.ok(!annual.includes("inc-20a") && !annual.includes("first-auditor"), annual.join(", "));
   assert.ok(!annual.includes("adt-1"), annual.join(", "));
+});
+
+test("annual part: the first AGM's ADT-1 sits under the next year, due until its details are entered, then filed", () => {
+  const today = new Date(2026, 10, 4);
+  const base = { ...SEED_CLIENTS[0], id: "young", type: "private" as const, incorporatedOn: "2025-08-14", filings: [], dueOverrides: undefined, auditorAppointedAtAgmFy: null, auditorTermYears: null, lastAgmOn: null, agmHistory: [] };
+  const adtOf = (c: Client, fy: number | null) =>
+    buildAnnualDuesRows([c], [], today, { fyEndingYear: fy }).filter((r) => r.sourceId === "adt-1");
+
+  // The FY 2025-26 AGM can run to 31 Dec 2026, so ADT-1 is due 15 Jan 2027.
+  const due = adtOf(base, 2027)[0];
+  assert.equal(due.fy, "FY 2026–27");
+  assert.equal(due.status, "upcoming");
+  assert.equal(due.due.toDateString(), new Date(2027, 0, 15).toDateString());
+  assert.equal(adtOf(base, 2026).length, 0, "nothing in the first year");
+
+  const rolling = buildAnnualDuesRows([base], [], today);
+  const matrix = buildFilingMatrix(rolling, [base], { adtTermFromFy: 2027 });
+  const cell = matrix.rows[0].cells["adt-1|2027|"];
+  assert.ok(cell && !cell.notRequired, "not NA");
+  assert.ok(!matrix.columns.some((c) => c.key === "adt-1|2026|"));
+
+  const filed = withAdt1Appointment(base, { srn: "AB1234567", filedOn: "2026-10-10" }, 5);
+  const m2 = buildFilingMatrix(buildAnnualDuesRows([filed], [], today), [filed], { adtTermFromFy: 2027 });
+  const done = m2.rows[0].cells["adt-1|2027|"];
+  assert.equal(done.status, "completed");
+  assert.equal(done.srn, "AB1234567");
+  assert.deepEqual(
+    m2.columns.filter((c) => c.key.startsWith("adt-1|")).map((c) => c.key),
+    ["adt-1|2027|", "adt-1|2028|", "adt-1|2029|", "adt-1|2030|"],
+  );
+  assert.ok(m2.rows[0].cells["adt-1|2028|"].notRequired, "NA from the following year");
+
+  // Still held there once its date has left the rolling window, not turned into NA.
+  const later = new Date(2027, 8, 1);
+  const m3 = buildFilingMatrix(buildAnnualDuesRows([filed], [], later), [filed], { adtTermFromFy: 2028 });
+  assert.equal(m3.rows[0].cells["adt-1|2027|"]?.status, "completed");
 });
 
 test("rows are in due-date order", () => {

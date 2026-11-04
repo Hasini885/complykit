@@ -90,9 +90,7 @@ export function nextAdtFy(client: Client, fromFy: number): number | null {
   const anchor = auditorAnchorFy(client);
   if (anchor === null) return null;
   const term = auditorTermOf(client);
-  const next = anchor + Math.max(0, Math.ceil((fromFy - anchor) / term)) * term;
-  // The first year has no annual ADT-1: that one is the first auditor's.
-  return next === firstFyEndingYear(client) ? next + term : next;
+  return anchor + Math.max(0, Math.ceil((fromFy - anchor) / term)) * term;
 }
 
 export function factsFor(client: Client): CompanyFacts {

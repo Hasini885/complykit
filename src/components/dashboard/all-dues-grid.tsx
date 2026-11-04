@@ -38,8 +38,7 @@ import {
   DUES_COLUMNS,
   DUES_SECTION_TITLE,
   STATUS_LABEL,
-  annualDuesRows,
-  buildDuesRows,
+  buildAnnualDuesRows,
   filterDuesRows,
   postIncorporationRows,
   type DuesColumn,
@@ -125,7 +124,7 @@ export function AllDuesGrid({
     () =>
       oneTime
         ? postIncorporationRows(clients, reference)
-        : annualDuesRows(buildDuesRows(clients, directors, reference, { filingsOnly: true, fyEndingYear: fy })),
+        : buildAnnualDuesRows(clients, directors, reference, { fyEndingYear: fy }),
     [oneTime, clients, directors, reference, fy],
   );
   const [filter, setFilter] = React.useState<DuesFilter>(ALL_DUES);

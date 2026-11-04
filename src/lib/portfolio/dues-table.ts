@@ -1,7 +1,14 @@
 import { daysBetween, financialYearLabel, formatDate, isoDate, midnight, today } from "@/lib/dates";
 import { typeLabel } from "@/lib/portfolio/clients";
 import { bucketFor, buildPortfolioReport, type ReportBucket, type ReportItem } from "@/lib/portfolio/report";
-import { POST_INCORPORATION_FORMS, postIncorporationItems } from "@/lib/portfolio/schedule";
+import { financialYearEndYear } from "@/lib/portfolio/directors";
+import {
+  POST_INCORPORATION_FORMS,
+  auditorAnchorFy,
+  firstFyEndingYear,
+  postIncorporationItems,
+  resolveClientYear,
+} from "@/lib/portfolio/schedule";
 import type { ResolvedDueDate } from "@/lib/resolve-due-dates";
 import type { Client, Director } from "@/lib/portfolio/types";
 
@@ -86,9 +93,42 @@ export const DUES_SECTION_TITLE: Record<DuesSection, string> = {
   annual: "Annual compliance",
 };
 
-/** The dues the annual part shows: everything except the post incorporation forms. */
-export function annualDuesRows(rows: DuesRow[]): DuesRow[] {
-  return rows.filter((r) => !POST_INCORPORATION_FORMS.includes(r.sourceId));
+/**
+ * The annual part: everything except the post incorporation forms. The ADT-1
+ * from the company's first AGM (the first subsequent auditor) is held in the
+ * year after that AGM's financial year: the year it is actually filed in, as
+ * the first year belongs to the first auditor. There it shows filed or due
+ * for as long as that year is in view, never dropping back to NA.
+ */
+export function buildAnnualDuesRows(
+  clients: Client[],
+  directors: Director[],
+  asOf: Date = today(),
+  opts: { fyEndingYear?: number | null } = {},
+): DuesRow[] {
+  const fy = opts.fyEndingYear ?? null;
+  const on = midnight(asOf);
+  const fyNow = financialYearEndYear(on);
+  const rows = buildDuesRows(clients, directors, asOf, { filingsOnly: true, fyEndingYear: fy }).filter(
+    (r) => !POST_INCORPORATION_FORMS.includes(r.sourceId),
+  );
+  const firstOf = new Map(clients.map((c) => [c.id, firstFyEndingYear(c)]));
+  const isFirstAdt = (r: DuesRow) => r.sourceId === "adt-1" && r.item?.fyEndingYear === firstOf.get(r.clientId);
+  const held = clients.flatMap((client) => {
+    const first = firstOf.get(client.id) ?? null;
+    if (first === null || auditorAnchorFy(client) !== first) return [];
+    const shown = first + 1;
+    const inView =
+      fy !== null
+        ? fy === shown
+        : (shown >= fyNow - 1 && shown <= fyNow) || rows.some((r) => r.clientId === client.id && isFirstAdt(r));
+    if (!inView) return [];
+    const item = resolveClientYear(client, [], first, { asOf: on }).find((i) => i.source.id === "adt-1");
+    if (!item?.due) return [];
+    const row = toDuesRow({ client, item, bucket: bucketFor(item, on), days: daysBetween(on, item.due) });
+    return [{ ...row, fyEndingYear: shown, fy: financialYearLabel(shown) }];
+  });
+  return [...rows.filter((r) => !isFirstAdt(r)), ...held].sort(byDueThenCompany);
 }
 
 /**

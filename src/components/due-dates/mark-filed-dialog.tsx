@@ -116,7 +116,7 @@ function MarkFiledBody({
         </DialogTitle>
         <DialogDescription className="mt-1 text-sm">
           {item.source.title}
-          {item.source.formCode ? ` (${item.source.formCode})` : ""} for{" "}
+          {item.source.formCode ? ` (${item.source.formCode})` : ""} {company ? "at the AGM for" : "for"}{" "}
           {financialYearLabel(item.fyEndingYear)}
           {item.qualifier ? `, ${item.qualifier}` : ""} — due {formatDate(item.due!)}.
           {kycDirectorId(item) ? " Recorded on the director, so it covers every board they sit on." : ""}

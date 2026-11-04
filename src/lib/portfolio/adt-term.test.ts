@@ -8,7 +8,7 @@ import {
   withAdt1Appointment,
   withAuditorTerm,
 } from "@/lib/portfolio/auditor";
-import { nextAdtFy, resolveClientYear } from "@/lib/portfolio/schedule";
+import { resolveClientYear } from "@/lib/portfolio/schedule";
 import type { Client } from "@/lib/portfolio/types";
 
 function client(over: Partial<Client> = {}): Client {
@@ -48,28 +48,27 @@ test("a term outside 1 to 5 years is held to the Act's limits", () => {
   assert.deepEqual(adtYears(client({ auditorAppointedAtAgmFy: 2025, auditorTermYears: 9 }), 2025, 2031), [2025, 2030]);
 });
 
-test("no annual ADT-1 in the first year (that is the first auditor's), then every five", () => {
+test("the first AGM always appoints the auditor: ADT-1 for the first year, then every five", () => {
   // Incorporated 14 Aug 2025: the first financial year ends 31 March 2026.
   const young = client({ incorporatedOn: "2025-08-14" });
-  assert.deepEqual(adtYears(young, 2026, 2036), [2031, 2036]);
-  assert.equal(nextAdtFy(young, 2026), 2031);
+  assert.deepEqual(adtYears(young, 2026, 2036), [2026, 2031, 2036]);
 });
 
 test("an appointment year before the company existed is read as its first AGM", () => {
   const slip = client({ incorporatedOn: "2025-08-14", auditorAppointedAtAgmFy: 2024 });
-  assert.deepEqual(adtYears(slip, 2026, 2031), [2031]);
+  assert.deepEqual(adtYears(slip, 2026, 2031), [2026, 2031]);
 });
 
-test("a later appointment year entered: due from then on, still none in the first year", () => {
+test("the first year's ADT-1 is due even when a later appointment year was entered", () => {
   const later = client({ incorporatedOn: "2025-08-14", auditorAppointedAtAgmFy: 2027, auditorTermYears: 5 });
-  assert.deepEqual(adtYears(later, 2026, 2032), [2027, 2032]);
+  assert.deepEqual(adtYears(later, 2026, 2032), [2026, 2027, 2032]);
 });
 
-test("years appointed: x years from the first AGM means x-1 NA years, then ADT-1 again", () => {
+test("years appointed: x years from an AGM means the ADT-1 falls due again x years on", () => {
   const young = client({ incorporatedOn: "2025-08-14" });
   const three = withAuditorTerm(young, 2026, 3);
   assert.equal(three.auditorTermYears, 3);
-  assert.deepEqual(adtYears(three, 2026, 2033), [2029, 2032]);
+  assert.deepEqual(adtYears(three, 2026, 2033), [2026, 2029, 2032]);
   assert.equal(withAuditorTerm(young, 2026, 9).auditorTermYears, 5, "the Act's maximum");
 });
 
@@ -94,7 +93,7 @@ test("ADT-1 details: SRN, date of filing and years drive the NA years and their 
   const saved = withAdt1Appointment(young, { srn: "ab1234567", filedOn: "2026-10-10" }, 3);
   assert.equal(saved.auditorAppointedAtAgmFy, 2026, "filed Oct 2026: the AGM for FY 2025-26");
   assert.equal(saved.auditorTermYears, 3);
-  assert.deepEqual(adtYears(saved, 2026, 2033), [2029, 2032]);
+  assert.deepEqual(adtYears(saved, 2026, 2033), [2026, 2029, 2032]);
   assert.equal(
     adtNaReason(saved, 2027),
     "Auditor appointed for 3 years at the AGM for FY 2025–26 (SRN AB1234567 filed dated 10/10/2026), next due 15/10/2029",
