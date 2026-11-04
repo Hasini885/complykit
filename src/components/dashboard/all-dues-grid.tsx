@@ -35,12 +35,16 @@ import { buildFilingMatrix } from "@/lib/portfolio/filing-matrix";
 import {
   ALL_DUES,
   DUES_COLUMNS,
+  DUES_SECTION_TITLE,
   STATUS_LABEL,
+  annualDuesRows,
   buildDuesRows,
   filterDuesRows,
+  postIncorporationRows,
   type DuesColumn,
   type DuesFilter,
   type DuesRow,
+  type DuesSection,
 } from "@/lib/portfolio/dues-table";
 import type { ReportBucket } from "@/lib/portfolio/report";
 import { financialYearEndYear } from "@/lib/portfolio/directors";
@@ -75,10 +79,12 @@ const SORT_VALUE: Partial<Record<string, (r: DuesRow) => number>> = {
 type Sort = { key: string; dir: 1 | -1 };
 
 /**
- * Spreadsheet view of every due of every company, filterable and sortable,
- * downloadable as Excel or PDF exactly as filtered.
+ * Spreadsheet view of one part of the dashboard (post incorporation or annual
+ * compliance) for every company, filterable and sortable, downloadable as
+ * Excel or PDF exactly as filtered.
  */
 export function AllDuesGrid({
+  section,
   clients,
   directors,
   reference,
@@ -87,6 +93,7 @@ export function AllDuesGrid({
   fy: controlledFy,
   yearControl,
 }: {
+  section: DuesSection;
   clients: Client[];
   directors: Director[];
   reference: Date;
@@ -111,9 +118,14 @@ export function AllDuesGrid({
     const now = financialYearEndYear(reference);
     return Array.from({ length: 5 }, (_, i) => now + 1 - i);
   }, [reference]);
+  const oneTime = section === "post-incorporation";
+  const title = DUES_SECTION_TITLE[section];
   const rows = React.useMemo(
-    () => buildDuesRows(clients, directors, reference, { filingsOnly: true, fyEndingYear: fy }),
-    [clients, directors, reference, fy],
+    () =>
+      oneTime
+        ? postIncorporationRows(clients, reference)
+        : annualDuesRows(buildDuesRows(clients, directors, reference, { filingsOnly: true, fyEndingYear: fy })),
+    [oneTime, clients, directors, reference, fy],
   );
   const [filter, setFilter] = React.useState<DuesFilter>(ALL_DUES);
   const [sort, setSort] = React.useState<Sort>({ key: "due", dir: 1 });
@@ -166,8 +178,9 @@ export function AllDuesGrid({
         : (clients.find((c) => c.id === filter.clientId)?.name ?? "One company");
     const status = STATUS_TABS.find((t) => t.value === filter.status)!.label;
     return [
+      title,
       company,
-      fy === null ? "Current window" : financialYearLabel(fy),
+      oneTime ? "" : fy === null ? "Current window" : financialYearLabel(fy),
       status === "All" ? "All statuses" : status,
       filter.query ? `Search "${filter.query}"` : "",
     ]
@@ -206,16 +219,18 @@ export function AllDuesGrid({
   }
 
   return (
-    <section id="all-dues" className="space-y-3">
+    <section id={section} className="space-y-3">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h2 className="font-heading text-xl font-semibold">
-            {singleCompany ? `All dues — ${clients[0]?.name ?? ""}` : "All dues — every company"}
+            {title} — {singleCompany ? (clients[0]?.name ?? "") : "every company"}
           </h2>
           <p className="text-xs text-muted-foreground">
-            {fy === null
-              ? "Forms to file, from 90 days ago to 12 months ahead."
-              : `Every form to file for ${financialYearLabel(fy)} (1 April ${fy - 1} – 31 March ${fy}), whenever it falls due.`}{" "}
+            {oneTime
+              ? "One-time forms after incorporation, shown until filed whatever the year."
+              : fy === null
+                ? "Forms to file, from 90 days ago to 12 months ahead."
+                : `Every form to file for ${financialYearLabel(fy)} (1 April ${fy - 1} – 31 March ${fy}), whenever it falls due.`}{" "}
             Excel has both the by-company sheet and the list.
           </p>
         </div>
@@ -279,7 +294,7 @@ export function AllDuesGrid({
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-2">
-        {yearControlled ? null : (
+        {yearControlled || oneTime ? null : (
         <select
           value={fy ?? "current"}
           onChange={(e) => setFy(e.target.value === "current" ? null : Number(e.target.value))}

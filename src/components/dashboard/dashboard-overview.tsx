@@ -85,8 +85,17 @@ function AdminDashboard() {
           beside it on wide screens and drops below it on narrow ones, so the
           matrix keeps its width. */}
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_16rem] xl:items-start">
-        <div className="min-w-0">
+        <div className="min-w-0 space-y-8">
           <AllDuesGrid
+            section="post-incorporation"
+            clients={clients}
+            directors={directors}
+            reference={reference}
+            onOpenClient={selectCompany}
+            fy={null}
+          />
+          <AllDuesGrid
+            section="annual"
             clients={clients}
             directors={directors}
             reference={reference}

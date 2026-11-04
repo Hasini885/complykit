@@ -4,6 +4,7 @@ import { adtNaReason } from "@/lib/portfolio/auditor";
 import type { DuesRow } from "@/lib/portfolio/dues-table";
 import { referenceKind } from "@/lib/portfolio/filings";
 import type { ReportBucket } from "@/lib/portfolio/report";
+import { POST_INCORPORATION_FORMS } from "@/lib/portfolio/schedule";
 import type { Client } from "@/lib/portfolio/types";
 
 /**
@@ -81,10 +82,18 @@ export type FilingMatrix = { columns: MatrixColumn[]; rows: MatrixRow[] };
 const STATUS_RANK: Record<ReportBucket, number> = { overdue: 0, "due-soon": 1, upcoming: 2, completed: 3 };
 
 export function columnKey(r: DuesRow): string {
+  // One-time forms: one column, though each company's falls in its own year.
+  if (POST_INCORPORATION_FORMS.includes(r.sourceId)) return `${r.sourceId}|once|`;
   // MGT-7 and MGT-7A are separate forms with separate columns.
   const id = r.sourceId === "mgt-7" && r.form === "MGT-7A" ? "mgt-7a" : r.sourceId;
   return `${id}|${r.fyEndingYear}|${r.period}`;
 }
+
+/** The column heading for a post incorporation form, in the words of the company form. */
+const POST_INCORPORATION_HEADING: Record<string, string> = {
+  "first-auditor": "First auditor appointment",
+  "inc-20a": "Declaration of commencement of business",
+};
 
 export function buildFilingMatrix(rows: DuesRow[], clients: Client[]): FilingMatrix {
   const columns = new Map<string, Omit<MatrixColumn, "showFy"> & { forms: Set<string> }>();
@@ -104,13 +113,14 @@ export function buildFilingMatrix(rows: DuesRow[], clients: Client[]): FilingMat
         form: r.form,
         forms: new Set(forms),
         obligation:
-          r.sourceId === "dir-3-kyc"
+          POST_INCORPORATION_HEADING[r.sourceId] ??
+          (r.sourceId === "dir-3-kyc"
             ? "Director KYC"
             : r.sourceId === "dir-12-cessation"
               ? "Director cessation"
             : r.form === "MGT-7A"
               ? "Annual return (small company / OPC)"
-              : r.obligation,
+              : r.obligation),
         fy: r.fy,
         period: r.period,
         firstDue: r.due,

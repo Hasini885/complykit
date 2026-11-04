@@ -354,6 +354,30 @@ export function clientSchedule(
   );
 }
 
+/** The one-time forms that follow incorporation: the first auditor's ADT-1, and INC-20A. */
+export const POST_INCORPORATION_FORMS = ["first-auditor", "inc-20a"];
+
+/**
+ * A company's post incorporation forms, whenever they fell due: unlike the
+ * rolling window, an unfiled one never drops off, however old the company.
+ * Asked "as of" the incorporation date so the forms' calendar windows are
+ * open; the caller works out overdue or not against today. A first auditor
+ * appointed on a recorded date belongs to that date's year.
+ */
+export function postIncorporationItems(client: Client): ResolvedDueDate[] {
+  const incorporated = parseIsoDate(client.incorporatedOn);
+  const first = firstFyEndingYear(client);
+  if (!incorporated || first === null) return [];
+  const appointed = factsFor(client).firstAuditorAppointedOn;
+  const yearOf: Record<string, number> = {
+    "first-auditor": appointed ? financialYearEndYear(appointed) : first,
+    "inc-20a": first,
+  };
+  return POST_INCORPORATION_FORMS.flatMap((id) =>
+    resolveClientYear(client, [], yearOf[id], { asOf: incorporated }).filter((i) => i.source.id === id),
+  );
+}
+
 function sortByDue(items: ResolvedDueDate[]): ResolvedDueDate[] {
   return [...items].sort((a, b) => {
     if (a.due === null && b.due === null) return 0;

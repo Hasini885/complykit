@@ -1,6 +1,7 @@
-import { financialYearLabel, formatDate, isoDate, today } from "@/lib/dates";
+import { daysBetween, financialYearLabel, formatDate, isoDate, midnight, today } from "@/lib/dates";
 import { typeLabel } from "@/lib/portfolio/clients";
-import { buildPortfolioReport, type ReportBucket } from "@/lib/portfolio/report";
+import { bucketFor, buildPortfolioReport, type ReportBucket, type ReportItem } from "@/lib/portfolio/report";
+import { POST_INCORPORATION_FORMS, postIncorporationItems } from "@/lib/portfolio/schedule";
 import type { ResolvedDueDate } from "@/lib/resolve-due-dates";
 import type { Client, Director } from "@/lib/portfolio/types";
 
@@ -71,41 +72,78 @@ export function buildDuesRows(
   const seen = new Set<string>();
   return source
     .filter((r) => !opts.filingsOnly || r.item.source.formCode !== null)
-    .map<DuesRow>((r) => ({
-      id: `${r.client.id}|${r.item.source.id}|${r.item.fyEndingYear}|${r.item.qualifier ?? ""}|${isoDate(r.item.due!)}`,
-      clientId: r.client.id,
-      sourceId: r.item.source.id.split(":")[0],
-      fyEndingYear: r.item.fyEndingYear,
-      company: r.client.name,
-      cin: r.client.cin,
-      entity: typeLabel(r.client.type),
-      obligation: r.item.source.title,
-      form: r.item.source.formCode ?? "",
-      section: r.item.source.section,
-      fy: financialYearLabel(r.item.fyEndingYear),
-      period: r.item.qualifier ?? "",
-      due: r.item.due!,
-      status: r.bucket,
-      days: r.days,
-      filedOn: r.item.filedOn ?? null,
-      srn: r.item.srn ?? "",
-      basis: [
-        r.item.originalDue ? `Own date (usual ${formatDate(r.item.originalDue)})` : "",
-        r.item.anchoredOnAssumedAgm ? "Assumed AGM" : "",
-        r.item.relief && r.bucket !== "completed" ? r.item.relief : "",
-      ]
-        .filter(Boolean)
-        .join(" · "),
-      item: r.item,
-    }))
+    .map(toDuesRow)
     // Within one year a duty counted from incorporation can repeat; keep one.
     .filter((r) => (seen.has(r.id) ? false : (seen.add(r.id), true)))
-    .sort(
-      (a, b) =>
-        a.due.getTime() - b.due.getTime() ||
-        a.company.localeCompare(b.company) ||
-        a.obligation.localeCompare(b.obligation),
-    );
+    .sort(byDueThenCompany);
+}
+
+/** The two parts of the dashboard. */
+export type DuesSection = "post-incorporation" | "annual";
+
+export const DUES_SECTION_TITLE: Record<DuesSection, string> = {
+  "post-incorporation": "Post incorporation compliance",
+  annual: "Annual compliance",
+};
+
+/** The dues the annual part shows: everything except the post incorporation forms. */
+export function annualDuesRows(rows: DuesRow[]): DuesRow[] {
+  return rows.filter((r) => !POST_INCORPORATION_FORMS.includes(r.sourceId));
+}
+
+/**
+ * The post incorporation part: each company's first auditor ADT-1 and INC-20A,
+ * for any year and however old, so one that was never filed stays in view.
+ */
+export function postIncorporationRows(clients: Client[], asOf: Date = today()): DuesRow[] {
+  const on = midnight(asOf);
+  return clients
+    .flatMap((client) =>
+      postIncorporationItems(client)
+        .filter((item) => item.due !== null)
+        .map((item) =>
+          toDuesRow({ client, item, bucket: bucketFor(item, on), days: daysBetween(on, item.due!) }),
+        ),
+    )
+    .sort(byDueThenCompany);
+}
+
+function toDuesRow(r: ReportItem): DuesRow {
+  return {
+    id: `${r.client.id}|${r.item.source.id}|${r.item.fyEndingYear}|${r.item.qualifier ?? ""}|${isoDate(r.item.due!)}`,
+    clientId: r.client.id,
+    sourceId: r.item.source.id.split(":")[0],
+    fyEndingYear: r.item.fyEndingYear,
+    company: r.client.name,
+    cin: r.client.cin,
+    entity: typeLabel(r.client.type),
+    obligation: r.item.source.title,
+    form: r.item.source.formCode ?? "",
+    section: r.item.source.section,
+    fy: financialYearLabel(r.item.fyEndingYear),
+    period: r.item.qualifier ?? "",
+    due: r.item.due!,
+    status: r.bucket,
+    days: r.days,
+    filedOn: r.item.filedOn ?? null,
+    srn: r.item.srn ?? "",
+    basis: [
+      r.item.originalDue ? `Own date (usual ${formatDate(r.item.originalDue)})` : "",
+      r.item.anchoredOnAssumedAgm ? "Assumed AGM" : "",
+      r.item.relief && r.bucket !== "completed" ? r.item.relief : "",
+    ]
+      .filter(Boolean)
+      .join(" · "),
+    item: r.item,
+  };
+}
+
+function byDueThenCompany(a: DuesRow, b: DuesRow): number {
+  return (
+    a.due.getTime() - b.due.getTime() ||
+    a.company.localeCompare(b.company) ||
+    a.obligation.localeCompare(b.obligation)
+  );
 }
 
 export type DuesFilter = {

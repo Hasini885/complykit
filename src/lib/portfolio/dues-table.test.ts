@@ -3,12 +3,15 @@ import test from "node:test";
 
 import {
   ALL_DUES,
+  annualDuesRows,
   asExcelDate,
   buildDuesRows,
   daysLabel,
   DUES_COLUMNS,
   filterDuesRows,
+  postIncorporationRows,
 } from "@/lib/portfolio/dues-table";
+import { buildFilingMatrix } from "@/lib/portfolio/filing-matrix";
 import { createDuesPdf, createDuesXlsx, STATUS_COLOURS } from "@/lib/portfolio/dues-export";
 import { buildPortfolioReport } from "@/lib/portfolio/report";
 import { SEED_CLIENTS, SEED_DIRECTORS } from "@/lib/portfolio/sample-portfolio.fixture";
@@ -27,6 +30,51 @@ test("one row per dated due of every company, matching the firm-wide report", ()
   assert.equal(rows.length, report.sections.reduce((n, s) => n + s.items.length, 0));
   assert.equal(new Set(rows.map((r) => r.clientId)).size, SEED_CLIENTS.length);
   assert.equal(new Set(rows.map((r) => r.id)).size, rows.length, "row ids are unique");
+});
+
+test("post incorporation part: an old company's unfiled forms stay, in one column each", () => {
+  const today = new Date(2026, 10, 4);
+  const base = { ...SEED_CLIENTS[0], type: "private" as const, filings: [], dueOverrides: undefined };
+  const old = { ...base, id: "old", name: "Old Co", incorporatedOn: "2024-05-01" };
+  const recent = { ...base, id: "recent", name: "Recent Co", incorporatedOn: "2026-10-15" };
+  const post = postIncorporationRows([old, recent], today);
+
+  assert.deepEqual(
+    post.filter((r) => r.clientId === "old").map((r) => r.sourceId).sort(),
+    ["first-auditor", "inc-20a"],
+    "shown though long outside the rolling window",
+  );
+  assert.ok(post.filter((r) => r.clientId === "old").every((r) => r.status === "overdue"));
+  assert.ok(post.some((r) => r.clientId === "recent" && r.sourceId === "inc-20a" && r.status === "upcoming"));
+
+  // Companies from different years still share one column per form.
+  const matrix = buildFilingMatrix(post, [old, recent]);
+  assert.deepEqual(matrix.columns.map((c) => c.form).sort(), ["ADT-1", "INC-20A"]);
+  assert.equal(matrix.columns.find((c) => c.form === "ADT-1")?.obligation, "First auditor appointment");
+  assert.equal(Object.keys(matrix.rows[0].cells).length, 2);
+});
+
+test("post incorporation part: not applicable, LLPs, and a recorded filing", () => {
+  const today = new Date(2026, 10, 4);
+  const base = { ...SEED_CLIENTS[0], type: "private" as const, incorporatedOn: "2024-05-01", filings: [], dueOverrides: undefined };
+  const ids = (c: Client) => postIncorporationRows([c], today).map((r) => r.sourceId);
+
+  assert.deepEqual(ids({ ...base, filesFirstAdt1: false }), ["inc-20a"]);
+  assert.deepEqual(ids({ ...base, type: "llp" }), []);
+
+  const filed = { ...base, filings: [{ key: "inc-20a|once", filedOn: "2024-08-01", srn: "AB1234567" }] };
+  const row = postIncorporationRows([filed], today).find((r) => r.sourceId === "inc-20a")!;
+  assert.equal(row.status, "completed");
+  assert.equal(row.srn, "AB1234567");
+});
+
+test("annual part: the post incorporation forms move out, the ADT-1 after an AGM stays", () => {
+  const fresh = { ...SEED_CLIENTS[0], id: "fresh", type: "private" as const, incorporatedOn: "2026-10-15", filings: [], dueOverrides: undefined };
+  const all = buildDuesRows([fresh], [], new Date(2026, 10, 4), { filingsOnly: true, fyEndingYear: 2027 });
+  assert.ok(all.some((r) => r.sourceId === "inc-20a"));
+  const annual = annualDuesRows(all).map((r) => r.sourceId);
+  assert.ok(!annual.includes("inc-20a") && !annual.includes("first-auditor"), annual.join(", "));
+  assert.ok(annual.includes("adt-1"), annual.join(", "));
 });
 
 test("rows are in due-date order", () => {

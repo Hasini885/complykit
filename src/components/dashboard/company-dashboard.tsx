@@ -177,6 +177,14 @@ export function CompanyDashboard({ client }: { client: Client }) {
       </div>
 
       <AllDuesGrid
+        section="post-incorporation"
+        clients={[client]}
+        directors={directors}
+        reference={reference}
+        singleCompany
+      />
+      <AllDuesGrid
+        section="annual"
         clients={[client]}
         directors={directors}
         reference={reference}
