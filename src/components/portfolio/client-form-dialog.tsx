@@ -106,7 +106,6 @@ const EMPTY: ClientDraft = {
   auditorTermYears: null,
   filesDpt3: false,
   filesAdt1: true,
-  filesInc20a: true,
   transferPricing: false,
 };
 
@@ -685,8 +684,10 @@ function ClientFormFields({
                   />
                   <CheckboxField
                     label="INC-20A applies"
-                    checked={draft.filesInc20a !== false}
-                    onChange={(v) => set("filesInc20a", v)}
+                    checked
+                    disabled
+                    title="INC-20A always applies. Its due date shows for companies incorporated on or after 2 November 2018."
+                    onChange={() => undefined}
                   />
                   <CheckboxField
                     label="DPT-3 applies"
@@ -695,7 +696,7 @@ function ClientFormFields({
                   />
                 </div>
                 <p className="mt-2 text-[11px] text-muted-foreground">
-                  ADT-1 applies to every company. Untick INC-20A or DPT-3 and its due date disappears
+                  ADT-1 and INC-20A apply to every company. Untick DPT-3 and its due date disappears
                   from the calendar, dashboard and reports for this company.
                 </p>
 

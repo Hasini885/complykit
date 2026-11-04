@@ -102,7 +102,6 @@ export function factsFor(client: Client): CompanyFacts {
     kycHandledPerDirector: true,
     filesDpt3: client.filesDpt3 ?? false,
     filesAdt1: client.filesAdt1 ?? true,
-    filesInc20a: client.filesInc20a ?? true,
     firstAuditorAppointedOn:
       client.auditorType === "first" && client.firstAuditorAppointedOn ? parseIsoDate(client.firstAuditorAppointedOn) : null,
     smallCompany: isSmallByFigures(applicabilityProfileFor(client)),

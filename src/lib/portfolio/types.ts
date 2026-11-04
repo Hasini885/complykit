@@ -111,11 +111,6 @@ export type Client = {
    * auditor's term works out (see auditorAppointedAtAgmFy). False: never shown.
    */
   filesAdt1?: boolean;
-  /**
-   * INC-20A applies to this company. Absent or true: it follows from the
-   * incorporation date (on or after 2 November 2018). False: never shown.
-   */
-  filesInc20a?: boolean;
   /** A transfer-pricing report (Form 3CEB) is required, moving the ITR to 30 November. */
   transferPricing?: boolean;
   /**

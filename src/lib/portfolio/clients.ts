@@ -46,7 +46,6 @@ export type ClientDraft = {
   securitiesInDemat?: boolean;
   filesDpt3?: boolean;
   filesAdt1?: boolean;
-  filesInc20a?: boolean;
   transferPricing?: boolean;
   auditorAppointedAtAgmFy?: number | null;
   auditorTermYears?: number | null;
@@ -185,7 +184,6 @@ export function newClient(draft: ClientDraft, now = new Date()): Client {
     filesDpt3: draft.filesDpt3 ?? false,
     // Every company appoints an auditor (Section 139), so ADT-1 always applies.
     filesAdt1: true,
-    filesInc20a: draft.filesInc20a ?? true,
     transferPricing: draft.transferPricing ?? false,
     auditorAppointedAtAgmFy: draft.auditorAppointedAtAgmFy ?? null,
     auditorTermYears: draft.auditorTermYears ?? null,
@@ -231,7 +229,6 @@ export function applyDraft(client: Client, draft: ClientDraft, now = new Date())
     filesDpt3: draft.filesDpt3 ?? false,
     // Every company appoints an auditor (Section 139), so ADT-1 always applies.
     filesAdt1: true,
-    filesInc20a: draft.filesInc20a ?? true,
     transferPricing: draft.transferPricing ?? false,
     auditorAppointedAtAgmFy: draft.auditorAppointedAtAgmFy ?? null,
     auditorTermYears: draft.auditorTermYears ?? null,
@@ -301,7 +298,6 @@ export function draftFrom(client: Client): ClientDraft {
     securitiesInDemat: client.securitiesInDemat ?? false,
     filesDpt3: client.filesDpt3 ?? false,
     filesAdt1: client.filesAdt1 ?? true,
-    filesInc20a: client.filesInc20a ?? true,
     transferPricing: client.transferPricing ?? false,
     auditorAppointedAtAgmFy: client.auditorAppointedAtAgmFy ?? null,
     auditorTermYears: client.auditorTermYears ?? null,

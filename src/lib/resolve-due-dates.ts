@@ -73,8 +73,6 @@ export type CompanyFacts = {
   filesDpt3: boolean;
   /** False when the profile marks ADT-1 as not applicable; absent means it applies. */
   filesAdt1?: boolean;
-  /** False when the profile marks INC-20A as not applicable; absent means it applies. */
-  filesInc20a?: boolean;
   /**
    * The Board meeting that appointed the first auditor (Section 139(6)), where
    * recorded. The first-auditor row then shows ADT-1 due 15 days after it,
@@ -171,7 +169,6 @@ function appliesOnFacts(source: RecurringDueDate, opts: ResolveOptions): boolean
     case "dpt-3":
       return facts.filesDpt3;
     case "inc-20a":
-      if (facts.filesInc20a === false) return false;
       return opts.incorporatedOn ? opts.incorporatedOn.getTime() >= INC_20A_FROM.getTime() : false;
     default:
       return true;
