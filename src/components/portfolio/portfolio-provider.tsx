@@ -12,7 +12,7 @@ import {
   sortClients,
   type ClientDraft,
 } from "@/lib/portfolio/clients";
-import { withAuditorTerm } from "@/lib/portfolio/auditor";
+import { withAdt1Appointment, withAuditorTerm } from "@/lib/portfolio/auditor";
 import { applyDirectorDraft, newDirector, type DirectorDraft } from "@/lib/portfolio/directors";
 import {
   applyConsultantDraft,
@@ -71,6 +71,13 @@ type PortfolioContextValue = {
   setAuthorisedDirector: (clientId: string, directorId: string | null) => Promise<void>;
   /** The auditor appointed at this year's AGM for this many years (1 to 5). */
   setAuditorTerm: (clientId: string, appointedFy: number, years: number) => Promise<void>;
+  /** A subsequent auditor's ADT-1: SRN, date of filing and years appointed. */
+  saveAuditorAppointment: (
+    clientId: string,
+    input: FilingInput,
+    years: number,
+    replacesFy: number | null,
+  ) => Promise<void>;
 
   /**
    * Records a deadline as met, with its SRN. DIR-3 KYC rows update the
@@ -253,6 +260,13 @@ export function PortfolioProvider({
         const client = (await repo.load()).clients.find((c) => c.id === clientId);
         if (!client) return;
         await repo.upsertClient(withAuditorTerm(client, appointedFy, years));
+        await refresh();
+      },
+
+      async saveAuditorAppointment(clientId, input, years, replacesFy) {
+        const client = (await repo.load()).clients.find((c) => c.id === clientId);
+        if (!client) return;
+        await repo.upsertClient(withAdt1Appointment(client, input, years, replacesFy));
         await refresh();
       },
 

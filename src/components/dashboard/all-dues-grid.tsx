@@ -137,7 +137,7 @@ export function AllDuesGrid({
   const [choosing, setChoosing] = React.useState<DuesRow[] | null>(null);
   // The bulk due-date dialog: open on a column ("" = let the user pick one).
   const [settingDue, setSettingDue] = React.useState<string | null>(null);
-  // An ADT-1 "NA" cell being opened to set how long the auditor was appointed for.
+  // An ADT-1 "NA" cell being opened to record the ADT-1: SRN, date of filing, years appointed.
   const [termCell, setTermCell] = React.useState<{ clientId: string; fy: number } | null>(null);
 
   function openRows(cellRows: DuesRow[]) {

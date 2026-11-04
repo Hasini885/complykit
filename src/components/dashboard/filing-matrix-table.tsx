@@ -46,7 +46,7 @@ export function FilingMatrixTable({
   onOpenCell?: (rows: DuesRow[]) => void;
   /** Makes each column header a button that sets that due's date across companies. */
   onOpenColumn?: (columnKey: string) => void;
-  /** Makes an ADT-1 "NA" cell a button that sets how long the auditor was appointed for. */
+  /** Makes an ADT-1 "NA" cell a button that records the ADT-1: SRN, date of filing, years appointed. */
   onOpenAuditorTerm?: (clientId: string, fy: number) => void;
 }) {
   if (matrix.columns.length === 0) {
@@ -197,11 +197,11 @@ function Cell({
             type="button"
             onClick={onOpenTerm}
             className="block w-full px-2 py-1.5 text-left transition-colors hover:bg-primary/10 focus-visible:outline-2 focus-visible:outline-ring"
-            aria-label={`${column.form} ${column.fy} for ${company}: ${cellText(cell, formatDate)}. Set the years appointed`}
+            aria-label={`${column.form} ${column.fy} for ${company}: ${cellText(cell, formatDate)}. Enter the ADT-1 SRN, date of filing and years appointed`}
           >
             {reason}
             <span className="mt-0.5 flex items-center gap-1 text-[10px] font-medium text-primary">
-              <Pencil className="size-3" aria-hidden /> Set years appointed
+              <Pencil className="size-3" aria-hidden /> ADT-1 details
             </span>
           </button>
         ) : (

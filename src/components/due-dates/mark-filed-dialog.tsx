@@ -11,6 +11,7 @@ import { digitsOnly, srnInput } from "@/lib/input-filters";
 import { usePortfolio } from "@/components/portfolio/portfolio-provider";
 import { AuditorYearsField } from "@/components/dashboard/auditor-years-field";
 import { financialYearLabel, formatDate, isoDate, today } from "@/lib/dates";
+import { appointmentCovering } from "@/lib/portfolio/auditor";
 import { auditorTermOf } from "@/lib/portfolio/schedule";
 import {
   ACK_LENGTH,
@@ -65,7 +66,9 @@ function MarkFiledBody({
   const { clients, markFiled, setAuditorTerm, unmarkFiled } = usePortfolio();
   // ADT-1 for a subsequent auditor: this filing starts the term, so ask how long it runs.
   const company = item.source.id === "adt-1" ? clients.find((c) => c.id === clientId) : undefined;
-  const [years, setYears] = React.useState(() => (company ? auditorTermOf(company) : 0));
+  const [years, setYears] = React.useState(() =>
+    company ? (appointmentCovering(company, item.fyEndingYear)?.years ?? auditorTermOf(company)) : 0,
+  );
   const hasForm = item.source.formCode !== null;
   const ack = referenceKind(item.source.id) === "ack";
   const [input, setInput] = React.useState<FilingInput>({
@@ -120,9 +123,11 @@ function MarkFiledBody({
         </DialogDescription>
       </div>
 
+      {/* ADT-1 for a subsequent auditor reads SRN, date of filing, years appointed. */}
+      <div className={company ? "flex flex-col-reverse gap-4" : "space-y-4"}>
       <label className="block space-y-1.5">
         <span className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
-          {hasForm ? "Filed on" : "Done on"}
+          {company ? "Date of filing" : hasForm ? "Filed on" : "Done on"}
         </span>
         <Input
           type="date"
@@ -166,6 +171,7 @@ function MarkFiledBody({
           </span>
         )}
       </label>
+      </div>
 
       {company ? <AuditorYearsField value={years} onChange={setYears} /> : null}
 

@@ -173,6 +173,8 @@ export type FilingRecord = {
   filedOn: string;
   /** Uppercase; empty where nothing is filed with MCA (e.g. holding the AGM). */
   srn: string;
+  /** ADT-1 for a subsequent auditor: the years that appointment runs for, 1 to 5. */
+  years?: number;
 };
 
 /**

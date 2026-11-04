@@ -6,17 +6,22 @@ import { Save } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { usePortfolio } from "@/components/portfolio/portfolio-provider";
 import { AuditorYearsField } from "@/components/dashboard/auditor-years-field";
-import { financialYearLabel } from "@/lib/dates";
-import { appointmentFyFor, auditorTermSummary, withAuditorTerm } from "@/lib/portfolio/auditor";
+import { isoDate, parseIsoDate, today } from "@/lib/dates";
+import { srnInput } from "@/lib/input-filters";
+import { appointmentCovering, auditorTermSummary, withAdt1Appointment } from "@/lib/portfolio/auditor";
+import { validateFiling, type FilingInput } from "@/lib/portfolio/filings";
 import { auditorTermOf } from "@/lib/portfolio/schedule";
 import type { Client } from "@/lib/portfolio/types";
 
+const LABEL = "text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground";
+
 /**
- * Opened from an ADT-1 "NA" cell: how many years the subsequent auditor was
- * appointed for. That decides which later years are NA and when ADT-1 is next
- * due, and the summary shows exactly that before saving.
+ * Opened from an ADT-1 "NA" cell: the subsequent auditor's ADT-1, as its SRN,
+ * date of filing and years appointed. These decide which years are NA, and the
+ * NA cells quote this SRN. The summary shows the result before saving.
  */
 export function AuditorTermDialog({
   client,
@@ -39,17 +44,31 @@ export function AuditorTermDialog({
 }
 
 function Body({ client, fy, onDone }: { client: Client; fy: number; onDone: () => void }) {
-  const { setAuditorTerm } = usePortfolio();
-  const appointedFy = appointmentFyFor(client, fy) ?? fy;
-  const [years, setYears] = React.useState(() => auditorTermOf(client));
+  const { saveAuditorAppointment } = usePortfolio();
+  const existing = appointmentCovering(client, fy);
+  const [input, setInput] = React.useState<FilingInput>({
+    srn: existing?.srn ?? "",
+    filedOn: existing?.filedOn ? isoDate(existing.filedOn) : "",
+  });
+  const [years, setYears] = React.useState(() => existing?.years ?? auditorTermOf(client));
+  const [errors, setErrors] = React.useState<Partial<Record<keyof FilingInput, string>>>({});
   const [busy, setBusy] = React.useState(false);
+
+  const filed = parseIsoDate(input.filedOn);
+  const incorporated = parseIsoDate(client.incorporatedOn);
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
+    const found = validateFiling(input, { srnRequired: true });
+    if (filed && incorporated && filed.getTime() < incorporated.getTime()) {
+      found.filedOn = "ADT-1 is filed after incorporation.";
+    }
+    setErrors(found);
+    if (Object.keys(found).length > 0) return;
     setBusy(true);
     try {
-      await setAuditorTerm(client.id, appointedFy, years);
-      toast.success(`Auditor appointed for ${years} year${years === 1 ? "" : "s"}`);
+      await saveAuditorAppointment(client.id, input, years, existing?.fy ?? null);
+      toast.success("ADT-1 saved", { description: `Auditor appointed for ${years} year${years === 1 ? "" : "s"}` });
       onDone();
     } finally {
       setBusy(false);
@@ -59,15 +78,46 @@ function Body({ client, fy, onDone }: { client: Client; fy: number; onDone: () =
   return (
     <form onSubmit={save} className="space-y-4">
       <div>
-        <DialogTitle className="font-heading text-lg">Subsequent auditor</DialogTitle>
-        <DialogDescription className="mt-1 text-sm">
-          {client.name}: the auditor appointed at the AGM for {financialYearLabel(appointedFy)}.
-        </DialogDescription>
+        <DialogTitle className="font-heading text-lg">ADT-1: subsequent auditor</DialogTitle>
+        <DialogDescription className="mt-1 text-sm">{client.name}</DialogDescription>
       </div>
+
+      <label className="block space-y-1.5">
+        <span className={LABEL}>SRN</span>
+        <Input
+          value={input.srn}
+          onChange={(e) => setInput((v) => ({ ...v, srn: srnInput(e.target.value) }))}
+          placeholder="e.g. AB1234567"
+          autoCapitalize="characters"
+          spellCheck={false}
+          aria-invalid={!!errors.srn}
+          className="font-mono uppercase"
+        />
+        {errors.srn ? <span className="text-xs text-destructive">{errors.srn}</span> : null}
+      </label>
+
+      <label className="block space-y-1.5">
+        <span className={LABEL}>Date of filing</span>
+        <Input
+          type="date"
+          value={input.filedOn}
+          min={client.incorporatedOn || undefined}
+          max={isoDate(today())}
+          onChange={(e) => setInput((v) => ({ ...v, filedOn: e.target.value }))}
+          aria-invalid={!!errors.filedOn}
+          className="tabular"
+        />
+        {errors.filedOn ? <span className="text-xs text-destructive">{errors.filedOn}</span> : null}
+      </label>
+
       <AuditorYearsField value={years} onChange={setYears} />
-      <p className="rounded-md bg-muted/40 px-3 py-2 text-xs leading-relaxed">
-        {auditorTermSummary(withAuditorTerm(client, appointedFy, years))}
-      </p>
+
+      {filed ? (
+        <p className="rounded-md bg-muted/40 px-3 py-2 text-xs leading-relaxed">
+          {auditorTermSummary(withAdt1Appointment(client, input, years, existing?.fy ?? null))}
+        </p>
+      ) : null}
+
       <DialogFooter>
         <Button type="submit" disabled={busy}>
           <Save className="size-4" aria-hidden /> Save

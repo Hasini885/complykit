@@ -1,7 +1,13 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { adtNaReason, appointmentFyFor, withAuditorTerm } from "@/lib/portfolio/auditor";
+import {
+  adtNaReason,
+  appointmentCovering,
+  appointmentFyFor,
+  withAdt1Appointment,
+  withAuditorTerm,
+} from "@/lib/portfolio/auditor";
 import { nextAdtFy, resolveClientYear } from "@/lib/portfolio/schedule";
 import type { Client } from "@/lib/portfolio/types";
 
@@ -81,6 +87,42 @@ test("a new appointment partway through starts its own term; the old SRN no long
   assert.deepEqual(adtYears(renewed, 2030, 2034), [2030, 2032, 2034]);
   assert.equal(renewed.adt1Srn, undefined);
   assert.equal(withAuditorTerm(filed, 2025, 3).adt1Srn, "AB1234567", "same appointment keeps its SRN");
+});
+
+test("ADT-1 details: SRN, date of filing and years drive the NA years and their reason", () => {
+  const young = client({ incorporatedOn: "2025-08-14" });
+  const saved = withAdt1Appointment(young, { srn: "ab1234567", filedOn: "2026-10-10" }, 3);
+  assert.equal(saved.auditorAppointedAtAgmFy, 2026, "filed Oct 2026: the AGM for FY 2025-26");
+  assert.equal(saved.auditorTermYears, 3);
+  assert.deepEqual(adtYears(saved, 2026, 2033), [2029, 2032]);
+  assert.equal(
+    adtNaReason(saved, 2027),
+    "Auditor appointed for 3 years at the AGM for FY 2025–26 (SRN AB1234567 filed dated 10/10/2026), next due 15/10/2029",
+  );
+  assert.equal(appointmentCovering(saved, 2028)?.srn, "AB1234567");
+  assert.equal(appointmentCovering(saved, 2029), null, "the term has ended");
+});
+
+test("each NA year quotes the SRN of its own appointment, after a reappointment too", () => {
+  const first = withAdt1Appointment(client({ incorporatedOn: "2025-08-14" }), { srn: "AB1111111", filedOn: "2026-10-10" }, 3);
+  const second = withAdt1Appointment(first, { srn: "CD2222222", filedOn: "2029-10-10" }, 2);
+  assert.deepEqual(adtYears(second, 2029, 2033), [2029, 2031, 2033]);
+  assert.match(adtNaReason(second, 2027), /appointed for 3 years .*FY 2025–26 \(SRN AB1111111 .*next due 15\/10\/2029$/);
+  assert.match(adtNaReason(second, 2030), /appointed for 2 years .*FY 2028–29 \(SRN CD2222222 /);
+});
+
+test("ADT-1 details: an earlier appointment is recorded without moving the running term back", () => {
+  const current = withAdt1Appointment(client(), { srn: "CD2222222", filedOn: "2025-10-10" }, 5);
+  const both = withAdt1Appointment(current, { srn: "AB1111111", filedOn: "2022-10-10" }, 3);
+  assert.equal(both.auditorAppointedAtAgmFy, 2025);
+  assert.equal(both.auditorTermYears, 5);
+  assert.match(adtNaReason(both, 2023), /appointed for 3 years .*SRN AB1111111/);
+});
+
+test("correcting ADT-1 details to another year moves the record", () => {
+  const first = withAdt1Appointment(client({ incorporatedOn: "2025-08-14" }), { srn: "AB1111111", filedOn: "2026-10-10" }, 5);
+  const moved = withAdt1Appointment(first, { srn: "AB1111111", filedOn: "2027-10-10" }, 5, 2026);
+  assert.deepEqual(moved.filings?.map((f) => f.key), ["adt-1|2027|"]);
 });
 
 test("the NA reason names the appointment, the years and the next due date", () => {
