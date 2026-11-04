@@ -29,6 +29,14 @@ export type FeeRelaxation = {
 
 export const FEE_RELAXATIONS: FeeRelaxation[] = [
   {
+    id: "gc-02-2026-dpt3",
+    formIds: ["dpt-3"],
+    fyEndingYear: 2026,
+    feeFreeUntil: "2026-07-31",
+    circular: "MCA General Circular No. 02/2026 (19 June 2026)",
+    summary: "No additional fee if the FY 2025–26 DPT-3 is filed by 31 Jul 2026",
+  },
+  {
     id: "gc-05-2026-aoc4",
     formIds: ["aoc-4", "aoc-4-cfs"],
     fyEndingYear: 2026,

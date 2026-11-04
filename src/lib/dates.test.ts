@@ -181,7 +181,8 @@ test("resolve: private company for FY 2025-26", () => {
   assert.equal(isoDate(by("aoc-4")[0].due!), "2026-12-31");
   assert.equal(isoDate(by("mgt-7")[0].due!), "2027-01-31");
   assert.equal(isoDate(by("adt-1")[0].due!), "2026-10-15", "AGM + 15");
-  assert.equal(isoDate(by("dpt-3")[0].due!), "2026-06-30");
+  assert.equal(isoDate(by("dpt-3")[0].statutoryDue!), "2026-06-30", "Rule 16");
+  assert.equal(isoDate(by("dpt-3")[0].due!), "2026-07-31", "extended by GC 02/2026");
   // Amendment Rules 2025 (w.e.f. 31 Mar 2026): 30 June, triennial — not 30 September.
   assert.equal(isoDate(by("dir-3-kyc")[0].due!), "2026-06-30");
 });

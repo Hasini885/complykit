@@ -222,7 +222,11 @@ function Cell({
         [...dueLines(cell, formatDate), ...filedLines(cell, formatDate)].map((line) => (
           <span
             key={line}
-            className={cn("block text-[10px] opacity-80", /^(SRN|Ack\.) /.test(line) && "tabular tracking-wide")}
+            className={cn(
+              "block text-[10px] opacity-80",
+              /^(SRN|Ack\.) /.test(line) && "tabular tracking-wide",
+              line.startsWith("As per ") && "max-w-[13rem] whitespace-normal",
+            )}
           >
             {line}
           </span>
@@ -236,6 +240,7 @@ function Cell({
                 "block text-[10px]",
                 cell.originalDue && i === 0 ? "opacity-60" : "opacity-90",
                 cell.originalDue && i === 1 ? "font-semibold" : "",
+                line.startsWith("As per ") ? "max-w-[13rem] whitespace-normal" : "",
               )}
             >
               {line}

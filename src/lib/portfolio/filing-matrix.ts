@@ -68,6 +68,8 @@ export type MatrixCell = {
   originalDue: Date | null;
   /** True when the user set the extended date themselves. */
   manualDue: boolean;
+  /** The circular behind the extended date, when a circular moved it. */
+  circular: string | null;
 };
 
 export type MatrixRow = {
@@ -323,6 +325,7 @@ function cellFor(parts: DuesRow[]): MatrixCell {
       rows: [],
       originalDue: null,
       manualDue: false,
+      circular: null,
     };
   }
   const open = parts.filter((p) => p.status !== "completed");
@@ -345,11 +348,12 @@ function cellFor(parts: DuesRow[]): MatrixCell {
 }
 
 /** Where a due has moved from its original date, and whether the user moved it. */
-function movedDue(r: DuesRow): { originalDue: Date | null; manualDue: boolean } {
+function movedDue(r: DuesRow): { originalDue: Date | null; manualDue: boolean; circular: string | null } {
   const it = r.item;
   const original = it ? (it.statutoryDue ?? it.originalDue ?? null) : null;
-  if (!original || original.getTime() === r.due.getTime()) return { originalDue: null, manualDue: false };
-  return { originalDue: original, manualDue: !!it?.originalDue };
+  if (!original || original.getTime() === r.due.getTime()) return { originalDue: null, manualDue: false, circular: null };
+  const manualDue = !!it?.originalDue;
+  return { originalDue: original, manualDue, circular: manualDue ? null : (it?.extendedBy ?? null) };
 }
 
 /**
@@ -368,11 +372,16 @@ export function filedLines(c: MatrixCell, formatDate: (d: Date) => string): stri
 
 /**
  * The date lines under a cell's status: "Original … / Extended …" where the
- * due has moved, else "Due …". The screen and the PDF both use these.
+ * due has moved, naming the circular that moved it, else "Due …". The screen
+ * and the PDF both use these.
  */
 export function dueLines(c: MatrixCell, formatDate: (d: Date) => string): string[] {
   if (!c.originalDue) return [`Due date ${formatDate(c.due)}`];
-  return [`Original due date ${formatDate(c.originalDue)}`, `Extended due date ${formatDate(c.due)}`];
+  return [
+    `Original due date ${formatDate(c.originalDue)}`,
+    `Extended due date ${formatDate(c.due)}`,
+    ...(c.circular ? [`As per ${c.circular}`] : []),
+  ];
 }
 
 /** Short text for a cell, for the screen and both downloads. */
@@ -394,7 +403,7 @@ export function cellText(c: MatrixCell | undefined, formatDate: (d: Date) => str
 
 function movedNote(c: MatrixCell, formatDate: (d: Date) => string): string {
   if (!c.originalDue) return "";
-  return ` (original due date ${formatDate(c.originalDue)}, extended due date ${formatDate(c.due)}${c.manualDue ? " — set manually" : ""})`;
+  return ` (original due date ${formatDate(c.originalDue)}, extended due date ${formatDate(c.due)}${c.manualDue ? " — set manually" : ""}${c.circular ? `, as per ${c.circular}` : ""})`;
 }
 
 /** "AOC-4", "MSME-1 · Apr–Sep", or "AOC-4 · FY 2025–26" where two years of it are shown. */

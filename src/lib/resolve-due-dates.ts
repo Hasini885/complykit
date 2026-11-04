@@ -38,6 +38,8 @@ export type ResolvedDueDate = {
    * effective due date (`due`) later. Absent when no extension applies.
    */
   statutoryDue?: Date | null;
+  /** The circular that moved the date, as it should be cited beside the extended date. */
+  extendedBy?: string | null;
   /**
    * Set when the user changed this one occurrence's date for convenience:
    * the date it had before (statutory, or as extended by a circular).
@@ -223,18 +225,21 @@ function withExtension(
   fyEndingYear: number,
   due: Date | null,
   auditCase = true,
-): Pick<ResolvedDueDate, "due" | "relief" | "statutoryDue"> {
+): Pick<ResolvedDueDate, "due" | "relief" | "statutoryDue" | "extendedBy"> {
   const found = relaxationFor(formId, fyEndingYear);
   const r = found && (!found.auditCasesOnly || auditCase) ? found : null;
   const until = r ? parseIsoDate(r.feeFreeUntil) : null;
-  if (!r || !until || due === null) return { due, relief: null, statutoryDue: null };
-  if (until.getTime() <= due.getTime()) {
-    return { due, relief: `${r.summary} (${r.circular})`, statutoryDue: null };
+  // Where the Act's own date is already the later one (a first AGM, say, or a
+  // transfer-pricing return), the circular gives nothing, so nothing is said.
+  if (!r || !until || due === null || until.getTime() <= due.getTime()) {
+    return { due, relief: null, statutoryDue: null, extendedBy: null };
   }
+  const withoutFee = r.extendsDueDate ? "" : " without additional fee";
   return {
     due: until,
-    relief: `Extended to ${formatDate(until)}${r.extendsDueDate ? "" : " without additional fee"} by ${r.circular}. Statutory due date ${formatDate(due)}.`,
+    relief: `Extended to ${formatDate(until)}${withoutFee} by ${r.circular}. Statutory due date ${formatDate(due)}.`,
     statutoryDue: due,
+    extendedBy: `${r.circular}${r.extendsDueDate ? "" : ", without additional fee"}`,
   };
 }
 

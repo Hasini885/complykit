@@ -91,7 +91,8 @@ test("the calendar marks the relieved dues, and only those", () => {
   const fy26 = resolveDueDates({ companyType: "private", fyEndingYear: 2026 });
   assert.match(fy26.find((r) => r.source.id === "aoc-4")!.relief ?? "", /31 Dec 2026/);
   assert.match(fy26.find((r) => r.source.id === "mgt-7")!.relief ?? "", /31 Jan 2027/);
-  assert.equal(fy26.find((r) => r.source.id === "dpt-3")!.relief, null);
+  assert.match(fy26.find((r) => r.source.id === "dpt-3")!.relief ?? "", /31 Jul 2026.*General Circular No\. 02\/2026/);
+  assert.equal(fy26.find((r) => r.source.id === "adt-1")!.relief, null);
   const fy27 = resolveDueDates({ companyType: "private", fyEndingYear: 2027 });
   assert.equal(fy27.find((r) => r.source.id === "aoc-4")!.relief, null);
 });
