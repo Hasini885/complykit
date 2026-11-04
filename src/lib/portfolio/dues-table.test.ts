@@ -68,13 +68,13 @@ test("post incorporation part: not applicable, LLPs, and a recorded filing", () 
   assert.equal(row.srn, "AB1234567");
 });
 
-test("annual part: the post incorporation forms move out, the ADT-1 after an AGM stays", () => {
+test("annual part: the post incorporation forms move out, and the first year has no ADT-1", () => {
   const fresh = { ...SEED_CLIENTS[0], id: "fresh", type: "private" as const, incorporatedOn: "2026-10-15", filings: [], dueOverrides: undefined };
   const all = buildDuesRows([fresh], [], new Date(2026, 10, 4), { filingsOnly: true, fyEndingYear: 2027 });
   assert.ok(all.some((r) => r.sourceId === "inc-20a"));
   const annual = annualDuesRows(all).map((r) => r.sourceId);
   assert.ok(!annual.includes("inc-20a") && !annual.includes("first-auditor"), annual.join(", "));
-  assert.ok(annual.includes("adt-1"), annual.join(", "));
+  assert.ok(!annual.includes("adt-1"), annual.join(", "));
 });
 
 test("rows are in due-date order", () => {

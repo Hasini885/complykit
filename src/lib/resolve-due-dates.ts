@@ -155,8 +155,8 @@ function appliesOnFacts(source: RecurringDueDate, opts: ResolveOptions): boolean
       return !facts.listed;
     case "adt-1": {
       if (facts.filesAdt1 === false) return false;
-      // Section 139(1): the first AGM appoints the auditor, so its ADT-1 is always due.
-      if (isFirstFinancialYear(opts)) return true;
+      // The first year's ADT-1 is the first auditor's: a post incorporation form, not this one.
+      if (isFirstFinancialYear(opts)) return false;
       const anchor = facts.auditorAppointedAtAgmFy;
       if (anchor === null) return false;
       const yearsOn = opts.fyEndingYear - anchor;

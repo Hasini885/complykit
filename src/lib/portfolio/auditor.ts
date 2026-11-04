@@ -1,5 +1,6 @@
 import { financialYearLabel, formatDate, parseIsoDate } from "@/lib/dates";
 import { auditorAnchorFy, auditorTermOf, firstFyEndingYear, resolveClientYear } from "@/lib/portfolio/schedule";
+import { AUDITOR_TERM_YEARS } from "@/lib/resolve-due-dates";
 import type { Client } from "@/lib/portfolio/types";
 
 /** "10/10/2025": the day/month/year style the ADT-1 note is written in. */
@@ -51,6 +52,31 @@ export function auditorTerm(client: Client, asOf?: Date): AuditorTerm | null {
   };
 }
 
+/** The year whose AGM made the appointment running in `fy`: the appointment year, then every term after it. */
+export function appointmentFyFor(client: Client, fy: number): number | null {
+  const anchor = auditorAnchorFy(client);
+  if (anchor === null) return null;
+  if (fy <= anchor) return anchor;
+  const term = auditorTermOf(client);
+  return anchor + Math.floor((fy - anchor) / term) * term;
+}
+
+/**
+ * The company with its auditor appointed at this year's AGM for this many
+ * years (1 to 5, Section 139(1)). A different appointment year means the SRN
+ * and date kept for the old appointment no longer describe the current one.
+ */
+export function withAuditorTerm(client: Client, appointedFy: number, years: number, now = new Date()): Client {
+  const same = auditorAnchorFy(client) === appointedFy;
+  return {
+    ...client,
+    auditorAppointedAtAgmFy: appointedFy,
+    auditorTermYears: Math.min(AUDITOR_TERM_YEARS, Math.max(1, Math.trunc(years))),
+    ...(same ? {} : { adt1Srn: undefined, adt1FiledOn: null }),
+    updatedAt: now.toISOString(),
+  };
+}
+
 /** "6th" */
 export function ordinal(n: number): string {
   const tens = n % 100;
@@ -59,19 +85,32 @@ export function ordinal(n: number): string {
 }
 
 /**
- * Why ADT-1 is NA in a year inside the term: "As per SRN AB1234567 filed
- * dated 10/10/2025, next due 15/10/2028" (with whatever of that is known).
+ * Why ADT-1 is NA in this year: the appointment that covers it, and when the
+ * next one falls due. "Auditor appointed for 3 years at the AGM for FY 2024–25
+ * (SRN AB1234567 filed dated 10/10/2025), next due 15/10/2028". Says "taken as"
+ * while nobody has entered the term, since five years is only the assumption.
  */
-export function adtNaReason(client: Client, asOf?: Date): string {
-  const term = auditorTerm(client, asOf);
-  if (!term) return "auditor's term running";
-  const filed = term.srn
-    ? `As per SRN ${term.srn}${term.filedOn ? ` filed dated ${dmy(term.filedOn)}` : ""}`
+export function adtNaReason(client: Client, fy: number, asOf?: Date): string {
+  const anchor = auditorAnchorFy(client);
+  if (anchor === null) return "auditor's term running";
+  if (fy < anchor) return `Auditor appointed later, at the AGM for ${financialYearLabel(anchor)}`;
+  const at = appointmentFyFor(client, fy)!;
+  // The SRN kept on the company belongs to its appointment year, not to later renewals.
+  const term = auditorTerm(
+    at === anchor ? client : { ...client, auditorAppointedAtAgmFy: at, adt1Srn: undefined, adt1FiledOn: null },
+    asOf,
+  )!;
+  const years = `${term.years} year${term.years === 1 ? "" : "s"}`;
+  const appointed = client.auditorTermYears
+    ? `Auditor appointed for ${years}`
+    : `Auditor taken as appointed for ${years}`;
+  const proof = term.srn
+    ? ` (SRN ${term.srn}${term.filedOn ? ` filed dated ${dmy(term.filedOn)}` : ""})`
     : term.filedOn
-      ? `As per ADT-1 filed dated ${dmy(term.filedOn)}`
-      : "Auditor's term running";
+      ? ` (ADT-1 filed dated ${dmy(term.filedOn)})`
+      : "";
   const next = term.nextDue ? `next due ${dmy(term.nextDue)}` : `next ADT-1 for ${financialYearLabel(term.untilFy)}`;
-  return `${filed}, ${next}`;
+  return `${appointed} at the AGM for ${financialYearLabel(at)}${proof}, ${next}`;
 }
 
 /**

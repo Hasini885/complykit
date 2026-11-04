@@ -9,7 +9,9 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle } f
 import { Input } from "@/components/ui/input";
 import { digitsOnly, srnInput } from "@/lib/input-filters";
 import { usePortfolio } from "@/components/portfolio/portfolio-provider";
+import { AuditorYearsField } from "@/components/dashboard/auditor-years-field";
 import { financialYearLabel, formatDate, isoDate, today } from "@/lib/dates";
+import { auditorTermOf } from "@/lib/portfolio/schedule";
 import {
   ACK_LENGTH,
   kycDirectorId,
@@ -60,7 +62,10 @@ function MarkFiledBody({
   item: ResolvedDueDate;
   onDone: () => void;
 }) {
-  const { markFiled, unmarkFiled } = usePortfolio();
+  const { clients, markFiled, setAuditorTerm, unmarkFiled } = usePortfolio();
+  // ADT-1 for a subsequent auditor: this filing starts the term, so ask how long it runs.
+  const company = item.source.id === "adt-1" ? clients.find((c) => c.id === clientId) : undefined;
+  const [years, setYears] = React.useState(() => (company ? auditorTermOf(company) : 0));
   const hasForm = item.source.formCode !== null;
   const ack = referenceKind(item.source.id) === "ack";
   const [input, setInput] = React.useState<FilingInput>({
@@ -78,6 +83,7 @@ function MarkFiledBody({
     setBusy(true);
     try {
       await markFiled(clientId, item, input);
+      if (company) await setAuditorTerm(clientId, item.fyEndingYear, years);
       const srn = normaliseSrn(input.srn);
       toast.success(`${item.source.title} marked filed`, {
         description: srn ? `${ack ? "Acknowledgement no." : "SRN"} ${srn}` : undefined,
@@ -160,6 +166,8 @@ function MarkFiledBody({
           </span>
         )}
       </label>
+
+      {company ? <AuditorYearsField value={years} onChange={setYears} /> : null}
 
       <DialogFooter className="gap-2 sm:justify-between">
         {item.filedOn ? (

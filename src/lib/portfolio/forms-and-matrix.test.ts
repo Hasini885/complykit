@@ -218,7 +218,10 @@ test("ADT-1 filed once for a 3-year term: SRN and date shown as NA in the years 
   const at = new Date(2026, 9, 27);
   const m = buildFilingMatrix(buildDuesRows([c], [], at, { filingsOnly: true }), [c]);
   const year2 = m.rows[0].cells["adt-1|2026|"];
-  assert.equal(cellText(year2, formatDate), "NA — As per SRN AB1234567 filed dated 10/10/2025, next due 15/10/2028");
+  assert.equal(
+    cellText(year2, formatDate),
+    "NA — Auditor appointed for 3 years at the AGM for FY 2024–25 (SRN AB1234567 filed dated 10/10/2025), next due 15/10/2028",
+  );
   // Its own place: after every other form, not ahead of them.
   const keys = m.columns.map((c) => c.key);
   const firstAdt = keys.findIndex((k) => k.startsWith("adt-1|"));
@@ -229,12 +232,12 @@ test("ADT-1 filed once for a 3-year term: SRN and date shown as NA in the years 
   assert.match(auditorTermSummary(c, at)!, /up to the conclusion of the 9th AGM \(for FY 2027–28\).*NA for the 2 years in between/);
 });
 
-test("a newly incorporated company's first ADT-1 shows as a due in the matrix", () => {
-  const c = client({ id: "new", incorporatedOn: "2025-08-14", lastAgmOn: "2026-09-30", agmHistory: ["2026-09-30"], auditorAppointedAtAgmFy: 2024 });
+test("a company's first year has no annual ADT-1 column or cell; the next year is NA", () => {
+  const c = client({ id: "new", incorporatedOn: "2025-08-14", lastAgmOn: "2026-09-30", agmHistory: ["2026-09-30"] });
   const at = new Date(2026, 9, 28);
-  const m = buildFilingMatrix(buildDuesRows([c], [], at, { filingsOnly: true }), [c]);
-  const cell = m.rows[0].cells["adt-1|2026|"];
-  assert.ok(cell && !cell.notRequired);
-  assert.equal(cell.status, "overdue", "AGM 30 Sep 2026 + 15 days = 15 Oct 2026");
-  assert.equal(iso(cell.due), "2026-10-15");
+  const m = buildFilingMatrix(buildDuesRows([c], [], at, { filingsOnly: true, fyEndingYear: 2026 }), [c]);
+  assert.ok(m.columns.some((col) => col.key === "aoc-4|2026|"));
+  assert.ok(!m.columns.some((col) => col.key === "adt-1|2026|"), "not in the annual table");
+  const next = buildFilingMatrix(buildDuesRows([c], [], at, { filingsOnly: true, fyEndingYear: 2027 }), [c]);
+  assert.match(cellText(next.rows[0].cells["adt-1|2027|"], iso as (d: Date) => string), /^NA — Auditor taken as appointed for 5 years/);
 });

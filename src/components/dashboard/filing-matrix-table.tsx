@@ -38,6 +38,7 @@ export function FilingMatrixTable({
   onOpenClient,
   onOpenCell,
   onOpenColumn,
+  onOpenAuditorTerm,
 }: {
   matrix: FilingMatrix;
   onOpenClient?: (clientId: string) => void;
@@ -45,6 +46,8 @@ export function FilingMatrixTable({
   onOpenCell?: (rows: DuesRow[]) => void;
   /** Makes each column header a button that sets that due's date across companies. */
   onOpenColumn?: (columnKey: string) => void;
+  /** Makes an ADT-1 "NA" cell a button that sets how long the auditor was appointed for. */
+  onOpenAuditorTerm?: (clientId: string, fy: number) => void;
 }) {
   if (matrix.columns.length === 0) {
     return (
@@ -94,7 +97,18 @@ export function FilingMatrixTable({
                   </span>
                 </th>
                 {matrix.columns.map((c) => (
-                  <Cell key={c.key} cell={row.cells[c.key]} column={c} company={row.company} onOpen={onOpenCell} />
+                  <Cell
+                    key={c.key}
+                    cell={row.cells[c.key]}
+                    column={c}
+                    company={row.company}
+                    onOpen={onOpenCell}
+                    onOpenTerm={
+                      onOpenAuditorTerm && c.key.startsWith("adt-1|")
+                        ? () => onOpenAuditorTerm(row.clientId, Number(c.key.split("|")[1]))
+                        : undefined
+                    }
+                  />
                 ))}
               </tr>
             );
@@ -145,11 +159,13 @@ function Cell({
   column,
   company,
   onOpen,
+  onOpenTerm,
 }: {
   cell: MatrixCell | undefined;
   column: MatrixColumn;
   company: string;
   onOpen?: (rows: DuesRow[]) => void;
+  onOpenTerm?: () => void;
 }) {
   if (!cell) {
     return (
@@ -162,13 +178,35 @@ function Cell({
     );
   }
   if (cell.notRequired) {
-    return (
-      <td
-        className="border-r border-b bg-muted/40 px-2 py-1.5 whitespace-nowrap text-muted-foreground last:border-r-0"
-        title={cellText(cell, formatDate)}
-      >
+    const reason = (
+      <>
         <span className="block font-semibold">NA</span>
         <span className="block max-w-[14rem] text-[10px] whitespace-normal opacity-80">{cell.notRequired}</span>
+      </>
+    );
+    return (
+      <td
+        className={cn(
+          "border-r border-b bg-muted/40 whitespace-nowrap text-muted-foreground last:border-r-0",
+          onOpenTerm ? "p-0" : "px-2 py-1.5",
+        )}
+        title={cellText(cell, formatDate)}
+      >
+        {onOpenTerm ? (
+          <button
+            type="button"
+            onClick={onOpenTerm}
+            className="block w-full px-2 py-1.5 text-left transition-colors hover:bg-primary/10 focus-visible:outline-2 focus-visible:outline-ring"
+            aria-label={`${column.form} ${column.fy} for ${company}: ${cellText(cell, formatDate)}. Set the years appointed`}
+          >
+            {reason}
+            <span className="mt-0.5 flex items-center gap-1 text-[10px] font-medium text-primary">
+              <Pencil className="size-3" aria-hidden /> Set years appointed
+            </span>
+          </button>
+        ) : (
+          reason
+        )}
       </td>
     );
   }

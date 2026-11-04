@@ -28,6 +28,7 @@ import {
 import { SrnChip } from "@/components/shared/srn-chip";
 import { MarkFiledDialog } from "@/components/due-dates/mark-filed-dialog";
 import { SetDueDatesDialog } from "@/components/dashboard/set-due-dates-dialog";
+import { AuditorTermDialog } from "@/components/dashboard/auditor-term-dialog";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { referenceKind } from "@/lib/portfolio/filings";
 import { FilingMatrixTable } from "@/components/dashboard/filing-matrix-table";
@@ -136,6 +137,8 @@ export function AllDuesGrid({
   const [choosing, setChoosing] = React.useState<DuesRow[] | null>(null);
   // The bulk due-date dialog: open on a column ("" = let the user pick one).
   const [settingDue, setSettingDue] = React.useState<string | null>(null);
+  // An ADT-1 "NA" cell being opened to set how long the auditor was appointed for.
+  const [termCell, setTermCell] = React.useState<{ clientId: string; fy: number } | null>(null);
 
   function openRows(cellRows: DuesRow[]) {
     const markable = cellRows.filter((r) => r.item);
@@ -362,6 +365,7 @@ export function AllDuesGrid({
             onOpenClient={onOpenClient}
             onOpenCell={openRows}
             onOpenColumn={(key) => setSettingDue(key)}
+            onOpenAuditorTerm={(clientId, year) => setTermCell({ clientId, fy: year })}
           />
           <p className="text-xs text-muted-foreground">
             {matrix.rows.length} compan{matrix.rows.length === 1 ? "y" : "ies"} × {matrix.columns.length} dues ·{" "}
@@ -446,6 +450,11 @@ export function AllDuesGrid({
         matrix={matrix}
         columnKey={settingDue}
         onClose={() => setSettingDue(null)}
+      />
+      <AuditorTermDialog
+        client={clients.find((c) => c.id === termCell?.clientId) ?? null}
+        fy={termCell?.fy ?? 0}
+        onClose={() => setTermCell(null)}
       />
       <ChoosePartDialog
         rows={choosing}

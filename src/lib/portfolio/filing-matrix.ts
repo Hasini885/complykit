@@ -4,7 +4,7 @@ import { adtNaReason } from "@/lib/portfolio/auditor";
 import type { DuesRow } from "@/lib/portfolio/dues-table";
 import { referenceKind } from "@/lib/portfolio/filings";
 import type { ReportBucket } from "@/lib/portfolio/report";
-import { POST_INCORPORATION_FORMS } from "@/lib/portfolio/schedule";
+import { POST_INCORPORATION_FORMS, firstFyEndingYear } from "@/lib/portfolio/schedule";
 import type { Client } from "@/lib/portfolio/types";
 
 /**
@@ -216,10 +216,12 @@ function notRequiredCell(cells: CellMap, key: string, from: DuesRow, form: strin
 function addAdtStatus(rows: DuesRow[], clients: Client[], columns: ColumnMap, cells: CellMap) {
   const byId = new Map(clients.map((c) => [c.id, c]));
   for (const aoc of rows.filter((r) => r.sourceId === "aoc-4" && r.period === "")) {
+    const client = byId.get(aoc.clientId);
+    // A company's first year has only the first auditor's ADT-1, under post incorporation.
+    if (client && aoc.fyEndingYear === firstFyEndingYear(client)) continue;
     const key = `${ADT_ID}|${aoc.fyEndingYear}|`;
     // Due 15 days after the AGM, ahead of AOC-4's 30: sort it just before.
     ensureColumn(columns, key, aoc, "ADT-1", "Notice of auditor appointment", -15);
-    const client = byId.get(aoc.clientId);
     if (!client) continue;
     notRequiredCell(
       cells,
@@ -228,7 +230,7 @@ function addAdtStatus(rows: DuesRow[], clients: Client[], columns: ColumnMap, ce
       "ADT-1",
       ADT_ID,
       // Inside the auditor's term: covered by the ADT-1 already filed.
-      client.filesAdt1 === false ? "not applicable (company master)" : adtNaReason(client),
+      client.filesAdt1 === false ? "not applicable (company master)" : adtNaReason(client, aoc.fyEndingYear),
     );
   }
 }

@@ -72,7 +72,7 @@ function formsFor(client: (typeof SEED_CLIENTS)[number], fy: number): string[] {
 
 test("INC-20A cannot be switched off, but unticking DPT-3 removes that due", () => {
   // A company incorporated recently, in its first year: INC-20A and the first ADT-1 both apply.
-  const fresh = newClient({ ...draft, incorporatedOn: "2026-09-01", filesDpt3: true });
+  const fresh = newClient({ ...draft, incorporatedOn: "2026-10-15", filesDpt3: true });
   const fy = 2027;
   const on = formsFor(fresh, fy);
   assert.ok(on.some((id) => id.startsWith("inc-20a")), `INC-20A expected in ${on.join(", ")}`);
@@ -128,13 +128,13 @@ test("company master data: email is required and checked, and paid-up cannot exc
   assert.equal(saved.authorisedCapital, 1000000);
 });
 
-test("first auditor's ADT-1 not applicable: that due goes, the ADT-1 after the AGM stays", () => {
+test("first auditor's ADT-1 not applicable: that due goes, the later ADT-1 stays", () => {
   // Incorporated within 30 days of the date formsFor checks, so the first auditor's due is live.
   const co = newClient({ ...draft, incorporatedOn: "2026-10-15", filesFirstAdt1: false });
   assert.equal(co.filesFirstAdt1, false);
   const ids = formsFor(co, 2027);
   assert.ok(!ids.includes("first-auditor"), ids.join(", "));
-  assert.ok(ids.includes("adt-1"), ids.join(", "));
+  assert.ok(formsFor(co, 2032).includes("adt-1"), "at the end of the first five-year term");
   assert.ok(formsFor(newClient({ ...draft, incorporatedOn: "2026-10-15" }), 2027).includes("first-auditor"));
 });
 
