@@ -146,7 +146,7 @@ export const dueDates: RecurringDueDate[] = [
   },
   {
     id: "adt-1",
-    title: "Notice of auditor appointment",
+    title: "Subsequent auditor appointment",
     formId: "adt-1",
     formCode: "ADT-1",
     section: "Section 139(1)",

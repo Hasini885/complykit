@@ -221,12 +221,12 @@ function addAdtStatus(rows: DuesRow[], clients: Client[], columns: ColumnMap, ce
     if (client && aoc.fyEndingYear === firstFyEndingYear(client)) continue;
     const key = `${ADT_ID}|${aoc.fyEndingYear}|`;
     // Due 15 days after the AGM, ahead of AOC-4's 30: sort it just before.
-    ensureColumn(columns, key, aoc, "ADT-1", "Notice of auditor appointment", -15);
+    ensureColumn(columns, key, aoc, "ADT-1", "Subsequent auditor appointment", -15);
     if (!client) continue;
     notRequiredCell(
       cells,
       key,
-      { ...aoc, obligation: "Notice of auditor appointment", section: "Section 139(1)" },
+      { ...aoc, obligation: "Subsequent auditor appointment", section: "Section 139(1)" },
       "ADT-1",
       ADT_ID,
       // Inside the auditor's term: covered by the ADT-1 already filed.
