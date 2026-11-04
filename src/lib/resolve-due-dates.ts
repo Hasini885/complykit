@@ -75,12 +75,6 @@ export type CompanyFacts = {
   filesAdt1?: boolean;
   /** False when the profile marks the first auditor's ADT-1 as not applicable; absent means it applies. */
   filesFirstAdt1?: boolean;
-  /**
-   * The Board meeting that appointed the first auditor (Section 139(6)), where
-   * recorded. The first-auditor row then shows ADT-1 due 15 days after it,
-   * rather than the 30-day deadline to make the appointment.
-   */
-  firstAuditorAppointedOn?: Date | null;
   /** Private company within the small-company limits, or an OPC: files MGT-7A. */
   smallCompany: boolean;
   /** A transfer-pricing report is due, moving the ITR to 30 November. */
@@ -187,18 +181,6 @@ function adjustOnFacts(
   opts: ResolveOptions,
 ): { source: RecurringDueDate; rule?: DueRule; because?: string } {
   const facts = opts.facts;
-  if (source.id === "first-auditor" && facts?.firstAuditorAppointedOn && opts.incorporatedOn) {
-    // Rule 4(2) of the Audit Rules: ADT-1 within 15 days of the appointment.
-    const days = daysBetween(midnight(opts.incorporatedOn), midnight(facts.firstAuditorAppointedOn)) + 15;
-    return {
-      source: {
-        ...source,
-        title: "File ADT-1 for the first auditor",
-        note: "The Board appointed the first auditor (Section 139(6)), who holds office until the first AGM. ADT-1 is filed within 15 days of that Board meeting.",
-      },
-      rule: { kind: "from-incorporation", days },
-    };
-  }
   if (source.id === "mgt-7" && facts) {
     const abridged = facts.smallCompany || opts.companyType === "opc";
     return { source: { ...source, formCode: abridged ? "MGT-7A" : "MGT-7", formId: abridged ? "mgt-7a" : "mgt-7" } };
@@ -318,13 +300,6 @@ export function resolveDueDates(opts: ResolveOptions): ResolvedDueDate[] {
   const applicable = dueDates.filter((d) => {
     if (!d.appliesTo.includes(opts.companyType)) return false;
     if (!appliesOnFacts(d, opts)) return false;
-    // The first auditor, once appointed: ADT-1 belongs to the year of that
-    // Board meeting, shown then and only then (not tied to the 30-day window).
-    const appointed = d.id === "first-auditor" ? opts.facts?.firstAuditorAppointedOn : null;
-    if (appointed) {
-      const fy = appointed.getMonth() <= 2 ? appointed.getFullYear() : appointed.getFullYear() + 1;
-      return fy === opts.fyEndingYear && !!opts.incorporatedOn;
-    }
     // One-time first-year duties drop off once their window has passed, and
     // never appear at all for a company whose incorporation date is unknown.
     if (d.onlyWithinDaysOfIncorporation !== undefined) {

@@ -326,9 +326,9 @@ test("first board meeting and first auditor show only for a newly incorporated c
   const incorporated = resolveDueDates({ companyType: "private", ...NEW_CO, asOf: AS_OF });
   const established = resolveDueDates({ companyType: "private", ...OLD_CO, asOf: AS_OF });
 
-  // 20 Aug 2026 + 30 days.
+  // 20 Aug 2026 + 30 days for the meeting; + 45 days for the first auditor's ADT-1.
   assert.deepEqual(dueOn(incorporated, "first-board-meeting"), makeDate(2026, 9, 19));
-  assert.deepEqual(dueOn(incorporated, "first-auditor"), makeDate(2026, 9, 19));
+  assert.deepEqual(dueOn(incorporated, "first-auditor"), makeDate(2026, 10, 4));
 
   // A company five years old is long past both; showing them would be noise.
   assert.equal(

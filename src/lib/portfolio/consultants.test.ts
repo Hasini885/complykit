@@ -129,7 +129,7 @@ test("company master data: email is required and checked, and paid-up cannot exc
 });
 
 test("first auditor's ADT-1 not applicable: that due goes, the later ADT-1 stays", () => {
-  // Incorporated within 30 days of the date formsFor checks, so the first auditor's due is live.
+  // Recently incorporated as of the date formsFor checks, so the first auditor's due is live.
   const co = newClient({ ...draft, incorporatedOn: "2026-10-15", filesFirstAdt1: false });
   assert.equal(co.filesFirstAdt1, false);
   const ids = formsFor(co, 2027);
@@ -138,12 +138,12 @@ test("first auditor's ADT-1 not applicable: that due goes, the later ADT-1 stays
   assert.ok(formsFor(newClient({ ...draft, incorporatedOn: "2026-10-15" }), 2027).includes("first-auditor"));
 });
 
-test("first auditor: ADT-1 falls 15 days after the Board meeting, in that year only", () => {
+test("first auditor: ADT-1 falls 45 days from incorporation, even with an older save's Board date", () => {
   const co = newClient({
     ...draft,
-    incorporatedOn: "2026-06-01",
+    incorporatedOn: "2026-09-30",
     auditorType: "first",
-    firstAuditorAppointedOn: "2026-06-20",
+    firstAuditorAppointedOn: "2026-10-05",
     filesAdt1: false, // ignored: ADT-1 applies to every company
   });
   assert.equal(co.filesAdt1, true);
@@ -151,9 +151,7 @@ test("first auditor: ADT-1 falls 15 days after the Board meeting, in that year o
   const first = items.find((i) => i.source.id === "first-auditor");
   assert.ok(first, "the first auditor's ADT-1 is listed");
   assert.equal(first.source.title, "File ADT-1 for the first auditor");
-  assert.equal(first.due?.toDateString(), new Date(2026, 6, 5).toDateString());
-  const nextYear = resolveClientYear(co, [], 2028, { asOf: new Date(2026, 9, 31) });
-  assert.ok(!nextYear.some((i) => i.source.id === "first-auditor"));
+  assert.equal(first.due?.toDateString(), new Date(2026, 10, 14).toDateString(), "30 Sep + 45 days");
   assert.ok(validateClient({ ...draft, incorporatedOn: "2026-06-01", auditorType: "first", firstAuditorAppointedOn: "2026-05-01" }, [])
     .some((e) => e.field === "firstAuditorAppointedOn"), "not before incorporation");
 });

@@ -105,8 +105,6 @@ export function factsFor(client: Client): CompanyFacts {
     filesDpt3: client.filesDpt3 ?? false,
     filesAdt1: client.filesAdt1 ?? true,
     filesFirstAdt1: client.filesFirstAdt1 ?? true,
-    firstAuditorAppointedOn:
-      client.auditorType === "first" && client.firstAuditorAppointedOn ? parseIsoDate(client.firstAuditorAppointedOn) : null,
     smallCompany: isSmallByFigures(applicabilityProfileFor(client)),
     transferPricing: client.transferPricing ?? false,
     llpTaxAudit: client.type === "llp" && (client.turnover ?? 0) > LLP_TAX_AUDIT_TURNOVER,
@@ -363,20 +361,14 @@ export const POST_INCORPORATION_FORMS = ["first-auditor", "inc-20a"];
  * A company's post incorporation forms, whenever they fell due: unlike the
  * rolling window, an unfiled one never drops off, however old the company.
  * Asked "as of" the incorporation date so the forms' calendar windows are
- * open; the caller works out overdue or not against today. A first auditor
- * appointed on a recorded date belongs to that date's year.
+ * open; the caller works out overdue or not against today.
  */
 export function postIncorporationItems(client: Client): ResolvedDueDate[] {
   const incorporated = parseIsoDate(client.incorporatedOn);
   const first = firstFyEndingYear(client);
   if (!incorporated || first === null) return [];
-  const appointed = factsFor(client).firstAuditorAppointedOn;
-  const yearOf: Record<string, number> = {
-    "first-auditor": appointed ? financialYearEndYear(appointed) : first,
-    "inc-20a": first,
-  };
-  return POST_INCORPORATION_FORMS.flatMap((id) =>
-    resolveClientYear(client, [], yearOf[id], { asOf: incorporated }).filter((i) => i.source.id === id),
+  return resolveClientYear(client, [], first, { asOf: incorporated }).filter((i) =>
+    POST_INCORPORATION_FORMS.includes(i.source.id),
   );
 }
 

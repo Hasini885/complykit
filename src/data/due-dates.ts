@@ -81,15 +81,16 @@ export const dueDates: RecurringDueDate[] = [
   },
   {
     id: "first-auditor",
-    title: "Appoint the first statutory auditor",
+    title: "File ADT-1 for the first auditor",
     formId: "adt-1",
     formCode: "ADT-1",
     section: "Section 139(6)",
     category: "One-time",
     appliesTo: ["private", "public", "opc", "section8"],
-    rule: { kind: "from-incorporation", days: 30 },
-    onlyWithinDaysOfIncorporation: 30,
-    note: "The Board appoints the first auditor within 30 days of incorporation; failing that, the members do so within 90 days at an extraordinary general meeting. The date shown is the appointment deadline — ADT-1 is then filed within 15 days of the appointment actually made. Shown only while the company is newly incorporated.",
+    rule: { kind: "from-incorporation", days: 45 },
+    // Stays on the calendar for 90 days past the deadline, so a missed one shows as overdue.
+    onlyWithinDaysOfIncorporation: 135,
+    note: "Due 45 days from incorporation: the Board appoints the first auditor within 30 days, and ADT-1 is filed within 15 days of that appointment. Shown on the calendar while the company is newly incorporated; it stays under Post incorporation compliance until filed.",
   },
   {
     id: "board-meetings",
