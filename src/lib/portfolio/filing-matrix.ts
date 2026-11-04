@@ -1,6 +1,6 @@
-import { addDays } from "@/lib/dates";
+import { addDays, financialYearLabel, makeDate } from "@/lib/dates";
 import { sortClients } from "@/lib/portfolio/clients";
-import { adtNaReason } from "@/lib/portfolio/auditor";
+import { adtNaReason, auditorAppointments } from "@/lib/portfolio/auditor";
 import type { DuesRow } from "@/lib/portfolio/dues-table";
 import { referenceKind } from "@/lib/portfolio/filings";
 import type { ReportBucket } from "@/lib/portfolio/report";
@@ -95,7 +95,15 @@ const POST_INCORPORATION_HEADING: Record<string, string> = {
   "inc-20a": "Declaration of commencement of business",
 };
 
-export function buildFilingMatrix(rows: DuesRow[], clients: Client[]): FilingMatrix {
+export function buildFilingMatrix(
+  rows: DuesRow[],
+  clients: Client[],
+  /**
+   * From this financial year on, also show the years a filed ADT-1 covers as
+   * NA, even beyond the dates in `rows`. Left out when one year is on screen.
+   */
+  opts: { adtTermFromFy?: number } = {},
+): FilingMatrix {
   const columns = new Map<string, Omit<MatrixColumn, "showFy"> & { forms: Set<string> }>();
   const cells = new Map<string, Map<string, DuesRow[]>>();
 
@@ -132,6 +140,7 @@ export function buildFilingMatrix(rows: DuesRow[], clients: Client[]): FilingMat
   }
 
   addAdtStatus(rows, clients, columns, cells);
+  if (opts.adtTermFromFy !== undefined) addAdtTermYears(rows, clients, columns, cells, opts.adtTermFromFy);
   addAnnualReturnStatus(rows, columns, cells);
 
   const named = [...columns.values()].map(({ forms, ...c }) => ({ ...c, form: [...forms].sort().join(" / ") }));
@@ -232,6 +241,45 @@ function addAdtStatus(rows: DuesRow[], clients: Client[], columns: ColumnMap, ce
       // Inside the auditor's term: covered by the ADT-1 already filed.
       client.filesAdt1 === false ? "not applicable (company master)" : adtNaReason(client, aoc.fyEndingYear),
     );
+  }
+}
+
+/**
+ * Once a subsequent auditor's ADT-1 is filed, every remaining year of that
+ * appointment shows as NA with its reason, however far ahead: the rolling
+ * window alone stops at twelve months. The year the term ends is a due again,
+ * so it is not one of these; a cell that already holds a real due stays one.
+ */
+function addAdtTermYears(rows: DuesRow[], clients: Client[], columns: ColumnMap, cells: CellMap, fromFy: number) {
+  for (const client of clients) {
+    const template = rows.find((r) => r.clientId === client.id);
+    if (!template) continue;
+    for (const a of auditorAppointments(client)) {
+      for (let fy = Math.max(a.fy + 1, fromFy); fy < a.fy + a.years; fy++) {
+        const key = `${ADT_ID}|${fy}|`;
+        const fyLabel = financialYearLabel(fy);
+        if (!columns.has(key)) {
+          columns.set(key, {
+            key,
+            form: "ADT-1",
+            forms: new Set(["ADT-1"]),
+            obligation: "Subsequent auditor appointment",
+            fy: fyLabel,
+            period: "",
+            // Where the year's ADT-1 would usually fall, to sort among the other years.
+            firstDue: makeDate(fy, 10, 15),
+          });
+        }
+        notRequiredCell(
+          cells,
+          key,
+          { ...template, fy: fyLabel, fyEndingYear: fy, period: "", obligation: "Subsequent auditor appointment", section: "Section 139(1)" },
+          "ADT-1",
+          ADT_ID,
+          adtNaReason(client, fy),
+        );
+      }
+    }
   }
 }
 

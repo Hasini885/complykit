@@ -93,8 +93,8 @@ function withYearsOnFiling(filings: FilingRecord[], fy: number, years: number): 
 /** One recorded ADT-1 for a subsequent auditor. */
 export type AuditorAppointment = { fy: number; years: number; srn: string; filedOn: Date | null };
 
-/** The recorded ADT-1 whose appointment covers this year; the latest, where two overlap. */
-export function appointmentCovering(client: Client, fy: number): AuditorAppointment | null {
+/** Every recorded ADT-1 for a subsequent auditor. */
+export function auditorAppointments(client: Client): AuditorAppointment[] {
   const found: AuditorAppointment[] = [];
   for (const f of client.filings ?? []) {
     const m = /^adt-1\|(\d+)\|$/.exec(f.key);
@@ -106,7 +106,16 @@ export function appointmentCovering(client: Client, fy: number): AuditorAppointm
       filedOn: parseIsoDate(f.filedOn),
     });
   }
-  return found.filter((a) => a.fy <= fy && fy < a.fy + a.years).sort((a, b) => b.fy - a.fy)[0] ?? null;
+  return found;
+}
+
+/** The recorded ADT-1 whose appointment covers this year; the latest, where two overlap. */
+export function appointmentCovering(client: Client, fy: number): AuditorAppointment | null {
+  return (
+    auditorAppointments(client)
+      .filter((a) => a.fy <= fy && fy < a.fy + a.years)
+      .sort((a, b) => b.fy - a.fy)[0] ?? null
+  );
 }
 
 /**

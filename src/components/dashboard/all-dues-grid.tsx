@@ -165,8 +165,10 @@ export function AllDuesGrid({
   const matrix = React.useMemo(() => {
     const scopedClients = filter.clientId === "all" ? clients : clients.filter((c) => c.id === filter.clientId);
     const scopedRows = filterDuesRows(rows, { ...ALL_DUES, clientId: filter.clientId });
-    return buildFilingMatrix(scopedRows, scopedClients);
-  }, [rows, clients, filter.clientId]);
+    // The running window also shows the years ahead that a filed ADT-1 covers, as NA.
+    const adtTermFromFy = !oneTime && fy === null ? financialYearEndYear(reference) : undefined;
+    return buildFilingMatrix(scopedRows, scopedClients, { adtTermFromFy });
+  }, [rows, clients, filter.clientId, oneTime, fy, reference]);
 
   const counts = React.useMemo(() => {
     const scoped = filterDuesRows(rows, { ...filter, status: "all" });

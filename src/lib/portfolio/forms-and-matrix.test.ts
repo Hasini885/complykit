@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { auditorTerm, auditorTermSummary } from "@/lib/portfolio/auditor";
+import { auditorTerm, auditorTermSummary, withAdt1Appointment } from "@/lib/portfolio/auditor";
 import { withAdt1Filing } from "@/lib/portfolio/clients";
 import { formatDate } from "@/lib/dates";
 
@@ -230,6 +230,35 @@ test("ADT-1 filed once for a 3-year term: SRN and date shown as NA in the years 
   assert.equal(term.untilFy, 2028);
   assert.equal(term.untilAgmNumber, 9, "the AGM for FY 2027-28 is the company's 9th");
   assert.match(auditorTermSummary(c, at)!, /up to the conclusion of the 9th AGM \(for FY 2027–28\).*NA for the 2 years in between/);
+});
+
+test("after filing ADT-1, every remaining year of the term shows NA, then it is due again", () => {
+  const c = withAdt1Appointment(client({ id: "filed", incorporatedOn: "2025-08-14" }), { srn: "AB1234567", filedOn: "2026-10-10" }, 5);
+  const at = new Date(2026, 10, 4);
+  const r = buildDuesRows([c], [], at, { filingsOnly: true });
+  const m = buildFilingMatrix(r, [c], { adtTermFromFy: 2027 });
+  const adtKeys = m.columns.filter((col) => col.key.startsWith("adt-1|")).map((col) => col.key);
+  assert.deepEqual(adtKeys, ["adt-1|2027|", "adt-1|2028|", "adt-1|2029|", "adt-1|2030|"], "4 NA years of 5; FY 2030-31 is due");
+  for (const key of adtKeys) {
+    const cell = m.rows[0].cells[key];
+    assert.ok(cell?.notRequired, key);
+    assert.match(cell.notRequired, /appointed for 5 years .*SRN AB1234567 .*next due 15\/10\/2031$/);
+  }
+  assert.ok(m.columns.find((col) => col.key === "adt-1|2030|")?.showFy, "each year is named in its heading");
+
+  // Without a filing there is nothing to extend: only the window's own year shows.
+  const unfiled = client({ id: "none", incorporatedOn: "2025-08-14" });
+  const plain = buildFilingMatrix(buildDuesRows([unfiled], [], at, { filingsOnly: true }), [unfiled], { adtTermFromFy: 2027 });
+  assert.ok(!plain.columns.some((col) => col.key === "adt-1|2028|"));
+});
+
+test("a term ending inside the window: the year it ends stays a real due", () => {
+  const c = withAdt1Appointment(client({ id: "short", incorporatedOn: "2019-07-18" }), { srn: "AB1234567", filedOn: "2025-10-10" }, 2);
+  const at = new Date(2026, 10, 4);
+  const m = buildFilingMatrix(buildDuesRows([c], [], at, { filingsOnly: true }), [c], { adtTermFromFy: 2027 });
+  assert.equal(c.auditorAppointedAtAgmFy, 2025);
+  const cell = m.rows[0].cells["adt-1|2027|"];
+  assert.ok(cell && !cell.notRequired, "appointed at the AGM for FY 2024-25 for 2 years: due for FY 2026-27");
 });
 
 test("a company's first year has no annual ADT-1 column or cell; the next year is NA", () => {
