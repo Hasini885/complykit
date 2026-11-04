@@ -1,36 +1,24 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ComplyKit
 
-## Getting Started
+**Live website: [complykitapp.vercel.app](https://complykitapp.vercel.app)**
 
-First, run the development server:
+ComplyKit is a compliance tracker for companies registered under India's Companies Act, 2013. It keeps every company's statutory due dates, directors and filings in one place, so deadlines aren't missed.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Features
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- **Dashboard:** every upcoming and overdue filing (AOC-4, MGT-7, ADT-1, DPT-3, INC-20A, DIR-3 KYC, ITR and more) for each financial year, with a compliance calendar.
+- **Company Master Data:** company details, directors with a separate DIN per company, the authorised person, the point of contact and the consultant.
+- **Filing status:** mark filings with their SRN and filed date, and track original and extended due dates.
+- **Director Master and Consultant Master:** view directors and consultants across all companies, with PDF and Excel reports.
+- **Document Generator:** board and general meeting notices, resolutions and other documents on the company's letterhead.
+- **Accounts:** each user signs up with name, mobile and email. Their data is saved to their account, so it appears on any computer.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Built with
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Next.js, React, TypeScript, Tailwind CSS, Clerk (login) and Vercel (hosting and private storage).
 
-## Learn More
+## Disclaimer
 
-To learn more about Next.js, take a look at the following resources:
+ComplyKit is a reference tool for general information only and is not legal or professional advice. Always verify due dates and requirements against the Companies Act, the Rules and the official MCA portal.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+© 2026 ComplyKit. All rights reserved.
