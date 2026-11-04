@@ -7,7 +7,6 @@ import { Building2, ChevronLeft, ChevronRight, ClipboardList, Contact, ListCheck
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
@@ -24,25 +23,19 @@ import {
   emailInput,
   mobileInput,
   personNameInput,
-  srnInput,
   textInput,
 } from "@/lib/input-filters";
 import {
   COMPANY_TYPES,
-  addDays,
-  addMonths,
-  firstFinancialYearEnd,
   formatDate,
   isoDate,
   parseIsoDate,
   today,
 } from "@/lib/dates";
-import { AUDITOR_TERM_YEARS } from "@/lib/resolve-due-dates";
 import { usePortfolio } from "@/components/portfolio/portfolio-provider";
 import { DirectorFormDialog } from "@/components/portfolio/director-form-dialog";
 import { formatMobile } from "@/lib/portfolio/mobile";
 import {
-  agmFyOf,
   draftFrom,
   initials,
   newId,
@@ -69,8 +62,7 @@ import {
   type PointOfContactChoice,
   type CompanyStep,
 } from "@/lib/portfolio/company-steps";
-import { CESSATION_REASONS, type AuditorType, type Client } from "@/lib/portfolio/types";
-import { auditorTermSummary } from "@/lib/portfolio/auditor";
+import { CESSATION_REASONS, type Client } from "@/lib/portfolio/types";
 
 /** "10 Oct 2026" from an ISO date; the raw text if it is not one. */
 function formatIso(iso: string): string {
@@ -106,6 +98,7 @@ const EMPTY: ClientDraft = {
   auditorTermYears: null,
   filesDpt3: false,
   filesAdt1: true,
+  filesFirstAdt1: true,
   transferPricing: false,
 };
 
@@ -113,9 +106,9 @@ const EMPTY: ClientDraft = {
  * Add / edit a client company.
  *
  * Three tabs: Master data (what goes on the letterhead, plus authorised and
- * paid-up capital), Directors, and Applicability of special forms (ADT-1
- * with the first or subsequent auditor, INC-20A, DPT-3). Fields no longer
- * asked here (AGM date, financials)
+ * paid-up capital), Directors, and Applicability of special forms (post
+ * incorporation: ADT-1, INC-20A; annual compliance: DPT-3). Fields no longer
+ * asked here (AGM date, financials, auditor details)
  * keep whatever an older save holds, and the calendar falls back on the
  * statutory dates for them. The consultant is set from Consultant Files.
  *
@@ -173,7 +166,6 @@ function ClientFormFields({
     return {
       ...d,
       mobile: d.mobile ? formatMobile(d.mobile) : "",
-      auditorType: d.auditorType ?? defaultAuditorType(d),
       filesAdt1: true,
     };
   });
@@ -673,152 +665,25 @@ function ClientFormFields({
                 ADT-1, INC-20A and DPT-3 are company forms; an LLP does not file them.
               </p>
             ) : (
-              <>
-                <div className="grid gap-2 sm:grid-cols-3">
-                  <CheckboxField
-                    label="ADT-1 applies"
-                    checked
-                    disabled
-                    title="Every company appoints an auditor (Section 139), so ADT-1 always applies."
-                    onChange={() => undefined}
+              <div className="space-y-4">
+                <FormCategory title="Post incorporation forms">
+                  <FormRow
+                    code="ADT-1"
+                    name="First auditor appointment"
+                    applicable={draft.filesFirstAdt1 !== false}
+                    onChange={(v) => set("filesFirstAdt1", v)}
                   />
-                  <CheckboxField
-                    label="INC-20A applies"
-                    checked
-                    disabled
-                    title="INC-20A always applies. Its due date shows for companies incorporated on or after 2 November 2018."
-                    onChange={() => undefined}
-                  />
-                  <CheckboxField
-                    label="DPT-3 applies"
-                    checked={!!draft.filesDpt3}
+                  <FormRow code="INC-20A" name="Declaration of commencement of business" />
+                </FormCategory>
+                <FormCategory title="Annual compliance forms">
+                  <FormRow
+                    code="DPT-3"
+                    name="Return of deposits"
+                    applicable={!!draft.filesDpt3}
                     onChange={(v) => set("filesDpt3", v)}
                   />
-                </div>
-                <p className="mt-2 text-[11px] text-muted-foreground">
-                  ADT-1 and INC-20A apply to every company. Untick DPT-3 and its due date disappears
-                  from the calendar, dashboard and reports for this company.
-                </p>
-
-                {/* The auditor in office, under Section 139 */}
-                <div className="mt-4 rounded-md border p-3">
-                  <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
-                    Statutory auditor (ADT-1)
-                  </p>
-                  <div
-                    role="radiogroup"
-                    aria-label="Auditor in office"
-                    className="inline-flex rounded-full border bg-muted/40 p-0.5"
-                  >
-                    {(
-                      [
-                        ["first", "First auditor"],
-                        ["subsequent", "Subsequent auditor"],
-                      ] as const
-                    ).map(([value, label]) => (
-                      <button
-                        key={value}
-                        type="button"
-                        role="radio"
-                        aria-checked={draft.auditorType === value}
-                        onClick={() => set("auditorType", value)}
-                        className={cn(
-                          "rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors",
-                          draft.auditorType === value
-                            ? "bg-primary text-primary-foreground shadow-sm"
-                            : "text-muted-foreground hover:text-foreground",
-                        )}
-                      >
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-
-                  {draft.auditorType === "first" ? (
-                    <div className="mt-3 space-y-3">
-                      <p className="text-[11px] leading-relaxed text-muted-foreground">
-                        <span className="font-semibold text-foreground">Section 139(6).</span> The Board
-                        appoints the first auditor within 30 days of incorporation; failing that, the
-                        members appoint one within 90 days at an extraordinary general meeting. The
-                        first auditor holds office until the conclusion of the first AGM. ADT-1 is
-                        filed within 15 days of the appointment.
-                      </p>
-                      <Field
-                        label="Board meeting appointing the first auditor"
-                        error={errors.firstAuditorAppointedOn}
-                        hint={firstAuditorHint(draft)}
-                      >
-                        <Input
-                          type="date"
-                          value={draft.firstAuditorAppointedOn ?? ""}
-                          onChange={(e) => set("firstAuditorAppointedOn", e.target.value || null)}
-                          min={draft.incorporatedOn || undefined}
-                          max={isoDate(today())}
-                          className="tabular"
-                        />
-                      </Field>
-                    </div>
-                  ) : (
-                    <div className="mt-3 space-y-3">
-                      <p className="text-[11px] leading-relaxed text-muted-foreground">
-                        <span className="font-semibold text-foreground">Section 139(1).</span> The
-                        members appoint the auditor at the AGM, from the conclusion of that meeting to
-                        the conclusion of the sixth AGM — a term of up to five years. In listed and
-                        prescribed companies an individual may serve one such term and an audit firm
-                        two consecutive terms (Section 139(2)). ADT-1 is filed within 15 days of the
-                        AGM.
-                      </p>
-                      {/* One ADT-1 per appointment: its SRN, its date, and the years appointed for. */}
-                      <div className="grid gap-3 sm:grid-cols-3">
-                        <Field label="ADT-1 SRN" error={errors.adt1Srn}>
-                          <Input
-                            value={draft.adt1Srn ?? ""}
-                            onChange={(e) => set("adt1Srn", srnInput(e.target.value))}
-                            placeholder="e.g. AB1234567"
-                            spellCheck={false}
-                            autoComplete="off"
-                            className="uppercase"
-                          />
-                        </Field>
-                        <Field label="ADT-1 filed on" error={errors.adt1FiledOn}>
-                          <Input
-                            type="date"
-                            value={draft.adt1FiledOn ?? ""}
-                            onChange={(e) => set("adt1FiledOn", e.target.value || null)}
-                            min={draft.incorporatedOn || undefined}
-                            max={isoDate(today())}
-                            className="tabular"
-                          />
-                        </Field>
-                        <Field label="Appointed for">
-                          <Select
-                            value={String(draft.auditorTermYears ?? AUDITOR_TERM_YEARS)}
-                            onValueChange={(v) =>
-                              set("auditorTermYears", Number(v) === AUDITOR_TERM_YEARS ? null : Number(v))
-                            }
-                          >
-                            <SelectTrigger className="w-full">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {[5, 4, 3, 2, 1].map((n) => (
-                                <SelectItem key={n} value={String(n)}>
-                                  {n} year{n === 1 ? "" : "s"}
-                                  {n === AUDITOR_TERM_YEARS ? " (maximum)" : ""}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </Field>
-                      </div>
-                      <p className="rounded-md bg-muted/40 px-3 py-2 text-[11px] leading-relaxed">
-                        {adtPreview(draft) ??
-                          "Enter the ADT-1 filing date to see the AGM up to which the auditor is appointed and when the next ADT-1 falls due."}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </>
+                </FormCategory>
+              </div>
             )}
           </TabsContent>
 
@@ -971,82 +836,63 @@ function Field({
   );
 }
 
-function CheckboxField({
-  label,
-  checked,
-  onChange,
-  disabled = false,
-  title,
-}: {
-  label: string;
-  checked: boolean;
-  onChange: (v: boolean) => void;
-  disabled?: boolean;
-  title?: string;
-}) {
-  const id = React.useId();
+/** One category of forms on the Applicability step. */
+function FormCategory({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <label
-      htmlFor={id}
-      title={title}
-      className={cn(
-        "flex items-center gap-2 rounded-md border px-3 py-2 text-sm",
-        disabled ? "cursor-default bg-muted/30" : "cursor-pointer hover:bg-muted/50",
-      )}
-    >
-      <Checkbox id={id} checked={checked} disabled={disabled} onCheckedChange={(v) => onChange(v === true)} />
-      {label}
-    </label>
+    <section className="rounded-md border p-3">
+      <h3 className="mb-2 text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">{title}</h3>
+      <div className="divide-y">{children}</div>
+    </section>
   );
 }
 
-/* ------------------------------------------------------------------ */
-/* Auditor (Section 139)                                               */
-/* ------------------------------------------------------------------ */
-
-/**
- * Until the first AGM is due (nine months after the first financial year),
- * the auditor in office is the first auditor; after it, a subsequent one.
- */
-function defaultAuditorType(d: ClientDraft): AuditorType {
-  const inc = parseIsoDate(d.incorporatedOn);
-  if (!inc || d.lastAgmOn) return "subsequent";
-  const firstAgmBy = addMonths(firstFinancialYearEnd(inc), 9);
-  return today().getTime() <= firstAgmBy.getTime() ? "first" : "subsequent";
-}
-
-/** When ADT-1 for the first auditor is due, or by when the Board must appoint. */
-function firstAuditorHint(d: ClientDraft): string {
-  const appointed = d.firstAuditorAppointedOn ? parseIsoDate(d.firstAuditorAppointedOn) : null;
-  if (appointed) return `ADT-1 due by ${formatDate(addDays(appointed, 15))} (15 days after the Board meeting).`;
-  const inc = parseIsoDate(d.incorporatedOn);
-  return inc
-    ? `Not yet appointed: the Board must appoint by ${formatDate(addDays(inc, 30))}, 30 days from incorporation.`
-    : "Enter the date of incorporation on the Master data tab first.";
-}
-
-/**
- * What the ADT-1 entered means: the AGM up to which the auditor holds office,
- * the next ADT-1 due date, and how many years in between are NA.
- */
-function adtPreview(d: ClientDraft): string | null {
-  const filed = d.adt1FiledOn ? parseIsoDate(d.adt1FiledOn) : null;
-  if (!filed || !parseIsoDate(d.incorporatedOn)) return null;
-  const now = new Date().toISOString();
-  const preview: Client = {
-    id: "preview",
-    name: d.name,
-    cin: d.cin,
-    type: d.type,
-    incorporatedOn: d.incorporatedOn,
-    registeredOffice: d.registeredOffice,
-    status: d.status,
-    auditorType: "subsequent",
-    auditorAppointedAtAgmFy: agmFyOf(filed),
-    auditorTermYears: d.auditorTermYears ?? null,
-    createdAt: now,
-    updatedAt: now,
-  };
-  return auditorTermSummary(preview);
+/** One form: Applicable / Not applicable when `onChange` is given, otherwise mandatory. */
+function FormRow({
+  code,
+  name,
+  applicable,
+  onChange,
+}: {
+  code: string;
+  name: string;
+  applicable?: boolean;
+  onChange?: (applicable: boolean) => void;
+}) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-2 py-2 first:pt-0 last:pb-0">
+      <p className="text-sm">
+        <span className="font-semibold">{code}</span>
+        <span className="block text-xs text-muted-foreground">{name}</span>
+      </p>
+      {onChange ? (
+        <div role="radiogroup" aria-label={code} className="inline-flex rounded-full border bg-muted/40 p-0.5">
+          {(
+            [
+              [true, "Applicable"],
+              [false, "Not applicable"],
+            ] as const
+          ).map(([value, label]) => (
+            <button
+              key={label}
+              type="button"
+              role="radio"
+              aria-checked={applicable === value}
+              onClick={() => onChange(value)}
+              className={cn(
+                "rounded-full px-3 py-1 text-xs font-medium transition-colors",
+                applicable === value
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      ) : (
+        <span className="rounded-full bg-muted px-3 py-1 text-xs font-medium">Mandatory</span>
+      )}
+    </div>
+  );
 }
 

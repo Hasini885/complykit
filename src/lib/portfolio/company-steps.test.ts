@@ -63,14 +63,13 @@ test("a consultant as point of contact makes the consultant compulsory", () => {
   assert.equal(firstIncomplete(byConsultant)?.step, "consultant");
 });
 
-test("a first auditor needs the date of the Board meeting", () => {
+test("the special forms step asks for no auditor details", () => {
   const first = { ...base, draft: { ...draft, auditorType: "first" as const, firstAuditorAppointedOn: null } };
-  assert.ok(stepErrors("forms", first).firstAuditorAppointedOn);
-  assert.equal(firstIncomplete(first)?.step, "forms");
-});
-
-test("a subsequent auditor needs the ADT-1 SRN and filing date", () => {
-  const missing = { ...base, draft: { ...draft, adt1Srn: "", adt1FiledOn: null } };
-  const e = stepErrors("forms", missing);
-  assert.ok(e.adt1Srn && e.adt1FiledOn);
+  assert.deepEqual(stepErrors("forms", first), {});
+  assert.equal(firstIncomplete(first), null);
+  const subsequent = { ...base, draft: { ...draft, adt1Srn: "", adt1FiledOn: null } };
+  assert.deepEqual(stepErrors("forms", subsequent), {});
+  // A date kept from an older save, which the form no longer shows, can't block saving.
+  const stale = { ...base, draft: { ...draft, auditorType: "first" as const, firstAuditorAppointedOn: "2020-01-01" } };
+  assert.equal(firstIncomplete(stale), null);
 });

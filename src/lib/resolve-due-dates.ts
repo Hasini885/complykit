@@ -73,6 +73,8 @@ export type CompanyFacts = {
   filesDpt3: boolean;
   /** False when the profile marks ADT-1 as not applicable; absent means it applies. */
   filesAdt1?: boolean;
+  /** False when the profile marks the first auditor's ADT-1 as not applicable; absent means it applies. */
+  filesFirstAdt1?: boolean;
   /**
    * The Board meeting that appointed the first auditor (Section 139(6)), where
    * recorded. The first-auditor row then shows ADT-1 due 15 days after it,
@@ -162,8 +164,8 @@ function appliesOnFacts(source: RecurringDueDate, opts: ResolveOptions): boolean
       return yearsOn >= 0 && yearsOn % term === 0;
     }
     case "first-auditor":
-      // The first auditor's ADT-1, so the same switch rules it out.
-      return facts.filesAdt1 !== false;
+      // Its own switch; the ADT-1 after an AGM (above) is not affected by it.
+      return facts.filesFirstAdt1 !== false && facts.filesAdt1 !== false;
     case "dir-3-kyc":
       return !facts.kycHandledPerDirector;
     case "dpt-3":

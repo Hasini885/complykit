@@ -128,6 +128,16 @@ test("company master data: email is required and checked, and paid-up cannot exc
   assert.equal(saved.authorisedCapital, 1000000);
 });
 
+test("first auditor's ADT-1 not applicable: that due goes, the ADT-1 after the AGM stays", () => {
+  // Incorporated within 30 days of the date formsFor checks, so the first auditor's due is live.
+  const co = newClient({ ...draft, incorporatedOn: "2026-10-15", filesFirstAdt1: false });
+  assert.equal(co.filesFirstAdt1, false);
+  const ids = formsFor(co, 2027);
+  assert.ok(!ids.includes("first-auditor"), ids.join(", "));
+  assert.ok(ids.includes("adt-1"), ids.join(", "));
+  assert.ok(formsFor(newClient({ ...draft, incorporatedOn: "2026-10-15" }), 2027).includes("first-auditor"));
+});
+
 test("first auditor: ADT-1 falls 15 days after the Board meeting, in that year only", () => {
   const co = newClient({
     ...draft,

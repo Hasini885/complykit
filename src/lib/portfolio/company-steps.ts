@@ -46,6 +46,7 @@ export function stepErrors(step: CompanyStep, input: StepInput): StepErrors {
 
   if (step === "master") {
     for (const e of validateClient(draft, input.clients, input.clientId)) {
+      // Auditor dates are no longer asked, so one kept from an older save can't block the form.
       if (e.field !== "firstAuditorAppointedOn" && e.field !== "adt1FiledOn") errors[e.field] = e.message;
     }
     // The capital is part of every company's master data.
@@ -82,19 +83,7 @@ export function stepErrors(step: CompanyStep, input: StepInput): StepErrors {
     for (const e of resolveReference(ref, input.consultants).errors) errors[`ref_${e.field}`] = e.message;
   }
 
-  if (step === "forms" && draft.type !== "llp") {
-    if (draft.auditorType === "first" && !draft.firstAuditorAppointedOn) {
-      errors.firstAuditorAppointedOn = "Enter the date of the Board meeting that appointed the first auditor.";
-    }
-    // A subsequent auditor: the one ADT-1 filed for the appointment, and its term.
-    if (draft.auditorType === "subsequent") {
-      if (!draft.adt1Srn?.trim()) errors.adt1Srn = "Enter the SRN of the ADT-1 filed for this appointment.";
-      if (!draft.adt1FiledOn) errors.adt1FiledOn = "Enter the date that ADT-1 was filed.";
-    }
-    for (const e of validateClient(draft, input.clients, input.clientId)) {
-      if (e.field === "firstAuditorAppointedOn" || e.field === "adt1FiledOn") errors[e.field] = e.message;
-    }
-  }
+  // The "forms" step is only Applicable / Not applicable choices, so nothing can be missing.
   return errors;
 }
 

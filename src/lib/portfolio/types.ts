@@ -111,6 +111,11 @@ export type Client = {
    * auditor's term works out (see auditorAppointedAtAgmFy). False: never shown.
    */
   filesAdt1?: boolean;
+  /**
+   * The first auditor's ADT-1 (post incorporation) applies to this company.
+   * Absent or true: it is shown. False: not shown. The ADT-1 after an AGM is separate.
+   */
+  filesFirstAdt1?: boolean;
   /** A transfer-pricing report (Form 3CEB) is required, moving the ITR to 30 November. */
   transferPricing?: boolean;
   /**
