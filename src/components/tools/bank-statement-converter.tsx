@@ -1,11 +1,13 @@
 "use client";
 
 import * as React from "react";
-import { Download, Loader2, Plus, Search, Trash2, Upload, X } from "lucide-react";
+import { ListFilter, Loader2, Plus, Search, Trash2, Upload, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Tip } from "@/components/shared/tip";
+import { ExcelIcon } from "@/components/shared/file-type-icon";
 import {
   BANKS,
   MDY_BANKS,
@@ -436,9 +438,25 @@ export function BankStatementConverter() {
           <section className="space-y-3 rounded-2xl border bg-card p-5">
             <h2 className="font-heading text-lg font-semibold">4. Download</h2>
             <div className="flex flex-wrap gap-2">
-              <Button onClick={() => exportXlsx([...rows].sort((a, b) => a.idx - b.idx), "")}><Download aria-hidden /> Excel: all transactions</Button>
-              <Button variant="outline" onClick={() => exportXlsx(view, "_filtered")}><Download aria-hidden /> Excel: only what’s shown</Button>
-              <Button variant="ghost" onClick={() => { setRows([]); setFile(null); setSel(new Set()); setRawText(""); }}><Plus aria-hidden /> Import another statement</Button>
+              <Tip label="Excel: all transactions">
+                <Button size="icon" variant="outline" aria-label="Download all transactions as Excel"
+                  onClick={() => exportXlsx([...rows].sort((a, b) => a.idx - b.idx), "")}>
+                  <ExcelIcon />
+                </Button>
+              </Tip>
+              <Tip label="Excel: only what’s shown">
+                <Button size="icon" variant="outline" aria-label="Download the filtered transactions as Excel"
+                  onClick={() => exportXlsx(view, "_filtered")} className="relative">
+                  <ExcelIcon />
+                  <ListFilter className="absolute right-1 bottom-1 size-3 rounded-full bg-background" aria-hidden />
+                </Button>
+              </Tip>
+              <Tip label="Import another statement">
+                <Button size="icon" variant="ghost" aria-label="Import another statement"
+                  onClick={() => { setRows([]); setFile(null); setSel(new Set()); setRawText(""); }}>
+                  <Plus aria-hidden />
+                </Button>
+              </Tip>
             </div>
             <p className="text-sm text-muted-foreground">The workbook has a Transactions sheet (with a Ledger column) and a Ledger Summary sheet.</p>
           </section>
