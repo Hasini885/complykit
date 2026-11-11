@@ -47,7 +47,7 @@ export function SiteHeader() {
             <TopNav />
           </div>
 
-          <div className="ml-auto flex shrink-0 items-center gap-1 2xl:ml-4">
+          <div className="ml-auto flex shrink-0 items-center gap-1">
             <Tip label="Search companies, SRNs, DINs (Ctrl K)">
               <Button
                 variant="ghost"
