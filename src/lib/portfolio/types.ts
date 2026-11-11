@@ -116,6 +116,11 @@ export type Client = {
    * Absent or true: it is shown. False: not shown. The ADT-1 after an AGM is separate.
    */
   filesFirstAdt1?: boolean;
+  /**
+   * INC-20A (declaration of commencement of business) applies to this company.
+   * Absent or true: it is shown (for companies incorporated on or after 2 Nov 2018). False: not shown.
+   */
+  filesInc20a?: boolean;
   /** A transfer-pricing report (Form 3CEB) is required, moving the ITR to 30 November. */
   transferPricing?: boolean;
   /**

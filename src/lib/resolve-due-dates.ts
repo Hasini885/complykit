@@ -77,6 +77,8 @@ export type CompanyFacts = {
   filesAdt1?: boolean;
   /** False when the profile marks the first auditor's ADT-1 as not applicable; absent means it applies. */
   filesFirstAdt1?: boolean;
+  /** False when the profile marks INC-20A as not applicable; absent means it applies. */
+  filesInc20a?: boolean;
   /** Private company within the small-company limits, or an OPC: files MGT-7A. */
   smallCompany: boolean;
   /** A transfer-pricing report is due, moving the ITR to 30 November. */
@@ -168,6 +170,7 @@ function appliesOnFacts(source: RecurringDueDate, opts: ResolveOptions): boolean
     case "dpt-3":
       return facts.filesDpt3;
     case "inc-20a":
+      if (facts.filesInc20a === false) return false;
       return opts.incorporatedOn ? opts.incorporatedOn.getTime() >= INC_20A_FROM.getTime() : false;
     default:
       return true;

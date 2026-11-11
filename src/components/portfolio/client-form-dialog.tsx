@@ -107,6 +107,7 @@ const EMPTY: ClientDraft = {
   filesDpt3: false,
   filesAdt1: true,
   filesFirstAdt1: true,
+  filesInc20a: true,
   transferPricing: false,
 };
 
@@ -736,7 +737,12 @@ function ClientFormFields({
                     applicable={draft.filesFirstAdt1 !== false}
                     onChange={(v) => set("filesFirstAdt1", v)}
                   />
-                  <FormRow code="INC-20A" name="Declaration of commencement of business" />
+                  <FormRow
+                    code="INC-20A"
+                    name="Declaration of commencement of business"
+                    applicable={draft.filesInc20a !== false}
+                    onChange={(v) => set("filesInc20a", v)}
+                  />
                 </FormCategory>
                 <FormCategory title="Annual compliance forms">
                   <FormRow

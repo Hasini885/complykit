@@ -70,7 +70,7 @@ function formsFor(client: (typeof SEED_CLIENTS)[number], fy: number): string[] {
   return resolveClientYear(client, SEED_DIRECTORS, fy, { asOf: new Date(2026, 9, 31) }).map((i) => i.source.id);
 }
 
-test("INC-20A cannot be switched off, but unticking DPT-3 removes that due", () => {
+test("INC-20A and DPT-3 can each be marked not applicable", () => {
   // A company incorporated recently, in its first year: INC-20A and the first ADT-1 both apply.
   const fresh = newClient({ ...draft, incorporatedOn: "2026-10-15", filesDpt3: true });
   const fy = 2027;
@@ -79,10 +79,10 @@ test("INC-20A cannot be switched off, but unticking DPT-3 removes that due", () 
   assert.ok(on.some((id) => id.startsWith("adt-1") || id.startsWith("first-auditor")), "ADT-1 expected");
   assert.ok(on.some((id) => id.startsWith("dpt-3")), "DPT-3 expected");
 
-  // An older save may still hold filesInc20a: false; it must be ignored.
-  const olderSave = { ...fresh, filesInc20a: false, filesDpt3: false };
-  const off = formsFor(olderSave, fy);
-  assert.ok(off.some((id) => id.startsWith("inc-20a")), `INC-20A expected in ${off.join(", ")}`);
+  // Marked not applicable in the special forms step: neither is shown.
+  const notApplicable = { ...fresh, filesInc20a: false, filesDpt3: false };
+  const off = formsFor(notApplicable, fy);
+  assert.ok(!off.some((id) => id.startsWith("inc-20a")), `inc-20a should be gone: ${off.join(", ")}`);
   assert.ok(!off.some((id) => id.startsWith("dpt-3")), `dpt-3 should be gone: ${off.join(", ")}`);
 });
 

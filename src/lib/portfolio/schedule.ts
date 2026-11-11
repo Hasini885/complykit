@@ -103,6 +103,7 @@ export function factsFor(client: Client): CompanyFacts {
     filesDpt3: client.filesDpt3 ?? false,
     filesAdt1: client.filesAdt1 ?? true,
     filesFirstAdt1: client.filesFirstAdt1 ?? true,
+    filesInc20a: client.filesInc20a ?? true,
     smallCompany: isSmallByFigures(applicabilityProfileFor(client)),
     transferPricing: client.transferPricing ?? false,
     llpTaxAudit: client.type === "llp" && (client.turnover ?? 0) > LLP_TAX_AUDIT_TURNOVER,

@@ -320,6 +320,7 @@ test("draft round-trips through the record", () => {
     firstAuditorAppointedOn: null,
     filesAdt1: true,
     filesFirstAdt1: true,
+    filesInc20a: true,
     lastAgmOn: null,
     notes: "",
     listed: false,
