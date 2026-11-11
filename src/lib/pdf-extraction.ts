@@ -214,6 +214,7 @@ export function applyExtractionToClientDraft(
     // Optional draft fields: only set when the PDF covered them, so a draft
     // that never had the key does not gain one holding undefined.
     ...definedOnly({
+      authorisedCapital: extracted.authorisedCapital,
       email: normaliseEmail(extracted.email),
       lastAgmOn,
       llpContribution: extracted.llpContribution,

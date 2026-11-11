@@ -281,3 +281,10 @@ test("normaliseEmail turns MCA's spelt-out email into an address", () => {
 test("normaliseEmail forgives OCR reading ] as J", () => {
   assert.equal(normaliseEmail("director[at]investorgroves[dotJcom"), "director@investorgroves.com");
 });
+
+test("the authorised capital read from the PDF fills the company form", () => {
+  const draft = { name: "", cin: "", paidUpCapital: 0 } as unknown as ClientDraft;
+  const result = applyExtractionToClientDraft(draft, { ...empty(), authorisedCapital: 1_000_000, paidUpCapital: 100_000 });
+  assert.equal(result.authorisedCapital, 1_000_000);
+  assert.equal(result.paidUpCapital, 100_000);
+});
