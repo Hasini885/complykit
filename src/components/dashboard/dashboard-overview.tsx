@@ -13,7 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AllDuesGrid } from "@/components/dashboard/all-dues-grid";
-import { CompanyDashboard } from "@/components/dashboard/company-dashboard";
+import { ClientFormDialog } from "@/components/portfolio/client-form-dialog";
 import { usePortfolio } from "@/components/portfolio/portfolio-provider";
 import { today } from "@/lib/dates";
 import { buildPortfolioReport } from "@/lib/portfolio/report";
@@ -29,7 +29,7 @@ import { ChallanUploadButton } from "@/components/portfolio/challan-upload";
  *  - a selected company shows that company's own details.
  */
 export function DashboardOverview() {
-  const { ready, clients, activeClient } = usePortfolio();
+  const { ready, clients } = usePortfolio();
 
   if (!ready) {
     return <div className="h-48 animate-pulse rounded-lg border bg-muted/30" aria-hidden />;
@@ -53,7 +53,7 @@ export function DashboardOverview() {
     );
   }
 
-  return activeClient ? <CompanyDashboard key={activeClient.id} client={activeClient} /> : <AdminDashboard />;
+  return <AdminDashboard />;
 }
 
 /**
@@ -62,7 +62,9 @@ export function DashboardOverview() {
  * data as the printable MIS, so the two always agree.
  */
 function AdminDashboard() {
-  const { clients, directors, setActiveClient } = usePortfolio();
+  const { clients, directors } = usePortfolio();
+  const [editingId, setEditingId] = React.useState<string | null>(null);
+  const editing = clients.find((c) => c.id === editingId) ?? null;
   const reference = React.useMemo(() => today(), []);
   const years = React.useMemo(() => selectableYears(null, reference), [reference]);
   const [fy, setFy] = useDashboardYear(years);
@@ -73,10 +75,9 @@ function AdminDashboard() {
 
   const allItems = report.sections.flatMap((s) => s.items);
 
-  /** Switches the dashboard (and every other page) to that company. */
-  async function selectCompany(clientId: string) {
-    await setActiveClient(clientId);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+  /** Opens that company's details. */
+  function selectCompany(clientId: string) {
+    setEditingId(clientId);
   }
 
   return (
@@ -114,6 +115,8 @@ function AdminDashboard() {
           </Panel>
         </div>
       </div>
+
+      <ClientFormDialog open={editing !== null} onOpenChange={(o) => !o && setEditingId(null)} client={editing} />
 
       {report.kycExceptions.length > 0 ? (
         <Link

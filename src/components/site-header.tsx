@@ -14,7 +14,6 @@ import { AccountSyncStatus } from "@/components/sync/account-sync";
 import { NotificationsBell } from "@/components/notifications-bell";
 import { Tip } from "@/components/shared/tip";
 import { CommandPalette, useCommandPalette } from "@/components/command-palette";
-import { ClientSwitcher } from "@/components/portfolio/client-switcher";
 import { MobileNav, TopNav } from "@/components/site-nav";
 
 /**
@@ -71,7 +70,6 @@ export function SiteHeader() {
 
       <div className="print:hidden">
         <div className="mx-auto flex w-full max-w-7xl items-center gap-3 px-4 pt-4 sm:px-6 lg:px-8">
-          <ClientSwitcher />
           <p className="ml-auto hidden items-center gap-2 rounded-full border bg-card/70 px-3.5 py-1.5 text-xs text-muted-foreground shadow-card backdrop-blur sm:flex">
             <span className="size-2 rounded-full bg-emerald-500 shadow-[0_0_0_3px] shadow-emerald-500/20" aria-hidden />
             Law updated: {LAW_UPDATED}

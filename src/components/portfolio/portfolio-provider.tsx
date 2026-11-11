@@ -170,7 +170,8 @@ export function PortfolioProvider({
 
   const value = React.useMemo<PortfolioContextValue>(() => {
     const clients = sortClients(snapshot.clients);
-    const activeClient = clients.find((c) => c.id === snapshot.activeClientId) ?? null;
+    // The app always works across all companies: there is no single-company view.
+    const activeClient: Client | null = null;
 
     return {
       ready,
@@ -178,11 +179,14 @@ export function PortfolioProvider({
       directors: snapshot.directors,
       consultants: sortConsultants(snapshot.consultants),
       activeClient,
-      activeClientId: snapshot.activeClientId,
+      activeClientId: null,
 
-      async setActiveClient(id) {
-        await repo.setActiveClientId(id);
-        await refresh();
+      // Kept for callers; it only clears any company chosen in an older version.
+      async setActiveClient() {
+        if (snapshot.activeClientId !== null) {
+          await repo.setActiveClientId(null);
+          await refresh();
+        }
       },
 
       async addClient(draft) {
