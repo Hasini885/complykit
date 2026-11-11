@@ -62,7 +62,7 @@ export function SiteHeader() {
             <AccountSyncStatus />
             <NotificationsBell />
             <ModeToggle />
-            <AccountButton />
+            <AccountButton withDataPage />
           </div>
         </div>
 

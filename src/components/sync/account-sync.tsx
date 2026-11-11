@@ -9,6 +9,7 @@ import { Tip } from "@/components/shared/tip";
 import { formatDate } from "@/lib/dates";
 import { syncPlan, type AccountData } from "@/lib/sync-plan";
 import { USER_DATA_KEYS } from "@/lib/user-storage";
+import { emptySnapshot } from "@/lib/portfolio/types";
 
 /**
  * Saves the signed-in user's data on the server under their account (via
@@ -50,6 +51,26 @@ function writeLocal(data: AccountData) {
     if (data.extras[k] !== undefined) localStorage.setItem(k, data.extras[k]);
     else localStorage.removeItem(k);
   }
+}
+
+/** Everything this browser holds for the account, as one file's worth of JSON (for "Export data"). */
+export function exportAccountData(): AccountData {
+  const local = readLocal();
+  return {
+    app: "complykit",
+    version: 1,
+    updatedAt: Date.now(),
+    portfolio: local.portfolio ?? emptySnapshot(),
+    extras: local.extras,
+  };
+}
+
+/**
+ * Replaces this browser's data with an exported file's (for "Import data").
+ * The automatic sync then saves it to the account; reload to show it.
+ */
+export function importAccountData(data: AccountData): void {
+  writeLocal(data);
 }
 
 function loadMeta(key: string): Meta {
