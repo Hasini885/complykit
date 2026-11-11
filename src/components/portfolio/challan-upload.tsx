@@ -40,8 +40,8 @@ export function ChallanUploadButton({
   variant = "icon",
 }: {
   className?: string;
-  /** "icon" for toolbars; "bar" for a full-width strip that also takes a dropped PDF. */
-  variant?: "icon" | "bar";
+  /** "icon" for toolbars; "hero" for a large drop area with a big button. */
+  variant?: "icon" | "hero";
 }) {
   const inputRef = React.useRef<HTMLInputElement>(null);
   const [reading, setReading] = React.useState(false);
@@ -68,37 +68,43 @@ export function ChallanUploadButton({
     }
   }
 
+  const drop = {
+    onDragOver: (e: React.DragEvent) => {
+      e.preventDefault();
+      setDragging(true);
+    },
+    onDragLeave: () => setDragging(false),
+    onDrop: (e: React.DragEvent) => {
+      e.preventDefault();
+      setDragging(false);
+      void onFile(e.dataTransfer.files?.[0]);
+    },
+  };
+
   const trigger =
-    variant === "bar" ? (
-      <button
-        type="button"
-        onClick={() => inputRef.current?.click()}
-        onDragOver={(e) => {
-          e.preventDefault();
-          setDragging(true);
-        }}
-        onDragLeave={() => setDragging(false)}
-        onDrop={(e) => {
-          e.preventDefault();
-          setDragging(false);
-          void onFile(e.dataTransfer.files?.[0]);
-        }}
-        disabled={reading}
-        className={`group flex w-full items-center gap-3 rounded-2xl border border-dashed p-3 text-left transition-colors hover:border-primary/60 hover:bg-primary/5 disabled:opacity-70 ${
-          dragging ? "border-primary bg-primary/10" : "border-primary/30 bg-card"
+    variant === "hero" ? (
+      <section
+        {...drop}
+        aria-label="Upload MCA challan"
+        className={`flex flex-col items-center rounded-3xl border-2 border-dashed px-4 py-10 text-center transition-colors sm:py-12 ${
+          dragging ? "border-primary bg-primary/10" : "border-primary/25 bg-card/60"
         } ${className ?? ""}`}
       >
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-          {reading ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Receipt className="size-4" aria-hidden />}
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="block text-sm font-semibold">{reading ? "Reading challan…" : "Upload MCA challan"}</span>
-          <span className="block text-[11px] leading-snug text-muted-foreground">
-            PDF receipt: marks the filing filed with its SRN
-          </span>
-        </span>
-        <Upload className="size-4 shrink-0 text-muted-foreground group-hover:text-primary" aria-hidden />
-      </button>
+        <h2 className="font-heading text-3xl font-bold tracking-tight sm:text-4xl">Upload MCA challan</h2>
+        <p className="mt-3 max-w-[52ch] text-base text-muted-foreground sm:text-lg">
+          Mark a filing as filed with its SRN, straight from the MCA payment receipt.
+        </p>
+        <Button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          disabled={reading}
+          className="mt-7 h-16 w-full max-w-sm rounded-2xl text-xl font-semibold shadow-lg shadow-primary/25"
+        >
+          {reading ? <Loader2 className="size-5 animate-spin" aria-hidden /> : <Upload className="size-5" aria-hidden />}
+          {reading ? "Reading challan…" : "Select challan PDF"}
+        </Button>
+        <p className="mt-3 text-sm text-muted-foreground">or drop the challan PDF here</p>
+      </section>
     ) : (
       <Tip label="Upload MCA challan (marks the filing and SRN)">
         <Button

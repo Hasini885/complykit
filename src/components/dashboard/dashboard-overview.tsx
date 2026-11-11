@@ -81,6 +81,8 @@ function AdminDashboard() {
 
   return (
     <div className="space-y-6">
+      <ChallanUploadButton variant="hero" />
+
       {/* The full sheet of dues leads the firm view: it is what the desk works from.
           Its year picker sets the year for the whole dashboard. The calendar sits
           beside it on wide screens and drops below it on narrow ones, so the
@@ -106,8 +108,7 @@ function AdminDashboard() {
           />
         </div>
 
-        <div className="min-w-0 max-w-64 space-y-3 xl:sticky xl:top-24">
-          <ChallanUploadButton variant="bar" />
+        <div className="min-w-0 max-w-64 xl:sticky xl:top-24">
           <Panel title="Compliance calendar" compact>
             <MiniCalendar items={allItems} reference={reference} onOpen={selectCompany} />
           </Panel>
