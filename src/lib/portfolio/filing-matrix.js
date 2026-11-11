@@ -1,0 +1,335 @@
+import { addDays, financialYearLabel, makeDate } from "@/lib/dates";
+import { sortClients } from "@/lib/portfolio/clients";
+import { adtNaReason, auditorAppointments } from "@/lib/portfolio/auditor";
+import { referenceKind } from "@/lib/portfolio/filings";
+import { POST_INCORPORATION_FORMS, firstFyEndingYear } from "@/lib/portfolio/schedule";
+const STATUS_RANK = { overdue: 0, "due-soon": 1, upcoming: 2, completed: 3 };
+
+export function columnKey(r) {
+  // One-time forms: one column, though each company's falls in its own year.
+  if (POST_INCORPORATION_FORMS.includes(r.sourceId)) return `${r.sourceId}|once|`;
+  // MGT-7 and MGT-7A are separate forms with separate columns.
+  const id = r.sourceId === "mgt-7" && r.form === "MGT-7A" ? "mgt-7a" : r.sourceId;
+  return `${id}|${r.fyEndingYear}|${r.period}`;
+}
+
+/** The column heading for a post incorporation form, in the words of the company form. */
+const POST_INCORPORATION_HEADING = {
+  "first-auditor": "First auditor appointment",
+  "inc-20a": "Declaration of commencement of business",
+};
+
+export function buildFilingMatrix(
+  rows,
+  clients,
+  /**
+   * From this financial year on, also show the years a filed ADT-1 covers as
+   * NA, even beyond the dates in `rows`. Left out when one year is on screen.
+   */
+  opts = {},
+) {
+  const columns = new Map();
+  const cells = new Map();
+
+  for (const r of rows) {
+    const key = columnKey(r);
+    const col = columns.get(key);
+    // "ITR-7 / ITR-6" counts as two forms, so the header lists each once.
+    const forms = r.form.split(" / ");
+    if (col) {
+      forms.forEach((f) => col.forms.add(f));
+      if (r.due.getTime() < col.firstDue.getTime()) col.firstDue = r.due;
+    } else {
+      columns.set(key, {
+        key,
+        form: r.form,
+        forms: new Set(forms),
+        obligation:
+          POST_INCORPORATION_HEADING[r.sourceId] ??
+          (r.sourceId === "dir-3-kyc"
+            ? "Director KYC"
+            : r.sourceId === "dir-12-cessation"
+              ? "Director cessation"
+              : r.form === "MGT-7A"
+                ? "Annual return (small company / OPC)"
+                : r.obligation),
+        fy: r.fy,
+        period: r.period,
+        firstDue: r.due,
+      });
+    }
+    const byClient = cells.get(r.clientId) ?? new Map();
+    byClient.set(key, [...(byClient.get(key) ?? []), r]);
+    cells.set(r.clientId, byClient);
+  }
+
+  addAdtStatus(rows, clients, columns, cells);
+  if (opts.adtTermFromFy !== undefined) addAdtTermYears(rows, clients, columns, cells, opts.adtTermFromFy);
+  addAnnualReturnStatus(rows, columns, cells);
+
+  const named = [...columns.values()].map(({ forms, ...c }) => ({ ...c, form: [...forms].sort().join(" / ") }));
+  const yearsPerForm = new Map();
+  for (const c of named) {
+    const id = `${c.form}|${c.period}`;
+    yearsPerForm.set(id, (yearsPerForm.get(id) ?? new Set()).add(c.fy));
+  }
+  // ADT-1 is neither yearly nor one-time, so it has its own place: after every
+  // other form (by date among themselves), no more prominent than the rest.
+  const isAdt = (c) => c.key.startsWith(`${ADT_ID}|`);
+  const orderedColumns = named
+    .map((c) => ({ ...c, showFy: yearsPerForm.get(`${c.form}|${c.period}`).size > 1 }))
+    .sort(
+      (a, b) =>
+        Number(isAdt(a)) - Number(isAdt(b)) ||
+        a.firstDue.getTime() - b.firstDue.getTime() ||
+        a.form.localeCompare(b.form),
+    );
+
+  const matrixRows = sortClients(clients).map((client) => {
+    const mine = cells.get(client.id) ?? new Map();
+    const out = {};
+    for (const [key, parts] of mine) out[key] = cellFor(parts);
+    return { clientId: client.id, company: client.name, cin: client.cin, cells: out };
+  });
+
+  return { columns: orderedColumns, rows: matrixRows };
+}
+
+const ADT_ID = "adt-1";
+const NOT_REQUIRED = "|not-required";
+
+/** Adds a column (if missing) next to `beside`, due `shiftDays` from it. */
+function ensureColumn(columns, key, beside, form, obligation, shiftDays) {
+  if (columns.has(key)) return;
+  const near = columns.get(columnKey(beside));
+  columns.set(key, {
+    key,
+    form,
+    forms: new Set([form]),
+    obligation,
+    fy: beside.fy,
+    period: "",
+    firstDue: addDays(near.firstDue, shiftDays),
+  });
+}
+
+/** A grey "not required" cell for a company, saying why. */
+function notRequiredCell(cells, key, from, form, sourceId, why) {
+  const mine = cells.get(from.clientId);
+  if (!mine || mine.has(key)) return;
+  mine.set(key, [
+    {
+      ...from,
+      id: `${from.clientId}|${key}${NOT_REQUIRED}`,
+      sourceId,
+      form,
+      filedOn: null,
+      srn: "",
+      basis: why,
+      item: undefined,
+    },
+  ]);
+}
+
+/**
+ * For every year with an AOC-4 column, makes sure ADT-1 has one too, and
+ * gives each company that files AOC-4 but has no ADT-1 due that year a
+ * "not required" cell naming the year its next ADT-1 falls due.
+ */
+function addAdtStatus(rows, clients, columns, cells) {
+  const byId = new Map(clients.map((c) => [c.id, c]));
+  for (const aoc of rows.filter((r) => r.sourceId === "aoc-4" && r.period === "")) {
+    const client = byId.get(aoc.clientId);
+    // A company's first year has only the first auditor's ADT-1, under post incorporation.
+    if (client && aoc.fyEndingYear === firstFyEndingYear(client)) continue;
+    const key = `${ADT_ID}|${aoc.fyEndingYear}|`;
+    // Due 15 days after the AGM, ahead of AOC-4's 30: sort it just before.
+    ensureColumn(columns, key, aoc, "ADT-1", "Subsequent auditor appointment", -15);
+    if (!client) continue;
+    notRequiredCell(
+      cells,
+      key,
+      { ...aoc, obligation: "Subsequent auditor appointment", section: "Section 139(1)" },
+      "ADT-1",
+      ADT_ID,
+      // Inside the auditor's term: covered by the ADT-1 already filed.
+      client.filesAdt1 === false ? "not applicable (company master)" : adtNaReason(client, aoc.fyEndingYear),
+    );
+  }
+}
+
+/**
+ * Once a subsequent auditor's ADT-1 is filed, every remaining year of that
+ * appointment shows as NA with its reason, however far ahead: the rolling
+ * window alone stops at twelve months. The year the term ends is a due again,
+ * so it is not one of these; a cell that already holds a real due stays one.
+ */
+function addAdtTermYears(rows, clients, columns, cells, fromFy) {
+  for (const client of clients) {
+    const template = rows.find((r) => r.clientId === client.id);
+    if (!template) continue;
+    for (const a of auditorAppointments(client)) {
+      for (let fy = Math.max(a.fy + 1, fromFy); fy < a.fy + a.years; fy++) {
+        const key = `${ADT_ID}|${fy}|`;
+        const fyLabel = financialYearLabel(fy);
+        if (!columns.has(key)) {
+          columns.set(key, {
+            key,
+            form: "ADT-1",
+            forms: new Set(["ADT-1"]),
+            obligation: "Subsequent auditor appointment",
+            fy: fyLabel,
+            period: "",
+            // Where the year's ADT-1 would usually fall, to sort among the other years.
+            firstDue: makeDate(fy, 10, 15),
+          });
+        }
+        notRequiredCell(
+          cells,
+          key,
+          {
+            ...template,
+            fy: fyLabel,
+            fyEndingYear: fy,
+            period: "",
+            obligation: "Subsequent auditor appointment",
+            section: "Section 139(1)",
+          },
+          "ADT-1",
+          ADT_ID,
+          adtNaReason(client, fy),
+        );
+      }
+    }
+  }
+}
+
+/**
+ * MGT-7 and MGT-7A get a column each. MGT-7A's is always shown beside the
+ * year's annual return; a company filing the other form gets a "not
+ * required" cell there saying which one it files and why.
+ */
+function addAnnualReturnStatus(rows, columns, cells) {
+  for (const r of rows.filter((x) => x.sourceId === "mgt-7")) {
+    const small = r.form === "MGT-7A";
+    const keyA = `mgt-7a|${r.fyEndingYear}|${r.period}`;
+    const keyFull = `mgt-7|${r.fyEndingYear}|${r.period}`;
+    ensureColumn(columns, keyA, r, "MGT-7A", "Annual return (small company / OPC)", 0);
+    const other = small ? keyFull : keyA;
+    if (!columns.has(other)) continue;
+    notRequiredCell(
+      cells,
+      other,
+      { ...r, obligation: small ? "Annual return" : "Annual return (small company / OPC)" },
+      small ? "MGT-7" : "MGT-7A",
+      small ? "mgt-7" : "mgt-7a",
+      small ? "files MGT-7A (small company / OPC)" : "files MGT-7 (not a small company or OPC)",
+    );
+  }
+}
+
+function cellFor(parts) {
+  if (parts.length === 1 && parts[0].id.endsWith(NOT_REQUIRED)) {
+    const p = parts[0];
+    return {
+      status: "upcoming",
+      due: p.due,
+      form: p.form,
+      parts: 1,
+      filedParts: 0,
+      filedOn: null,
+      srn: "",
+      days: 0,
+      notRequired: p.basis,
+      rows: [],
+      originalDue: null,
+      manualDue: false,
+      circular: null,
+    };
+  }
+  const open = parts.filter((p) => p.status !== "completed");
+  const filed = parts.filter((p) => p.status === "completed");
+  const worst = [...parts].sort((a, b) => STATUS_RANK[a.status] - STATUS_RANK[b.status])[0];
+  const lead = open.length > 0 ? [...open].sort((a, b) => a.due.getTime() - b.due.getTime())[0] : parts[0];
+  const single = parts.length === 1 ? parts[0] : null;
+  return {
+    status: open.length === 0 ? "completed" : worst.status,
+    due: lead.due,
+    form: parts[0].form,
+    parts: parts.length,
+    filedParts: filed.length,
+    filedOn: single?.filedOn ?? null,
+    srn: single?.srn ?? "",
+    days: lead.days,
+    rows: parts,
+    ...movedDue(lead),
+  };
+}
+
+/** Where a due has moved from its original date, and whether the user moved it. */
+function movedDue(r) {
+  const it = r.item;
+  const original = it ? (it.statutoryDue ?? it.originalDue ?? null) : null;
+  if (!original || original.getTime() === r.due.getTime())
+    return { originalDue: null, manualDue: false, circular: null };
+  const manualDue = !!it?.originalDue;
+  return { originalDue: original, manualDue, circular: manualDue ? null : (it?.extendedBy ?? null) };
+}
+
+/**
+ * The lines under a filed cell: when it was filed, then its SRN (or, for an
+ * ITR, its acknowledgement number). A cell covering several directors gives
+ * the latest filing date. The screen, the PDF and Excel all use these.
+ */
+export function filedLines(c, formatDate) {
+  const dates = c.rows.map((r) => r.filedOn).filter((d) => d !== null);
+  const filedOn = c.filedOn ?? (dates.length ? dates.reduce((a, b) => (a.getTime() > b.getTime() ? a : b)) : null);
+  const lines = [];
+  if (filedOn) lines.push(`${c.parts > 1 ? "Last filed on" : "Filed on"} ${formatDate(filedOn)}`);
+  if (c.srn) lines.push(`${referenceKind(c.rows[0]?.sourceId ?? "") === "ack" ? "Ack." : "SRN"} ${c.srn}`);
+  return lines;
+}
+
+/**
+ * The date lines under a cell's status: "Original … / Extended …" where the
+ * due has moved, naming the circular that moved it, else "Due …". The screen
+ * and the PDF both use these.
+ */
+export function dueLines(c, formatDate) {
+  if (!c.originalDue) return [`Due date ${formatDate(c.due)}`];
+  return [
+    `Original due date ${formatDate(c.originalDue)}`,
+    `Extended due date ${formatDate(c.due)}`,
+    ...(c.circular ? [`As per ${c.circular}`] : []),
+  ];
+}
+
+/** Short text for a cell, for the screen and both downloads. */
+export function cellText(c, formatDate) {
+  if (!c) return "—";
+  if (c.notRequired) return `NA — ${c.notRequired}`;
+  const of = c.parts > 1 ? ` (${c.filedParts}/${c.parts})` : "";
+  switch (c.status) {
+    case "completed":
+      return ["Filed" + of, ...dueLines(c, formatDate), ...filedLines(c, formatDate)].join(" · ");
+    case "overdue":
+      return `Not filed — overdue${of} · due ${formatDate(c.due)}${movedNote(c, formatDate)}`;
+    case "due-soon":
+      return `Not filed — due ${formatDate(c.due)}${of}${movedNote(c, formatDate)}`;
+    case "upcoming":
+      return `Not yet due · ${formatDate(c.due)}${of}${movedNote(c, formatDate)}`;
+  }
+}
+
+function movedNote(c, formatDate) {
+  if (!c.originalDue) return "";
+  return ` (original due date ${formatDate(c.originalDue)}, extended due date ${formatDate(c.due)}${c.manualDue ? " — set manually" : ""}${c.circular ? `, as per ${c.circular}` : ""})`;
+}
+
+/** "AOC-4", "MSME-1 · Apr–Sep", or "AOC-4 · FY 2025–26" where two years of it are shown. */
+export function columnTitle(c) {
+  const period = c.period
+    ? ` · ${c.period.replace("April to September", "Apr–Sep").replace("October to March", "Oct–Mar")}`
+    : "";
+  return `${c.form}${c.showFy ? ` · ${c.fy}` : ""}${period}`;
+}
