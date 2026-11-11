@@ -8,6 +8,7 @@ import {
   countExtractedFields,
   ExtractedCompanySchema,
   extractionToDirectorDrafts,
+  normaliseEmail,
   normaliseIncorporationDate,
   PDF_MAX_BYTES,
   type ExtractedCompany,
@@ -22,6 +23,7 @@ function empty(): ExtractedCompany {
     entityTypeRaw: null,
     incorporationDate: null,
     registeredOfficeAddress: null,
+    email: null,
     paidUpCapital: null,
     authorisedCapital: null,
     turnover: null,
@@ -67,6 +69,7 @@ test("the schema accepts a fully populated document", () => {
     entityTypeRaw: "Private Limited Company",
     incorporationDate: "2019-07-18",
     registeredOfficeAddress: "No. 4, Residency Road, Bengaluru",
+    email: "accounts@raghavan.in",
     paidUpCapital: 3_200_000,
     authorisedCapital: 5_000_000,
     turnover: 46_500_000,
@@ -92,7 +95,7 @@ test("the schema rejects a made-up extra field rather than passing it through si
 /* ---------------- field counting ---------------- */
 
 test("an all-null extraction counts zero fields found", () => {
-  assert.deepEqual(countExtractedFields(empty()), { found: 0, total: 21 });
+  assert.deepEqual(countExtractedFields(empty()), { found: 0, total: 22 });
 });
 
 test("field count increases by exactly one per non-null scalar, plus one if directors is non-empty", () => {
@@ -264,4 +267,13 @@ test("a director with no DIN maps to an empty string, not null, matching the for
 
 test("the size cap matches the 10MB the spec asked for", () => {
   assert.equal(PDF_MAX_BYTES, 10 * 1024 * 1024);
+});
+
+test("normaliseEmail turns MCA's spelt-out email into an address", () => {
+  assert.equal(normaliseEmail("gandhamsyambabu[at]gmail[dot]com"), "gandhamsyambabu@gmail.com");
+  assert.equal(normaliseEmail("VENVASGLOBAL[at]GMAIL[dot]COM"), "venvasglobal@gmail.com");
+  assert.equal(normaliseEmail("info (at) firm (dot) co (dot) in"), "info@firm.co.in");
+  assert.equal(normaliseEmail("a.b@x.in"), "a.b@x.in");
+  assert.equal(normaliseEmail("-"), null);
+  assert.equal(normaliseEmail(null), null);
 });

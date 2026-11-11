@@ -1,5 +1,5 @@
 import { parseIsoDate } from "@/lib/dates";
-import { emptyExtraction, type ExtractedCompany } from "@/lib/pdf-extraction";
+import { emptyExtraction, normaliseEmail, type ExtractedCompany } from "@/lib/pdf-extraction";
 
 /**
  * Reads company details out of the TEXT of a PDF, without any AI service.
@@ -330,6 +330,22 @@ function findAddress(lines: string[]): string | null {
   return address.length > 5 ? address : null;
 }
 
+/** "Email Id  NAME[at]GMAIL[dot]COM" on the master data; any address in the text otherwise. */
+function findEmail(lines: string[]): string | null {
+  const found = firstLabelled(
+    lines,
+    [String.raw`e-?mail\s*(?:id|address)?`],
+    (v) => normaliseEmail(v) !== null,
+  );
+  if (found) return normaliseEmail(found.value);
+  for (const line of lines) {
+    const m = /[A-Za-z0-9._%+-]+\s*(?:@|[[(]\s*at\s*[\])])\s*[A-Za-z0-9.-]+(?:\.|\s*[[(]\s*dot\s*[\])]\s*)[A-Za-z]{2,}(?:(?:\.|\s*[[(]\s*dot\s*[\])]\s*)[A-Za-z]{2,})?/i.exec(line);
+    const email = m ? normaliseEmail(m[0]) : null;
+    if (email) return email;
+  }
+  return null;
+}
+
 /* ------------------------------------------------------------------ */
 /* Financials                                                          */
 /* ------------------------------------------------------------------ */
@@ -562,6 +578,7 @@ export function parseCompanyText(rawLines: string[]): ExtractedCompany {
   result.lastAgmDate = agm ? parseDate(agm.value) : null;
 
   result.registeredOfficeAddress = findAddress(lines);
+  result.email = findEmail(lines);
 
   const status = firstLabelled(lines, [String.raw`(?:company|llp)\s+status`], (v) => /[a-z]{4}/i.test(v));
   result.companyStatusRaw = status?.value ?? null;

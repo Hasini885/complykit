@@ -25,6 +25,8 @@ export const ExtractedCompanySchema = z.object({
   /** ISO 8601, yyyy-mm-dd. */
   incorporationDate: z.string().nullable(),
   registeredOfficeAddress: z.string().nullable(),
+  /** The company's email. MCA prints it as name[at]domain[dot]com; see normaliseEmail. */
+  email: z.string().nullable(),
   paidUpCapital: z.number().nullable(),
   authorisedCapital: z.number().nullable(),
   turnover: z.number().nullable(),
@@ -63,6 +65,7 @@ const SCALAR_FIELDS = [
   "entityTypeRaw",
   "incorporationDate",
   "registeredOfficeAddress",
+  "email",
   "paidUpCapital",
   "authorisedCapital",
   "turnover",
@@ -117,6 +120,23 @@ export function classifyCompanyStatus(raw: string | null): ClientStatus | null {
   if (/dissolved|liquidat|amalgamated|converted|closed|wound/.test(s)) return "closed";
   if (/\bactive\b/.test(s)) return "active";
   return null;
+}
+
+/**
+ * An email as MCA prints it ("NAME[at]GMAIL[dot]COM", also "(at)", " at ",
+ * "[.]") as a plain lower-case address, or null when it is not one.
+ */
+export function normaliseEmail(raw: string | null | undefined): string | null {
+  if (!raw) return null;
+  const s = raw
+    .trim()
+    .replace(/\s*[[({]\s*at\s*[\])}]\s*/gi, "@")
+    .replace(/\s*[[({]\s*(?:dot|\.)\s*[\])}]\s*/gi, ".")
+    .replace(/\s+at\s+/gi, "@")
+    .replace(/\s+dot\s+/gi, ".")
+    .replace(/\s+/g, "")
+    .toLowerCase();
+  return /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/.test(s) ? s : null;
 }
 
 /** Every field the extraction schema knows about, for merging. */
@@ -193,6 +213,7 @@ export function applyExtractionToClientDraft(
     // Optional draft fields: only set when the PDF covered them, so a draft
     // that never had the key does not gain one holding undefined.
     ...definedOnly({
+      email: normaliseEmail(extracted.email),
       lastAgmOn,
       llpContribution: extracted.llpContribution,
       directorsCount,

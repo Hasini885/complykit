@@ -295,3 +295,8 @@ test("master data 2026 layout: centred address and wrapped director names", () =
     { name: "BALAJI NEERUKATTU", din: "11990388" },
   ]);
 });
+
+test("the company email is read from MCA's [at] / [dot] form", () => {
+  const r = parseCompanyText([...MASTER_DATA_2026.slice(0, 4), "Email Id    GANDHAMSYAMBABU[at]GMAIL[dot]COM", ...MASTER_DATA_2026.slice(4)]);
+  assert.equal(r.email, "gandhamsyambabu@gmail.com");
+});
