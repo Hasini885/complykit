@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { Menu, Scale } from "lucide-react";
+import { Menu, Scale, Search } from "lucide-react";
 
 import { site } from "@/config/site";
 import { LAW_UPDATED } from "@/config/navigation";
@@ -12,7 +12,7 @@ import { ModeToggle } from "@/components/mode-toggle";
 import { AccountButton } from "@/components/account-button";
 import { AccountSyncStatus } from "@/components/sync/account-sync";
 import { NotificationsBell } from "@/components/notifications-bell";
-import { SiteSearchTrigger } from "@/components/site-search-trigger";
+import { Tip } from "@/components/shared/tip";
 import { CommandPalette, useCommandPalette } from "@/components/command-palette";
 import { ClientSwitcher } from "@/components/portfolio/client-switcher";
 import { MobileNav, TopNav } from "@/components/site-nav";
@@ -47,10 +47,18 @@ export function SiteHeader() {
             <TopNav />
           </div>
 
-          {/* Everything right of the menu shares what is left: the search box
-              shrinks (down to a magnifier) so it can never run under the menu. */}
-          <div className="ml-auto flex min-w-0 flex-1 items-center justify-end gap-1">
-            <SiteSearchTrigger onOpen={() => palette.setOpen(true)} className="mr-1 max-w-56" />
+          <div className="ml-auto flex shrink-0 items-center gap-1">
+            <Tip label="Search companies, SRNs, DINs (Ctrl K)">
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="Search companies, SRNs, DINs and mobiles"
+                aria-keyshortcuts="Control+K Meta+K"
+                onClick={() => palette.setOpen(true)}
+              >
+                <Search className="size-4" aria-hidden />
+              </Button>
+            </Tip>
             <AccountSyncStatus />
             <NotificationsBell />
             <ModeToggle />
