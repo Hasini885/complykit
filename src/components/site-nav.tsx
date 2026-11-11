@@ -27,7 +27,7 @@ const LINK =
 const LINK_IDLE = "text-muted-foreground hover:bg-accent hover:text-accent-foreground";
 const LINK_ACTIVE = "bg-primary/10 font-semibold text-primary";
 
-/** Desktop navigation, rendered inside the top bar from xl up. */
+/** Desktop navigation, rendered inside the top bar from 2xl up. */
 export function TopNav() {
   const pathname = usePathname();
 

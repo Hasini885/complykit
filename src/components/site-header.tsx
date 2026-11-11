@@ -29,11 +29,11 @@ export function SiteHeader() {
   return (
     <>
       <header className="sticky top-0 z-40 px-3 pt-3 sm:px-4 print:hidden">
-        <div className="mx-auto flex h-16 w-full max-w-7xl items-center gap-3 rounded-full border border-white/60 bg-card/75 pr-2 pl-3 shadow-card backdrop-blur-xl sm:pl-4 dark:border-white/10">
+        <div className="mx-auto flex h-16 w-full max-w-[1600px] items-center gap-3 rounded-full border border-white/60 bg-card/75 pr-2 pl-3 shadow-card backdrop-blur-xl sm:pl-4 dark:border-white/10">
           <Button
             variant="ghost"
             size="icon"
-            className="xl:hidden"
+            className="2xl:hidden"
             aria-label="Open navigation"
             onClick={() => setMobileOpen(true)}
           >
@@ -42,18 +42,22 @@ export function SiteHeader() {
 
           <Brand />
 
-          {/* The menu keeps its full width and the right-hand tools never overlap it:
-              the full search box appears only once there is room for both. */}
-          <div className="ml-2 hidden shrink-0 xl:block">
+          {/* The menu (about 900px) keeps its full width and the right-hand tools never
+              overlap it. Inline from 2xl; the full search box shows when the menu is
+              collapsed, or from 1800px where both fit; otherwise search is an icon. */}
+          <div className="ml-2 hidden shrink-0 2xl:block">
             <TopNav />
           </div>
 
           <div className="ml-auto flex shrink-0 items-center gap-1">
-            <SiteSearchTrigger onOpen={() => palette.setOpen(true)} className="mr-1 hidden w-56 2xl:flex" />
+            <SiteSearchTrigger
+              onOpen={() => palette.setOpen(true)}
+              className="mr-1 hidden w-56 md:flex 2xl:hidden min-[1800px]:flex"
+            />
             <Button
               variant="ghost"
               size="icon"
-              className="2xl:hidden"
+              className="md:hidden 2xl:inline-flex min-[1800px]:hidden"
               aria-label="Search companies, SRNs, DINs and mobiles"
               onClick={() => palette.setOpen(true)}
             >
