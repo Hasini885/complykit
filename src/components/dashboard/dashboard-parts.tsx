@@ -188,6 +188,14 @@ const FILL: Record<ReportItem["bucket"], string> = {
   completed: "bg-emerald-500/25 text-emerald-800 hover:bg-emerald-500/35 dark:text-emerald-200",
 };
 
+/** Solid status colours for a day's button in the glass calendar (its most urgent due). */
+const SOLID: Record<ReportItem["bucket"], string> = {
+  overdue: "bg-destructive text-white hover:bg-destructive/90",
+  "due-soon": "bg-amber-500 text-white hover:bg-amber-500/90",
+  upcoming: "bg-primary text-primary-foreground hover:bg-primary/90",
+  completed: "bg-emerald-500 text-white hover:bg-emerald-500/90",
+};
+
 const RANK: Record<ReportItem["bucket"], number> = { overdue: 0, "due-soon": 1, upcoming: 2, completed: 3 };
 
 /**
@@ -419,23 +427,16 @@ export function GlassCalendar({
                 aria-pressed={isSelected}
                 aria-label={`${day} ${monthName(month.getMonth())}${due ? `, ${due.length} due` : ""}${isToday ? ", today" : ""}`}
                 className={cn(
-                  "tabular relative mx-auto flex size-6 flex-col items-center justify-center rounded-lg text-[10px] transition-all",
+                  "tabular relative mx-auto flex size-6 flex-col items-center justify-center rounded-full text-[10px] transition-all",
                   due
-                    ? "cursor-pointer border border-white/60 bg-white/50 font-semibold shadow-[inset_0_1px_0_rgb(255_255_255/0.7)] backdrop-blur-md hover:bg-white/75 dark:border-white/15 dark:bg-white/10 dark:hover:bg-white/20"
+                    ? cn("cursor-pointer font-semibold shadow-sm", SOLID[kinds[0]])
                     : "cursor-default text-foreground/55",
-                  isToday && "ring-2 ring-primary/70",
+                  isToday && "ring-2 ring-primary/70 ring-offset-1 ring-offset-background",
                   isSelected &&
                     "liquid-metal border-transparent text-primary-foreground hover:bg-transparent dark:hover:bg-transparent",
                 )}
               >
                 {day}
-                {kinds.length > 0 ? (
-                  <span className="absolute bottom-0.5 flex gap-px" aria-hidden>
-                    {kinds.map((k) => (
-                      <span key={k} className={cn("size-[3px] rounded-full", isSelected ? "bg-white" : DOT[k])} />
-                    ))}
-                  </span>
-                ) : null}
               </button>
             );
           })}
