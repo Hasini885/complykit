@@ -20,7 +20,7 @@ import { buildPortfolioReport } from "@/lib/portfolio/report";
 import { DEFAULT_WINDOW, selectableYears } from "@/lib/portfolio/schedule";
 import { addDays, financialYearEnd, financialYearLabel, formatDate } from "@/lib/dates";
 import { site } from "@/config/site";
-import { MiniCalendar, Panel } from "@/components/dashboard/dashboard-parts";
+import { GlassCalendar } from "@/components/dashboard/dashboard-parts";
 import { ChallanUploadButton } from "@/components/portfolio/challan-upload";
 import { MasterDataUpload } from "@/components/portfolio/master-data-upload";
 
@@ -117,9 +117,7 @@ function AdminDashboard() {
         </div>
 
         <div className="min-w-0 max-w-64 xl:sticky xl:top-24">
-          <Panel title="Compliance calendar" compact>
-            <MiniCalendar items={allItems} reference={reference} onOpen={selectCompany} />
-          </Panel>
+          <GlassCalendar items={allItems} reference={reference} onOpen={selectCompany} />
         </div>
       </div>
 

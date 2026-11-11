@@ -321,6 +321,179 @@ export function MiniCalendar({
   );
 }
 
+/**
+ * The compliance calendar as frosted glass: a translucent, blurred card over
+ * soft sky, violet and pink light, glass day tiles with a coloured dot for
+ * each kind of due (overdue, due soon, upcoming, filed), and the chosen day's
+ * dues in a glass tray below. Same data and behaviour as MiniCalendar.
+ */
+export function GlassCalendar({
+  items,
+  reference,
+  onOpen,
+  title = "Compliance calendar",
+}: {
+  items: ReportItem[];
+  reference: Date;
+  onOpen?: (clientId: string) => void;
+  title?: string;
+}) {
+  const [month, setMonth] = React.useState(() => new Date(reference.getFullYear(), reference.getMonth(), 1));
+  const [selected, setSelected] = React.useState<number | null>(null);
+
+  const byDay = React.useMemo(() => {
+    const map = new Map<number, ReportItem[]>();
+    for (const r of items) {
+      const d = r.item.due!;
+      if (d.getFullYear() !== month.getFullYear() || d.getMonth() !== month.getMonth()) continue;
+      const list = map.get(d.getDate()) ?? [];
+      list.push(r);
+      map.set(d.getDate(), list);
+    }
+    return map;
+  }, [items, month]);
+
+  const lead = (month.getDay() + 6) % 7; // Monday first
+  const daysInMonth = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
+  const isThisMonth = month.getFullYear() === reference.getFullYear() && month.getMonth() === reference.getMonth();
+  const monthTotal = [...byDay.values()].reduce((n, l) => n + l.length, 0);
+
+  function shift(n: number) {
+    setMonth((m) => new Date(m.getFullYear(), m.getMonth() + n, 1));
+    setSelected(null);
+  }
+  function goToday() {
+    setMonth(new Date(reference.getFullYear(), reference.getMonth(), 1));
+    setSelected(reference.getDate());
+  }
+
+  const dayItems = selected ? (byDay.get(selected) ?? []) : [];
+  const navButton =
+    "flex size-7 items-center justify-center rounded-full border border-white/50 bg-white/40 text-foreground/80 shadow-[inset_0_1px_0_rgb(255_255_255/0.6)] backdrop-blur-md transition-colors hover:bg-white/70 dark:border-white/10 dark:bg-white/10 dark:hover:bg-white/20";
+
+  return (
+    <section aria-label={title} className="relative isolate overflow-hidden rounded-3xl">
+      {/* Light behind the glass. */}
+      <div aria-hidden className="pointer-events-none absolute -top-12 -left-10 -z-10 size-44 rounded-full bg-sky-400/45 blur-3xl" />
+      <div aria-hidden className="pointer-events-none absolute top-1/3 -right-12 -z-10 size-48 rounded-full bg-violet-500/45 blur-3xl" />
+      <div aria-hidden className="pointer-events-none absolute -bottom-14 left-4 -z-10 size-44 rounded-full bg-pink-400/40 blur-3xl" />
+
+      <div className="rounded-3xl border border-white/60 bg-white/30 p-3.5 shadow-[inset_0_1px_0_rgb(255_255_255/0.7),0_14px_34px_-14px_rgb(76_61_160/0.45)] backdrop-blur-2xl dark:border-white/10 dark:bg-white/[0.06] dark:shadow-[inset_0_1px_0_rgb(255_255_255/0.08),0_14px_34px_-14px_rgb(0_0_0/0.6)]">
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <p className="text-[10px] font-semibold tracking-[0.12em] text-foreground/60 uppercase">{title}</p>
+            <p className="font-heading text-lg leading-tight font-bold">
+              {monthName(month.getMonth())} <span className="font-medium text-foreground/60">{month.getFullYear()}</span>
+            </p>
+            <p className="text-[11px] text-foreground/60">
+              {monthTotal === 0 ? "Nothing due" : `${monthTotal} due this month`}
+            </p>
+          </div>
+          <div className="flex items-center gap-1">
+            <button type="button" onClick={() => shift(-1)} className={navButton} aria-label="Previous month">
+              <ChevronLeft className="size-4" aria-hidden />
+            </button>
+            <button type="button" onClick={() => shift(1)} className={navButton} aria-label="Next month">
+              <ChevronRight className="size-4" aria-hidden />
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-3 grid grid-cols-7 gap-1 text-center">
+          {WEEKDAYS.map((w, i) => (
+            <span key={i} className="pb-0.5 text-[10px] font-semibold text-foreground/50">
+              {w}
+            </span>
+          ))}
+          {Array.from({ length: lead }, (_, i) => (
+            <span key={`lead-${i}`} />
+          ))}
+          {Array.from({ length: daysInMonth }, (_, i) => {
+            const day = i + 1;
+            const due = byDay.get(day);
+            const kinds = due ? [...new Set(due.map((r) => r.bucket))].sort((a, b) => RANK[a] - RANK[b]) : [];
+            const isToday = isThisMonth && day === reference.getDate();
+            const isSelected = selected === day;
+            return (
+              <button
+                key={day}
+                type="button"
+                disabled={!due}
+                onClick={() => setSelected(isSelected ? null : day)}
+                aria-pressed={isSelected}
+                aria-label={`${day} ${monthName(month.getMonth())}${due ? `, ${due.length} due` : ""}${isToday ? ", today" : ""}`}
+                className={cn(
+                  "tabular relative flex aspect-square w-full flex-col items-center justify-center rounded-xl text-[11px] transition-all",
+                  due
+                    ? "cursor-pointer border border-white/60 bg-white/50 font-semibold shadow-[inset_0_1px_0_rgb(255_255_255/0.7)] backdrop-blur-md hover:bg-white/75 dark:border-white/15 dark:bg-white/10 dark:hover:bg-white/20"
+                    : "cursor-default text-foreground/55",
+                  isToday && "ring-2 ring-primary/70",
+                  isSelected &&
+                    "liquid-metal border-transparent text-primary-foreground hover:bg-transparent dark:hover:bg-transparent",
+                )}
+              >
+                {day}
+                {kinds.length > 0 ? (
+                  <span className="absolute bottom-1 flex gap-0.5" aria-hidden>
+                    {kinds.map((k) => (
+                      <span key={k} className={cn("size-1 rounded-full", isSelected ? "bg-white" : DOT[k])} />
+                    ))}
+                  </span>
+                ) : null}
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap gap-x-2.5 gap-y-1 text-[10px] text-foreground/60">
+            <Legend dot={DOT.overdue} label="Overdue" />
+            <Legend dot={DOT["due-soon"]} label="Due soon" />
+            <Legend dot={DOT.upcoming} label="Upcoming" />
+          </div>
+          {!isThisMonth || selected !== reference.getDate() ? (
+            <button
+              type="button"
+              onClick={goToday}
+              className="rounded-full border border-white/50 bg-white/40 px-2.5 py-0.5 text-[10px] font-semibold backdrop-blur-md hover:bg-white/70 dark:border-white/10 dark:bg-white/10"
+            >
+              Today
+            </button>
+          ) : null}
+        </div>
+
+        {selected ? (
+          <div className="mt-3 rounded-2xl border border-white/50 bg-white/40 p-1.5 shadow-[inset_0_1px_0_rgb(255_255_255/0.6)] backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.07]">
+            <p className="px-1.5 pt-0.5 pb-1 text-[10px] font-semibold tracking-wide text-foreground/60 uppercase">
+              {selected} {monthName(month.getMonth())}
+            </p>
+            {dayItems.length === 0 ? (
+              <p className="px-1.5 pb-1.5 text-xs text-foreground/60">Nothing due.</p>
+            ) : (
+              <ul className="space-y-0.5">
+                {dayItems.map((r) => (
+                  <li key={`${r.client.id}-${r.item.source.id}`}>
+                    <button
+                      type="button"
+                      disabled={!onOpen}
+                      onClick={() => onOpen?.(r.client.id)}
+                      className="flex w-full items-center gap-2 rounded-xl px-1.5 py-1.5 text-left text-xs enabled:hover:bg-white/60 dark:enabled:hover:bg-white/10"
+                    >
+                      <FormChip code={r.item.source.formCode ?? "No form"} />
+                      <span className="min-w-0 flex-1 truncate">{onOpen ? r.client.name : r.item.source.title}</span>
+                      <DuePill item={r} />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        ) : null}
+      </div>
+    </section>
+  );
+}
+
 function Legend({ dot, label }: { dot: string; label: string }) {
   return (
     <span className="inline-flex items-center gap-1.5">
