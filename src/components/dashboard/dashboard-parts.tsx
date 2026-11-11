@@ -322,8 +322,8 @@ export function MiniCalendar({
 }
 
 /**
- * The compliance calendar as frosted glass: a translucent, blurred card over
- * soft sky, violet and pink light, glass day tiles with a coloured dot for
+ * The compliance calendar on a fully transparent card (only a thin outline),
+ * so the page's satin shows straight through; glass day tiles with a coloured dot for
  * each kind of due (overdue, due soon, upcoming, filed), and the chosen day's
  * dues in a glass tray below. Same data and behaviour as MiniCalendar.
  */
@@ -373,12 +373,8 @@ export function GlassCalendar({
 
   return (
     <section aria-label={title} className="relative isolate overflow-hidden rounded-2xl">
-      {/* Light behind the glass. */}
-      <div aria-hidden className="pointer-events-none absolute -top-12 -left-10 -z-10 size-32 rounded-full bg-sky-400/45 blur-3xl" />
-      <div aria-hidden className="pointer-events-none absolute top-1/3 -right-12 -z-10 size-36 rounded-full bg-violet-500/45 blur-3xl" />
-      <div aria-hidden className="pointer-events-none absolute -bottom-14 left-4 -z-10 size-32 rounded-full bg-pink-400/40 blur-3xl" />
 
-      <div className="rounded-2xl border border-white/60 bg-white/30 p-2.5 shadow-[inset_0_1px_0_rgb(255_255_255/0.7),0_14px_34px_-14px_rgb(76_61_160/0.45)] backdrop-blur-2xl dark:border-white/10 dark:bg-white/[0.06] dark:shadow-[inset_0_1px_0_rgb(255_255_255/0.08),0_14px_34px_-14px_rgb(0_0_0/0.6)]">
+      <div className="rounded-2xl border border-foreground/15 bg-transparent p-2.5">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
             <p className="text-[10px] font-semibold tracking-[0.12em] text-foreground/60 uppercase">{title}</p>
