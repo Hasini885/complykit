@@ -29,7 +29,7 @@ export function SiteHeader() {
   return (
     <>
       <header className="sticky top-0 z-40 px-3 pt-3 sm:px-4 print:hidden">
-        <div className="mx-auto flex h-16 w-full max-w-[1600px] items-center gap-3 rounded-full border border-white/60 bg-card/75 pr-2 pl-3 shadow-card backdrop-blur-xl sm:pl-4 dark:border-white/10">
+        <div className="mx-auto flex h-16 w-full max-w-[1600px] items-center gap-3 rounded-full 2xl:w-fit border border-white/60 bg-card/75 pr-2 pl-3 shadow-card backdrop-blur-xl sm:pl-4 dark:border-white/10">
           <Button
             variant="ghost"
             size="icon"
@@ -47,7 +47,7 @@ export function SiteHeader() {
             <TopNav />
           </div>
 
-          <div className="ml-auto flex shrink-0 items-center gap-1">
+          <div className="ml-auto flex shrink-0 items-center gap-1 2xl:ml-4">
             <Tip label="Search companies, SRNs, DINs (Ctrl K)">
               <Button
                 variant="ghost"
