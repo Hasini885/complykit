@@ -5,7 +5,6 @@ import Link from "next/link";
 import { Menu, Scale, Search } from "lucide-react";
 
 import { site } from "@/config/site";
-import { LAW_UPDATED } from "@/config/navigation";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { ModeToggle } from "@/components/mode-toggle";
@@ -68,19 +67,6 @@ export function SiteHeader() {
 
         <CommandPalette open={palette.open} onOpenChange={palette.setOpen} />
       </header>
-
-      <div className="print:hidden">
-        <div className="mx-auto flex w-full max-w-7xl items-center gap-3 px-4 pt-4 sm:px-6 lg:px-8">
-          <p className="ml-auto hidden items-center gap-2 rounded-full border bg-card/70 px-3.5 py-1.5 text-xs text-muted-foreground shadow-card backdrop-blur sm:flex">
-            <span className="size-2 rounded-full bg-emerald-500 shadow-[0_0_0_3px] shadow-emerald-500/20" aria-hidden />
-            Law updated: {LAW_UPDATED}
-            <span className="text-border" aria-hidden>
-              |
-            </span>
-            <span>{site.edition}</span>
-          </p>
-        </div>
-      </div>
 
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
         <SheetContent side="left" className="w-80 rounded-r-3xl p-0">

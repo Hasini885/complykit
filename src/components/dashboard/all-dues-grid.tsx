@@ -232,14 +232,6 @@ export function AllDuesGrid({
           <h2 className="font-heading text-xl font-semibold">
             {title} — {singleCompany ? (clients[0]?.name ?? "") : "every company"}
           </h2>
-          <p className="text-xs text-muted-foreground">
-            {oneTime
-              ? "One-time forms after incorporation, shown until filed whatever the year."
-              : fy === null
-                ? "Forms to file, from 90 days ago to 12 months ahead."
-                : `Every form to file for ${financialYearLabel(fy)} (1 April ${fy - 1} – 31 March ${fy}), whenever it falls due.`}{" "}
-            Excel has both the by-company sheet and the list.
-          </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {yearControl}
@@ -375,9 +367,7 @@ export function AllDuesGrid({
             onOpenAuditorTerm={(clientId, year) => setTermCell({ clientId, fy: year })}
           />
           <p className="text-xs text-muted-foreground">
-            {matrix.rows.length} compan{matrix.rows.length === 1 ? "y" : "ies"} × {matrix.columns.length} dues ·{" "}
-            click a cell to mark it filed with its SRN (the acknowledgement number for an ITR); click a form&apos;s
-            heading, or Set due dates, to give it your own due date for all or some companies.
+            {matrix.rows.length} compan{matrix.rows.length === 1 ? "y" : "ies"} × {matrix.columns.length} dues
           </p>
         </>
       ) : (
@@ -438,10 +428,7 @@ export function AllDuesGrid({
         </table>
       </div>
       <p className="text-xs text-muted-foreground">
-        {visible.length} of {rows.length} rows ·{" "}
-        {singleCompany
-          ? "use Mark filed to record the SRN (or an ITR's acknowledgement number)."
-          : "use Mark filed to record the SRN (or an ITR's acknowledgement number); click a company to see its details."}
+        {visible.length} of {rows.length} rows
       </p>
       </>
       )}

@@ -12,7 +12,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { InfoBanner } from "@/components/shared/info-banner";
 import { formatInr } from "@/lib/fees";
 import {
   PENALTY_VIOLATIONS,
@@ -144,11 +143,6 @@ export function PenaltyEstimator() {
           </>
         )}
 
-        <InfoBanner className="mt-4">
-          Figures as amended by the Companies (Amendment) Acts of 2019 and 2020. The Registrar decides the
-          final amount in adjudication, and repeat defaults within three years can attract twice the
-          penalty under Section 454A. Confirm the current position before advising a client.
-        </InfoBanner>
       </div>
     </div>
   );

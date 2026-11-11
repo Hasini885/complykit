@@ -12,7 +12,6 @@ import { LiquidMetalButton } from "@/components/ui/liquid-metal-button";
  */
 export function UploadHero({
   title,
-  description,
   button,
   busyLabel,
   dropHint,
@@ -22,7 +21,8 @@ export function UploadHero({
   className = "",
 }: {
   title: string;
-  description: string;
+  /** Kept for callers; not shown (the site keeps its text to what is needed). */
+  description?: string;
   button: string;
   busyLabel: string;
   dropHint: string;
@@ -50,7 +50,6 @@ export function UploadHero({
       } ${className}`}
     >
       <h2 className="font-heading text-2xl font-bold tracking-tight">{title}</h2>
-      <p className="mt-1.5 max-w-[52ch] text-sm text-muted-foreground">{description}</p>
       <div className="mt-4 w-full max-w-xs">
         <LiquidMetalButton
           label={button}

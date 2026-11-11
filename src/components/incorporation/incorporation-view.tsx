@@ -20,7 +20,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { PageHeader } from "@/components/page-header";
-import { InfoBanner } from "@/components/shared/info-banner";
 import {
   COMPARISON_ROWS,
   DOCUMENT_COLUMNS,
@@ -150,19 +149,7 @@ export function IncorporationView() {
         </div>
       </section>
 
-      <InfoBanner>
-        <span className="font-medium">Proposed, not yet in force:</span> MCA&apos;s draft Companies
-        (Incorporation) Amendment Rules, 2026 (public notice of 8 April 2026) would merge several
-        incorporation e-forms into two modular forms (E-CON and E-CHNG), raise the directors who can
-        apply for a DIN at incorporation from three to five, simplify OPC and Section 8 paperwork,
-        and move the Registrar to risk-based verification. Until they are notified in the Gazette,
-        the current SPICe+ process above applies.
-      </InfoBanner>
 
-      <InfoBanner>
-        Filing happens on the MCA portal. This toolkit prepares and organises you; the actual
-        incorporation is filed at www.mca.gov.in. Engage a CA/CS for execution.
-      </InfoBanner>
     </div>
   );
 }

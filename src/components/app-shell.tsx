@@ -5,7 +5,6 @@ import { useUser } from "@clerk/nextjs";
 
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
-import { UnverifiedDataBanner } from "@/components/unverified-data-banner";
 import { PortfolioProvider } from "@/components/portfolio/portfolio-provider";
 import { AccountSyncProvider } from "@/components/sync/account-sync";
 import { activateUserStorage } from "@/lib/user-storage";
@@ -47,7 +46,6 @@ export function AppShell({ children, banner }: { children: React.ReactNode; bann
           {/* Header, banner and footer carry print:hidden themselves, so printing
               (reports, "Save as PDF") shows the page content only. */}
           <SiteHeader />
-          <UnverifiedDataBanner />
           {banner}
           <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6 lg:px-8 lg:py-10 print:max-w-none print:p-0">
             {children}

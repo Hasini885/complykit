@@ -5,7 +5,6 @@ import Link from "next/link";
 import {
   ArrowRight,
   Building2,
-  CalendarHeart,
   Plus,
   UserX,
 } from "lucide-react";
@@ -19,7 +18,6 @@ import { today } from "@/lib/dates";
 import { buildPortfolioReport } from "@/lib/portfolio/report";
 import { DEFAULT_WINDOW, selectableYears } from "@/lib/portfolio/schedule";
 import { addDays, financialYearEnd, financialYearLabel, formatDate } from "@/lib/dates";
-import { site } from "@/config/site";
 import { GlassCalendar } from "@/components/dashboard/dashboard-parts";
 import { ChallanUploadButton } from "@/components/portfolio/challan-upload";
 import { MasterDataUpload } from "@/components/portfolio/master-data-upload";
@@ -213,60 +211,13 @@ function YearPicker({
   );
 }
 
-function plural(n: number, one: string, many: string): string {
-  return `${n} ${n === 1 ? one : many}`;
-}
-
 /* ------------------------------------------------------------------ */
 
-/**
- * The dashboard's opening line: today's date, the title, and one sentence on
- * where the portfolio (or the selected company) stands. The date waits for the browser so the server render (which has no
- * portfolio and may be in another time zone) never disagrees with it.
- */
+/** The dashboard's title. */
 export function DashboardHero() {
-  const { ready, clients, directors, activeClient } = usePortfolio();
-  const reference = React.useMemo(() => today(), []);
-  const report = React.useMemo(
-    () =>
-      ready
-        ? buildPortfolioReport(clients, directors, { asOf: reference, clientId: activeClient?.id })
-        : null,
-    [ready, clients, directors, reference, activeClient],
-  );
-
-  let summary: string;
-  if (!report || clients.length === 0) {
-    summary = site.tagline;
-  } else {
-    const t = report.totals;
-    const scope = activeClient ? `for ${activeClient.name}` : `across ${plural(clients.length, "company", "companies")}`;
-    summary =
-      t.overdue === 0 && t["due-soon"] === 0
-        ? `You're all caught up: nothing overdue and nothing due in the next 30 days ${scope}. 🎉`
-        : `Heads up: ${plural(t.overdue, "filing", "filings")} overdue and ${t["due-soon"]} due in the next 30 days ${scope}.`;
-  }
-
-  const now = new Date();
-  const dateLabel = now.toLocaleDateString("en-IN", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
-
   return (
-    <section className="mb-8 flex flex-wrap items-end justify-between gap-6">
-      <div className="min-w-0">
-        <p className="mb-4 inline-flex h-7 items-center gap-1.5 rounded-full border bg-card/70 px-3 text-xs font-medium text-muted-foreground shadow-card backdrop-blur">
-          <CalendarHeart className="size-3.5 text-pink-500" aria-hidden />
-          {ready ? dateLabel : site.name}
-        </p>
-        <h1 className="font-heading text-4xl font-bold tracking-tight sm:text-[3.25rem] sm:leading-[1.05]">
-          {activeClient ? activeClient.name : "Dashboard"}
-        </h1>
-        <p className="mt-3 max-w-[60ch] text-base text-muted-foreground sm:text-lg">{summary}</p>
-      </div>
+    <section className="mb-6">
+      <h1 className="font-heading text-4xl font-bold tracking-tight sm:text-[3.25rem] sm:leading-[1.05]">Dashboard</h1>
     </section>
   );
 }

@@ -27,7 +27,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/page-header";
-import { InfoBanner } from "@/components/shared/info-banner";
 import { DocumentPreview } from "@/components/documents/document-preview";
 import { DocxDocumentPreview } from "@/components/documents/docx-document-preview";
 import { usePortfolio } from "@/components/portfolio/portfolio-provider";
@@ -192,11 +191,6 @@ function Library({ onOpen }: { onOpen: (t: AnyTemplate, saved?: SavedDocument) =
         </section>
       ) : null}
 
-      <InfoBanner>
-        Drafts are a starting point for reference only. Review every document against the Act, the
-        Rules and the company&apos;s Articles, and have it settled by a practising CS/CA before it is
-        signed or filed. Saved documents stay in this browser.
-      </InfoBanner>
     </div>
   );
 }

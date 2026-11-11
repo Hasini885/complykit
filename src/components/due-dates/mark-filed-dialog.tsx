@@ -161,15 +161,7 @@ function MarkFiledBody({
           aria-invalid={!!errors.srn}
           className="font-mono uppercase"
         />
-        {errors.srn ? (
-          <span className="text-xs text-destructive">{errors.srn}</span>
-        ) : (
-          <span className="text-[11px] text-muted-foreground">
-            {ack
-              ? "The acknowledgement number on the ITR-V, from the income-tax e-filing portal."
-              : "The Service Request Number on the MCA payment challan or filing acknowledgement."}
-          </span>
-        )}
+        {errors.srn ? <span className="text-xs text-destructive">{errors.srn}</span> : null}
       </label>
       </div>
 

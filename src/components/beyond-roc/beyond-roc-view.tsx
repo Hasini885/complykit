@@ -14,7 +14,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { PageHeader } from "@/components/page-header";
-import { InfoBanner } from "@/components/shared/info-banner";
 import { BEYOND_ROC_CATEGORIES, beyondRocItems, type BeyondRocCategory } from "@/data/beyond-roc";
 import { daysRemaining, extensionFor, resolveBeyondRocDue } from "@/lib/beyond-roc";
 import { formatDate, today } from "@/lib/dates";
@@ -57,11 +56,6 @@ export function BeyondRocView() {
         lede="The other statutory deadlines every business juggles — GST, Income Tax & TDS, PF/ESI, SEBI LODR and FEMA/RBI — with live 'next due' dates. Applies only where you hold the relevant registration."
       />
 
-      <InfoBanner tone="warn">
-        <span className="font-semibold">Registration-dependent.</span> These deadlines apply only
-        if the entity is registered under that law (GST / EPF / ESI / listing / FEMA). Dates are
-        indicative — confirm on the respective portal.
-      </InfoBanner>
 
       <Tabs value={category} onValueChange={(v) => setCategory(v as BeyondRocCategory)}>
         <TabsList className="flex-wrap">

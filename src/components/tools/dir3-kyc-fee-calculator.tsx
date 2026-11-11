@@ -4,7 +4,6 @@ import * as React from "react";
 import { AlertTriangle, User } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
-import { InfoBanner } from "@/components/shared/info-banner";
 import { formatInr } from "@/lib/fees";
 import { KYC_DUE_DAY, KYC_DUE_MONTH, KYC_LATE_FEE } from "@/lib/portfolio/directors";
 import { formatDate, isoDate, makeDate, parseIsoDate, today } from "@/lib/dates";
@@ -92,10 +91,6 @@ export function Dir3KycFeeCalculator() {
           </p>
         </div>
 
-        <InfoBanner className="mt-3">
-          The fee is per DIN holder, flat and non-slab — it does not increase with how late the
-          filing is.
-        </InfoBanner>
       </div>
     </div>
   );

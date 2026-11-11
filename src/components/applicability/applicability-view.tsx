@@ -17,7 +17,6 @@ import {
 } from "@/components/ui/select";
 import { PageHeader } from "@/components/page-header";
 import { StatCard, StatCardGrid } from "@/components/shared/stat-card";
-import { InfoBanner } from "@/components/shared/info-banner";
 import { PdfUploadDropzone } from "@/components/shared/pdf-upload-dropzone";
 import { COMPANY_TYPES } from "@/lib/dates";
 import { usePortfolio } from "@/components/portfolio/portfolio-provider";
@@ -160,10 +159,6 @@ export function ApplicabilityView() {
             </div>
           </div>
 
-          <InfoBanner>
-            Enter amounts in rupees. Results update live and are indicative — confirm edge cases
-            with a professional.
-          </InfoBanner>
 
           <div className="flex justify-end print:hidden">
             <Tip label="Print applicability report">

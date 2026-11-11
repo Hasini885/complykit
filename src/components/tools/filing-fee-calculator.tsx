@@ -11,7 +11,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { InfoBanner } from "@/components/shared/info-banner";
 import { NORMAL_FEE_BANDS, NO_SHARE_CAPITAL_FEE, formatInr, normalFeeBand } from "@/lib/fees";
 
 type Entity = "with-capital" | "without-capital";
@@ -88,11 +87,6 @@ export function FilingFeeCalculator() {
           </div>
         </dl>
 
-        <InfoBanner className="mt-4">
-          This is the standard, on-time MCA fee for most e-Forms. Stamp duty is extra and varies by
-          state. LLP filing fees follow a separate flat-fee-per-form schedule, not this slab table —
-          not modelled here.
-        </InfoBanner>
       </div>
 
       <div className="lg:col-span-2">
