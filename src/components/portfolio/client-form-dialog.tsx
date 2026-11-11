@@ -18,6 +18,7 @@ import {
 import { Tip } from "@/components/shared/tip";
 import {
   amountInput,
+  indianAmount,
   cinInput,
   companyNameInput,
   emailInput,
@@ -526,7 +527,7 @@ function ClientFormFields({
                 <Field label="LLP contribution (₹)" error={errors.llpContribution} className="sm:col-span-6">
                   <Input
                     inputMode="numeric"
-                    value={draft.llpContribution || ""}
+                    value={indianAmount(draft.llpContribution)}
                     onChange={(e) => set("llpContribution", num(e.target.value))}
                     placeholder="0"
                     className="tabular"
@@ -537,7 +538,7 @@ function ClientFormFields({
                   <Field label="Authorised capital (₹)" error={errors.authorisedCapital} className="sm:col-span-3">
                     <Input
                       inputMode="numeric"
-                      value={draft.authorisedCapital || ""}
+                      value={indianAmount(draft.authorisedCapital)}
                       onChange={(e) => set("authorisedCapital", num(e.target.value))}
                       placeholder="0"
                       className="tabular"
@@ -546,7 +547,7 @@ function ClientFormFields({
                   <Field label="Paid-up capital (₹)" error={errors.paidUpCapital} className="sm:col-span-3">
                     <Input
                       inputMode="numeric"
-                      value={draft.paidUpCapital || ""}
+                      value={indianAmount(draft.paidUpCapital)}
                       onChange={(e) => set("paidUpCapital", num(e.target.value))}
                       placeholder="0"
                       className="tabular"

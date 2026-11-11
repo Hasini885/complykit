@@ -59,6 +59,12 @@ export function textInput(value: string, max: number): string {
 }
 
 /** Rupee amounts: digits only, up to 15 (below ₹1,000 lakh crore). */
+/** A rupee amount in Indian grouping for an input box, e.g. 1000000 → "10,00,000"; "" for none. */
+export function indianAmount(value: number | null | undefined): string {
+  if (!value || !Number.isFinite(value)) return "";
+  return new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(Math.trunc(value));
+}
+
 export function amountInput(value: string): number {
   const n = Number(digitsOnly(value, 15));
   return Number.isFinite(n) ? n : 0;

@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   amountInput,
+  indianAmount,
   cinInput,
   companyNameInput,
   dinInput,
@@ -38,4 +39,13 @@ test("names and emails", () => {
 test("amounts: digits only", () => {
   assert.equal(amountInput("₹ 10,00,000"), 1000000);
   assert.equal(amountInput(""), 0);
+});
+
+test("rupee amounts show in Indian grouping", () => {
+  assert.equal(indianAmount(1_000_000), "10,00,000");
+  assert.equal(indianAmount(100_000), "1,00,000");
+  assert.equal(indianAmount(12_34_56_789), "12,34,56,789");
+  assert.equal(indianAmount(999), "999");
+  assert.equal(indianAmount(0), "");
+  assert.equal(amountInput("10,00,000"), 1_000_000, "commas typed or shown are ignored when saving");
 });
