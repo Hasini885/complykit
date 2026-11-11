@@ -5,7 +5,6 @@ import { toast } from "sonner";
 import { CheckCircle2, Loader2, Receipt } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tip } from "@/components/shared/tip";
@@ -23,7 +22,6 @@ import {
 } from "@/lib/challan";
 import { financialYearLabel, formatDate, parseIsoDate, today } from "@/lib/dates";
 import { formatInr } from "@/lib/fees";
-import { draftFrom } from "@/lib/portfolio/clients";
 import { appointmentCovering } from "@/lib/portfolio/auditor";
 import { applyFilings, filingKey } from "@/lib/portfolio/filings";
 import { buildPortfolioReport } from "@/lib/portfolio/report";
@@ -33,8 +31,7 @@ import type { ResolvedDueDate } from "@/lib/resolve-due-dates";
 
 /**
  * Upload MCA payment challans (G.A.R.7) and ITR acknowledgements. A challan
- * marks the filing it paid for as filed with its SRN and SRN date (and can
- * update the company's name and registered office); an ITR acknowledgement
+ * marks the filing it paid for as filed with its SRN and SRN date; an ITR acknowledgement
  * marks that year's ITR filed with its acknowledgement number and date of
  * filing. Any other document is refused.
  */
@@ -313,7 +310,7 @@ function ApplyToCompany({
   onDone: () => void;
   onSkip?: () => void;
 }) {
-  const { directors, markFiled, updateClient, setAuditorTerm } = usePortfolio();
+  const { directors, markFiled, setAuditorTerm } = usePortfolio();
   const itr = challan.kind === "itr";
   const codes = React.useMemo(
     () => challan.fees.map((f) => f.formCode).filter((c): c is string => c !== null),
@@ -347,10 +344,6 @@ function ApplyToCompany({
   const row = candidates.find((c) => filingKey(c) === pickedKey) ?? bestChallanRow(candidates, challan);
   const rowKey = row ? filingKey(row) : "";
 
-  // An ITR acknowledgement's address is in the tax department's format: never copied to master data.
-  const nameDiffers = !itr && challan.companyName.trim() !== client.name.trim();
-  const addressDiffers = !itr && challan.address !== "" && challan.address.trim() !== client.registeredOffice.trim();
-  const [updateMaster, setUpdateMaster] = React.useState(nameDiffers || addressDiffers);
   const refLabel = itr ? "Acknowledgement no." : "SRN";
 
   const isAdt1 = row?.source.id === "adt-1";
@@ -365,19 +358,11 @@ function ApplyToCompany({
   async function apply() {
     setBusy(true);
     try {
-      if (updateMaster && (nameDiffers || addressDiffers)) {
-        await updateClient(client.id, {
-          ...draftFrom(client),
-          ...(nameDiffers ? { name: challan.companyName } : {}),
-          ...(addressDiffers ? { registeredOffice: challan.address } : {}),
-        });
-      }
-      if (row) {
-        await markFiled(client.id, row, { filedOn: challan.srnDate, srn: challan.srn });
-        if (isAdt1) await setAuditorTerm(client.id, row.fyEndingYear, years);
-      }
-      toast.success(row ? `${row.source.title} marked filed` : "Master data updated", {
-        description: row ? `${refLabel} ${challan.srn} · ${client.name}` : client.name,
+      if (!row) return;
+      await markFiled(client.id, row, { filedOn: challan.srnDate, srn: challan.srn });
+      if (isAdt1) await setAuditorTerm(client.id, row.fyEndingYear, years);
+      toast.success(`${row.source.title} marked filed`, {
+        description: `${refLabel} ${challan.srn} · ${client.name}`,
       });
       onDone();
     } finally {
@@ -442,7 +427,7 @@ function ApplyToCompany({
         ) : (
           <p className="text-sm text-muted-foreground">
             {client.name} has no {challan.fees.map((f) => f.formCode ?? f.description).join(", ")} filing in its
-            schedule{itr ? "." : ", so only the master data can be updated."}
+            schedule.
           </p>
         )}
         {row ? (
@@ -454,23 +439,13 @@ function ApplyToCompany({
 
       {isAdt1 ? <AuditorYearsField value={years} onChange={setYears} /> : null}
 
-      {nameDiffers || addressDiffers ? (
-        <label className="flex items-start gap-2 text-sm">
-          <Checkbox checked={updateMaster} onCheckedChange={(v) => setUpdateMaster(v === true)} className="mt-0.5" />
-          <span>
-            Update {nameDiffers && addressDiffers ? "name and registered office" : nameDiffers ? "name" : "registered office"}{" "}
-            in master data from the challan
-          </span>
-        </label>
-      ) : null}
-
       <DialogFooter className="gap-2">
         {onSkip ? (
           <Button type="button" variant="ghost" onClick={onSkip} disabled={busy}>
             Skip
           </Button>
         ) : null}
-        <Button onClick={apply} disabled={busy || (!row && !(updateMaster && (nameDiffers || addressDiffers)))}>
+        <Button onClick={apply} disabled={busy || !row}>
           {busy ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <CheckCircle2 className="size-4" aria-hidden />}{" "}
           Save
         </Button>
