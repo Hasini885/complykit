@@ -1,9 +1,9 @@
 "use client";
 
 import * as React from "react";
-import { Loader2, Upload } from "lucide-react";
+import { Upload } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
+import { LiquidMetalButton } from "@/components/ui/liquid-metal-button";
 
 /**
  * A large upload area: a title, a line of explanation, one big button, and
@@ -51,15 +51,17 @@ export function UploadHero({
     >
       <h2 className="font-heading text-2xl font-bold tracking-tight">{title}</h2>
       <p className="mt-1.5 max-w-[52ch] text-sm text-muted-foreground">{description}</p>
-      <Button
-        type="button"
-        onClick={onPick}
-        disabled={busy}
-        className="mt-4 h-12 w-full max-w-xs rounded-2xl text-base font-semibold shadow-md shadow-primary/25"
-      >
-        {busy ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Upload className="size-4" aria-hidden />}
-        {busy ? busyLabel : button}
-      </Button>
+      <div className="mt-4 w-full max-w-xs">
+        <LiquidMetalButton
+          label={button}
+          busy={busy}
+          busyLabel={busyLabel}
+          icon={<Upload className="size-4" aria-hidden />}
+          onClick={onPick}
+          fullWidth
+          height={48}
+        />
+      </div>
       <p className="mt-2 text-xs text-muted-foreground">{dropHint}</p>
     </section>
   );

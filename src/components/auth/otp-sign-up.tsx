@@ -7,6 +7,7 @@ import { useSignUp } from "@clerk/nextjs/legacy";
 import { isClerkAPIResponseError } from "@clerk/nextjs/errors";
 
 import { Button } from "@/components/ui/button";
+import { LiquidMetalButton } from "@/components/ui/liquid-metal-button";
 import { Input } from "@/components/ui/input";
 import { emailInput, mobileInput, personNameInput } from "@/lib/input-filters";
 import { normaliseMobile } from "@/lib/portfolio/mobile";
@@ -159,10 +160,14 @@ export function OtpSignUp() {
       {errors.form ? <p className="text-sm text-destructive">{errors.form}</p> : null}
       {/* Clerk's bot protection shows here when it is needed. */}
       <div id="clerk-captcha" />
-      <Button type="submit" className="w-full" disabled={busy || !isLoaded}>
-        {busy ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <UserPlus className="size-4" aria-hidden />}
-        Create account
-      </Button>
+      <LiquidMetalButton
+        type="submit"
+        label="Create account"
+        icon={<UserPlus className="size-4" aria-hidden />}
+        busy={busy}
+        disabled={!isLoaded}
+        fullWidth
+      />
     </form>
   );
 }

@@ -9,7 +9,8 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground shadow-md shadow-primary/25 hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/30",
+        // Liquid metal (see globals.css): the CSS look-alike of LiquidMetalButton.
+        default: "liquid-metal bg-primary text-primary-foreground",
         outline:
           "border-border bg-card hover:bg-accent hover:border-primary/30 hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
         secondary:

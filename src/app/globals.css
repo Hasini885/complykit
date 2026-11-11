@@ -182,3 +182,55 @@
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-8px); }
 }
+
+/*
+ * Liquid metal: the CSS look-alike of LiquidMetalButton (src/components/ui/
+ * liquid-metal-button.tsx) for every primary button. A violet metal surface
+ * with a slow travelling sheen, a bright top edge and a darker lower edge; no
+ * WebGL, so any number of buttons can use it.
+ */
+@utility liquid-metal {
+  background-image:
+    linear-gradient(105deg, transparent 30%, rgb(255 255 255 / 0.38) 45%, rgb(255 255 255 / 0.08) 52%, transparent 62%),
+    linear-gradient(180deg, color-mix(in oklch, var(--primary), white 18%) 0%, var(--primary) 48%, color-mix(in oklch, var(--primary), black 22%) 100%);
+  background-size: 250% 100%, 100% 100%;
+  background-position: 120% 0, 0 0;
+  background-repeat: no-repeat;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.45),
+    inset 0 -1px 0 rgb(0 0 0 / 0.22),
+    0 0 0 1px color-mix(in oklch, var(--primary), black 25%),
+    0 6px 14px -6px color-mix(in oklch, var(--primary), transparent 45%);
+  text-shadow: 0 1px 1px rgb(0 0 0 / 0.25);
+  animation: liquid-metal-sheen 5s ease-in-out infinite;
+
+  &:hover {
+    animation-duration: 2.2s;
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.55),
+      inset 0 -1px 0 rgb(0 0 0 / 0.22),
+      0 0 0 1px color-mix(in oklch, var(--primary), black 25%),
+      0 10px 20px -6px color-mix(in oklch, var(--primary), transparent 35%);
+  }
+
+  &:active {
+    box-shadow:
+      inset 0 2px 4px rgb(0 0 0 / 0.3),
+      0 0 0 1px color-mix(in oklch, var(--primary), black 30%);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+@keyframes liquid-metal-sheen {
+  0%,
+  20% {
+    background-position: 120% 0, 0 0;
+  }
+  70%,
+  100% {
+    background-position: -120% 0, 0 0;
+  }
+}

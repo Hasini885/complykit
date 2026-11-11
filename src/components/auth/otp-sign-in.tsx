@@ -6,6 +6,7 @@ import { KeyRound, Loader2, LogIn, MailCheck } from "lucide-react";
 import { useSignIn } from "@clerk/nextjs/legacy";
 
 import { Button } from "@/components/ui/button";
+import { LiquidMetalButton } from "@/components/ui/liquid-metal-button";
 import { Input } from "@/components/ui/input";
 import { Field, PasswordInput, messageOf } from "@/components/auth/otp-sign-up";
 import { emailInput } from "@/lib/input-filters";
@@ -302,10 +303,14 @@ export function OtpSignIn() {
         </Field>
         {error ? <p className="text-sm text-destructive">{error}</p> : null}
         <div id="clerk-captcha" />
-        <Button type="submit" className="w-full" disabled={busy || !isLoaded}>
-          {busy ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <LogIn className="size-4" aria-hidden />}
-          Sign in
-        </Button>
+        <LiquidMetalButton
+          type="submit"
+          label="Sign in"
+          icon={<LogIn className="size-4" aria-hidden />}
+          busy={busy}
+          disabled={!isLoaded}
+          fullWidth
+        />
         <div className="flex flex-col items-center gap-2">
           <button
             type="button"

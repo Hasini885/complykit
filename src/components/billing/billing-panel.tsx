@@ -4,9 +4,9 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { SignOutButton } from "@clerk/nextjs";
 import { toast } from "sonner";
-import { CheckCircle2, CreditCard, Loader2 } from "lucide-react";
+import { CheckCircle2, CreditCard } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
+import { LiquidMetalButton } from "@/components/ui/liquid-metal-button";
 import { site } from "@/config/site";
 import { formatDate } from "@/lib/dates";
 import { formatInr } from "@/lib/fees";
@@ -144,10 +144,13 @@ export function BillingPanel({ access, price, payable }: { access: Access; price
       ) : null}
 
       {access.state === "admin" ? null : payable ? (
-        <Button className="w-full" onClick={pay} disabled={busy}>
-          {busy ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <CreditCard className="size-4" aria-hidden />}
-          {access.state === "paid" ? `Renew for a year · ${formatInr(price)}` : `Pay ${formatInr(price)} for a year`}
-        </Button>
+        <LiquidMetalButton
+          label={access.state === "paid" ? `Renew for a year · ${formatInr(price)}` : `Pay ${formatInr(price)} for a year`}
+          icon={<CreditCard className="size-4" aria-hidden />}
+          busy={busy}
+          onClick={pay}
+          fullWidth
+        />
       ) : (
         <p className="text-center text-sm text-muted-foreground">Payments are not open yet. Enjoy it free for now.</p>
       )}
