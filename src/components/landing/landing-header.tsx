@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BrandWordmark, LogoMark } from "@/components/brand-logo";
+import { BrandLockup } from "@/components/brand-logo";
 import { ArrowRight } from "lucide-react";
 
 import { site } from "@/config/site";
@@ -19,9 +19,8 @@ export function LandingHeader() {
   return (
     <header className="sticky top-0 z-40 px-3 pt-3 sm:px-4">
       <div className="mx-auto flex h-16 w-full max-w-6xl items-center gap-3 rounded-full border border-white/60 bg-card/75 pr-2 pl-3 shadow-card backdrop-blur-xl sm:pl-4 dark:border-white/10">
-        <Link href="/" className="flex shrink-0 items-center gap-2.5">
-          <LogoMark className="size-10" />
-          <BrandWordmark name={site.name} className="text-[15px]" />
+        <Link href="/" className="flex shrink-0 items-center" aria-label={site.name}>
+          <BrandLockup />
         </Link>
 
         <nav aria-label="Page sections" className="ml-4 hidden items-center md:flex">

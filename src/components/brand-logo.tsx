@@ -3,8 +3,10 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 /**
- * The CA Compliance Tool mark: a bold "C" in a sky-to-blue gradient, open on
- * the right, as in the logo. Drawn as SVG so it is sharp at any size.
+ * The CA Compliance Tool mark: a bold "C", open on the right, in blue satin:
+ * the site background's slanted bands of light, brighter so the mark stands
+ * out. Drawn as SVG so it is sharp at any size. The full logo files (mark and
+ * name, for print and social media) are in /public/brand.
  */
 export function LogoMark({ className, title }: { className?: string; title?: string }) {
   const id = React.useId().replace(/:/g, "");
@@ -17,34 +19,70 @@ export function LogoMark({ className, title }: { className?: string; title?: str
       aria-label={title}
     >
       <defs>
-        <linearGradient id={`${id}-c`} x1="0.15" y1="0" x2="0.85" y2="1">
-          <stop offset="0%" stopColor="#bfe3ff" />
-          <stop offset="55%" stopColor="#6cb6ff" />
-          <stop offset="100%" stopColor="#3b82f6" />
+        {/* Satin: slanted bands of light and deeper blue, as in the page background. */}
+        <linearGradient id={`${id}-satin`} x1="0" y1="0.15" x2="1" y2="0.85">
+          <stop offset="0%" stopColor="#7fb6f2" />
+          <stop offset="18%" stopColor="#e3f1ff" />
+          <stop offset="34%" stopColor="#5d9be8" />
+          <stop offset="52%" stopColor="#c4e0ff" />
+          <stop offset="68%" stopColor="#3f7fe0" />
+          <stop offset="84%" stopColor="#a6cff9" />
+          <stop offset="100%" stopColor="#2f6ad6" />
+        </linearGradient>
+        {/* A soft top sheen, like light catching silk. */}
+        <linearGradient id={`${id}-sheen`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#ffffff" stopOpacity="0.35" />
+          <stop offset="45%" stopColor="#ffffff" stopOpacity="0" />
         </linearGradient>
       </defs>
       {/* A thick ring with its right side cut away: the C. */}
-      <path
-        d="M29.19 10.81 A13 13 0 1 0 29.19 29.19"
-        fill="none"
-        stroke={`url(#${id}-c)`}
-        strokeWidth="9"
-        strokeLinecap="butt"
-      />
+      <path d="M29.19 10.81 A13 13 0 1 0 29.19 29.19" fill="none" stroke={`url(#${id}-satin)`} strokeWidth="9" />
+      <path d="M29.19 10.81 A13 13 0 1 0 29.19 29.19" fill="none" stroke={`url(#${id}-sheen)`} strokeWidth="9" />
     </svg>
   );
 }
 
-/** The name in the logo's gradient and spaced capitals. */
+/** The name in the same blue satin, in spaced capitals. */
 export function BrandWordmark({ name, className }: { name: string; className?: string }) {
   return (
     <span
       className={cn(
-        "bg-gradient-to-r from-sky-500 via-sky-500 to-blue-600 bg-clip-text font-heading font-bold tracking-[0.06em] whitespace-nowrap text-transparent uppercase dark:from-sky-200 dark:via-sky-300 dark:to-blue-500",
+        "brand-satin-text bg-clip-text font-heading font-bold tracking-[0.06em] whitespace-nowrap text-transparent uppercase",
         className,
       )}
     >
       {name}
+    </span>
+  );
+}
+
+/**
+ * The full logo, stacked as in the artwork: the C, with "CA COMPLIANCE" right
+ * below it and "TOOL" under that, all centred. "sm" fits the 64px top bar.
+ */
+export function BrandLockup({ size = "sm", className }: { size?: "sm" | "md"; className?: string }) {
+  const sm = size === "sm";
+  return (
+    <span className={cn("inline-flex flex-col items-center leading-none", className)} aria-label="CA Compliance Tool">
+      <LogoMark className={sm ? "size-7" : "size-12"} />
+      <span
+        aria-hidden
+        className={cn(
+          "brand-satin-text bg-clip-text font-heading font-extrabold whitespace-nowrap text-transparent uppercase",
+          sm ? "mt-0.5 text-[10px] tracking-[0.18em]" : "mt-1.5 text-base tracking-[0.2em]",
+        )}
+      >
+        CA Compliance
+      </span>
+      <span
+        aria-hidden
+        className={cn(
+          "brand-satin-text bg-clip-text font-heading font-extrabold whitespace-nowrap text-transparent uppercase",
+          sm ? "mt-px text-[9px] tracking-[0.2em]" : "mt-1 text-sm tracking-[0.22em]",
+        )}
+      >
+        Tool
+      </span>
     </span>
   );
 }

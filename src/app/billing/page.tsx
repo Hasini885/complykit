@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
-import { BrandWordmark, LogoMark } from "@/components/brand-logo";
+import { BrandLockup } from "@/components/brand-logo";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { site } from "@/config/site";
 import { BillingPanel } from "@/components/billing/billing-panel";
 import { currentAccess, razorpayConfigured } from "@/lib/billing-server";
 
@@ -19,12 +18,9 @@ export default async function BillingPage() {
   return (
     <main className="relative isolate flex min-h-screen items-center justify-center overflow-hidden px-4 py-10">
       <div className="w-full max-w-md space-y-5 rounded-3xl border bg-card p-6 shadow-card sm:p-7">
-        <div className="flex items-center gap-3">
-          <LogoMark className="size-11" />
-          <div>
-            <BrandWordmark name={site.name} className="block text-base" />
-            <p className="text-sm text-muted-foreground">Subscription</p>
-          </div>
+        <div className="flex flex-col items-center gap-2 text-center">
+          <BrandLockup size="md" />
+          <p className="text-sm text-muted-foreground">Subscription</p>
         </div>
 
         <BillingPanel

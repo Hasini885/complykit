@@ -1,6 +1,6 @@
 "use client";
 
-import { BrandWordmark, LogoMark } from "@/components/brand-logo";
+import { BrandLockup } from "@/components/brand-logo";
 import * as React from "react";
 import Link from "next/link";
 import { Menu, Search } from "lucide-react";
@@ -88,14 +88,8 @@ export function SiteHeader() {
 
 function Brand({ onNavigate }: { onNavigate?: () => void }) {
   return (
-    <Link href="/dashboard" onClick={onNavigate} className="flex shrink-0 items-center gap-2.5">
-      <LogoMark className="size-10" />
-      <BrandName />
+    <Link href="/dashboard" onClick={onNavigate} className="flex shrink-0 items-center" aria-label={site.name}>
+      <BrandLockup />
     </Link>
   );
-}
-
-/** The name on one line beside the logo. */
-function BrandName() {
-  return <BrandWordmark name={site.name} className="text-[15px]" />;
 }
