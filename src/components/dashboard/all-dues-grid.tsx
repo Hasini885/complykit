@@ -371,7 +371,7 @@ export function AllDuesGrid({
       {/* `relative` makes this the containing block for absolutely positioned
           descendants (screen-reader labels), which would otherwise escape the
           scroll box and widen the whole page. */}
-      <div className="relative max-h-[560px] overflow-auto rounded-lg border-2 border-dotted border-foreground/40 bg-card">
+      <div className="relative max-h-[560px] overflow-auto rounded-3xl border-2 border-dashed border-primary/25 bg-card">
         <table className="w-max min-w-full border-collapse text-left text-xs">
           <thead className="sticky top-0 z-10 bg-muted">
             <tr>
