@@ -62,7 +62,7 @@ import {
   type PointOfContactChoice,
   type CompanyStep,
 } from "@/lib/portfolio/company-steps";
-import { CESSATION_REASONS, type Client } from "@/lib/portfolio/types";
+import { CESSATION_REASONS, type Client, type Director } from "@/lib/portfolio/types";
 
 /** "10 Oct 2026" from an ISO date; the raw text if it is not one. */
 function formatIso(iso: string): string {
@@ -127,6 +127,7 @@ export function ClientFormDialog({
   onOpenChange,
   client,
   initial,
+  extracted,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -134,6 +135,8 @@ export function ClientFormDialog({
   client?: Client | null;
   /** Starting values for a new client, e.g. read from an MCA challan. */
   initial?: Partial<ClientDraft>;
+  /** Read from an MCA master data PDF: filled in over the starting values, directors added to the board. */
+  extracted?: ExtractedCompany;
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -142,7 +145,12 @@ export function ClientFormDialog({
         className="max-h-[90vh] gap-0 p-0 sm:max-w-3xl"
       >
         {open ? (
-          <ClientFormFields client={client ?? null} initial={initial} onDone={() => onOpenChange(false)} />
+          <ClientFormFields
+            client={client ?? null}
+            initial={initial}
+            extracted={extracted}
+            onDone={() => onOpenChange(false)}
+          />
         ) : null}
       </DialogContent>
     </Dialog>
@@ -152,13 +160,34 @@ export function ClientFormDialog({
 /** The three tabs of the company form. */
 type FormTab = CompanyStep;
 
+/** The board with the PDF's directors added (a DIN already saved is linked, not duplicated). */
+function boardWithExtracted(
+  entries: BoardEntry[],
+  data: ExtractedCompany,
+  directors: Director[],
+  since: string,
+): { entries: BoardEntry[]; added: number } {
+  let added = 0;
+  for (const d of extractionToDirectorDrafts(data, since)) {
+    if (entries.some((e) => e.draft.din.trim() === d.din)) continue;
+    const placed = placeOnBoard(entries, "new", d, directors, newId, { appointedOn: since, cessationOn: null });
+    if (placed.errors.length === 0) {
+      entries = placed.entries;
+      added++;
+    }
+  }
+  return { entries, added };
+}
+
 function ClientFormFields({
   client,
   initial,
+  extracted,
   onDone,
 }: {
   client: Client | null;
   initial?: Partial<ClientDraft>;
+  extracted?: ExtractedCompany;
   onDone: () => void;
 }) {
   const {
@@ -174,7 +203,8 @@ function ClientFormFields({
     setAuthorisedDirector,
   } = usePortfolio();
   const [draft, setDraft] = React.useState<ClientDraft>(() => {
-    const d = client ? draftFrom(client) : { ...EMPTY, ...initial };
+    const base = client ? draftFrom(client) : { ...EMPTY, ...initial };
+    const d = extracted ? applyExtractionToClientDraft(base, extracted) : base;
     return {
       ...d,
       mobile: d.mobile ? formatMobile(d.mobile) : "",
@@ -182,7 +212,11 @@ function ClientFormFields({
     };
   });
   // Directors on this company's board, kept here and saved with the company.
-  const [board, setBoard] = React.useState<BoardEntry[]>(() => boardFor(client?.id ?? null, directors));
+  const [board, setBoard] = React.useState<BoardEntry[]>(() => {
+    const current = boardFor(client?.id ?? null, directors);
+    if (!extracted) return current;
+    return boardWithExtracted(current, extracted, directors, draft.incorporatedOn || isoDate(today())).entries;
+  });
   const [removedIds, setRemovedIds] = React.useState<string[]>([]);
   const [editingEntry, setEditingEntry] = React.useState<BoardEntry | "new" | null>(null);
   const [tab, setTab] = React.useState<FormTab>("master");
@@ -249,17 +283,7 @@ function ClientFormFields({
   function fillFromPdf(data: ExtractedCompany) {
     const next = applyExtractionToClientDraft(draft, data);
     setDraft(next);
-    const since = next.incorporatedOn || isoDate(today());
-    let entries = board;
-    let added = 0;
-    for (const d of extractionToDirectorDrafts(data, since)) {
-      if (entries.some((e) => e.draft.din.trim() === d.din)) continue;
-      const placed = placeOnBoard(entries, "new", d, directors, newId, { appointedOn: since, cessationOn: null });
-      if (placed.errors.length === 0) {
-        entries = placed.entries;
-        added++;
-      }
-    }
+    const { entries, added } = boardWithExtracted(board, data, directors, next.incorporatedOn || isoDate(today()));
     setBoard(entries);
     const { found, total } = countExtractedFields(data);
     toast.success(`Filled ${found} of ${total} fields from the PDF`, {

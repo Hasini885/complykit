@@ -22,6 +22,7 @@ import { addDays, financialYearEnd, financialYearLabel, formatDate } from "@/lib
 import { site } from "@/config/site";
 import { MiniCalendar, Panel } from "@/components/dashboard/dashboard-parts";
 import { ChallanUploadButton } from "@/components/portfolio/challan-upload";
+import { MasterDataUpload } from "@/components/portfolio/master-data-upload";
 
 /**
  * The dashboard follows the company switcher in the top bar:
@@ -37,6 +38,8 @@ export function DashboardOverview() {
 
   if (clients.length === 0) {
     return (
+      <div className="space-y-4">
+      <MasterDataUpload />
       <section className="rounded-lg border border-dashed p-8 text-center">
         <Building2 className="mx-auto size-8 text-muted-foreground" aria-hidden />
         <h2 className="mt-3 font-heading text-xl font-semibold">No companies yet</h2>
@@ -50,6 +53,7 @@ export function DashboardOverview() {
           </Link>
         </Button>
       </section>
+      </div>
     );
   }
 
@@ -82,7 +86,10 @@ function AdminDashboard() {
 
   return (
     <div className="space-y-6">
-      <ChallanUploadButton variant="hero" />
+      <div className="grid gap-4 md:grid-cols-2">
+        <MasterDataUpload />
+        <ChallanUploadButton variant="hero" />
+      </div>
 
       {/* The full sheet of dues leads the firm view: it is what the desk works from.
           Its year picker sets the year for the whole dashboard. The calendar sits

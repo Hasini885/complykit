@@ -2,13 +2,14 @@
 
 import * as React from "react";
 import { toast } from "sonner";
-import { CheckCircle2, Loader2, Receipt, Upload } from "lucide-react";
+import { CheckCircle2, Loader2, Receipt } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tip } from "@/components/shared/tip";
+import { UploadHero } from "@/components/shared/upload-hero";
 import { AuditorYearsField } from "@/components/dashboard/auditor-years-field";
 import { ClientFormDialog } from "@/components/portfolio/client-form-dialog";
 import { usePortfolio } from "@/components/portfolio/portfolio-provider";
@@ -45,7 +46,6 @@ export function ChallanUploadButton({
 }) {
   const inputRef = React.useRef<HTMLInputElement>(null);
   const [reading, setReading] = React.useState(false);
-  const [dragging, setDragging] = React.useState(false);
   // Challans waiting to be reviewed, one at a time; `total` is for "2 of 5".
   const [queue, setQueue] = React.useState<Challan[]>([]);
   const [total, setTotal] = React.useState(0);
@@ -93,43 +93,19 @@ export function ChallanUploadButton({
   /** On to the next challan in the batch. */
   const next = () => setQueue((q) => q.slice(1));
 
-  const drop = {
-    onDragOver: (e: React.DragEvent) => {
-      e.preventDefault();
-      setDragging(true);
-    },
-    onDragLeave: () => setDragging(false),
-    onDrop: (e: React.DragEvent) => {
-      e.preventDefault();
-      setDragging(false);
-      void onFiles(e.dataTransfer.files);
-    },
-  };
-
   const trigger =
     variant === "hero" ? (
-      <section
-        {...drop}
-        aria-label="Upload MCA challan"
-        className={`flex flex-col items-center rounded-3xl border-2 border-dashed px-4 py-6 text-center transition-colors ${
-          dragging ? "border-primary bg-primary/10" : "border-primary/25 bg-card/60"
-        } ${className ?? ""}`}
-      >
-        <h2 className="font-heading text-2xl font-bold tracking-tight">Upload MCA challan</h2>
-        <p className="mt-1.5 max-w-[52ch] text-sm text-muted-foreground">
-          Mark a filing as filed with its SRN, straight from the MCA payment receipt.
-        </p>
-        <Button
-          type="button"
-          onClick={() => inputRef.current?.click()}
-          disabled={reading}
-          className="mt-4 h-12 w-full max-w-xs rounded-2xl text-base font-semibold shadow-md shadow-primary/25"
-        >
-          {reading ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Upload className="size-4" aria-hidden />}
-          {reading ? "Reading challans…" : "Select challan PDFs"}
-        </Button>
-        <p className="mt-2 text-xs text-muted-foreground">or drop one or more challan PDFs here</p>
-      </section>
+      <UploadHero
+        title="Upload MCA challan"
+        description="Mark a filing as filed with its SRN, straight from the MCA payment receipt."
+        button="Select challan PDFs"
+        busyLabel="Reading challans…"
+        dropHint="or drop one or more challan PDFs here"
+        busy={reading}
+        onPick={() => inputRef.current?.click()}
+        onDropFiles={(files) => void onFiles(files)}
+        className={className}
+      />
     ) : (
       <Tip label="Upload MCA challan (marks the filing and SRN)">
         <Button
