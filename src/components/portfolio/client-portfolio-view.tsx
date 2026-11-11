@@ -11,7 +11,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Tip } from "@/components/shared/tip";
 import { ExcelIcon, PdfIcon } from "@/components/shared/file-type-icon";
-import { ChallanUploadButton } from "@/components/portfolio/challan-upload";
 import {
   Table,
   TableBody,
@@ -107,7 +106,6 @@ export function ClientPortfolioView() {
           </p>
 
           <div className="flex flex-wrap gap-1.5">
-            <ChallanUploadButton />
             <Tip label="Download company master data (PDF)">
               <Button
                 size="icon-sm"
