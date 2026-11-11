@@ -21,6 +21,7 @@ import { AllDuesGrid } from "@/components/dashboard/all-dues-grid";
 import { COMING_UP_DAYS, Empty, ItemList, Panel } from "@/components/dashboard/dashboard-parts";
 import { usePortfolio } from "@/components/portfolio/portfolio-provider";
 import { ClientFormDialog } from "@/components/portfolio/client-form-dialog";
+import { ChallanUploadButton } from "@/components/portfolio/challan-upload";
 import { KycBadge } from "@/components/portfolio/kyc-badge";
 import { StatusPill } from "@/components/portfolio/status-pill";
 import { financialYearLabel, formatDate, parseIsoDate, today } from "@/lib/dates";
@@ -88,6 +89,7 @@ export function CompanyDashboard({ client }: { client: Client }) {
                 </Link>
               </Button>
             </Tip>
+            <ChallanUploadButton className="size-8" />
             <Tip label="Company report (PDF)">
               <Button size="icon-sm" variant="outline" className="size-8" onClick={openReport} aria-label="Company report (PDF)">
                 <FileText className="size-3.5" aria-hidden />

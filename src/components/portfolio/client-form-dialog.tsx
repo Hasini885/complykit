@@ -119,11 +119,14 @@ export function ClientFormDialog({
   open,
   onOpenChange,
   client,
+  initial,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   /** Present to edit; absent to create a new client. */
   client?: Client | null;
+  /** Starting values for a new client, e.g. read from an MCA challan. */
+  initial?: Partial<ClientDraft>;
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -132,7 +135,7 @@ export function ClientFormDialog({
         className="max-h-[90vh] gap-0 p-0 sm:max-w-3xl"
       >
         {open ? (
-          <ClientFormFields client={client ?? null} onDone={() => onOpenChange(false)} />
+          <ClientFormFields client={client ?? null} initial={initial} onDone={() => onOpenChange(false)} />
         ) : null}
       </DialogContent>
     </Dialog>
@@ -144,9 +147,11 @@ type FormTab = CompanyStep;
 
 function ClientFormFields({
   client,
+  initial,
   onDone,
 }: {
   client: Client | null;
+  initial?: Partial<ClientDraft>;
   onDone: () => void;
 }) {
   const {
@@ -162,7 +167,7 @@ function ClientFormFields({
     setAuthorisedDirector,
   } = usePortfolio();
   const [draft, setDraft] = React.useState<ClientDraft>(() => {
-    const d = client ? draftFrom(client) : EMPTY;
+    const d = client ? draftFrom(client) : { ...EMPTY, ...initial };
     return {
       ...d,
       mobile: d.mobile ? formatMobile(d.mobile) : "",
