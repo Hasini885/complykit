@@ -21,13 +21,13 @@ export function LogoMark({ className, title }: { className?: string; title?: str
       <defs>
         {/* Satin: slanted bands of light and deeper blue, as in the page background. */}
         <linearGradient id={`${id}-satin`} x1="0" y1="0.15" x2="1" y2="0.85">
-          <stop offset="0%" stopColor="#7fb6f2" />
-          <stop offset="18%" stopColor="#e3f1ff" />
-          <stop offset="34%" stopColor="#5d9be8" />
-          <stop offset="52%" stopColor="#c4e0ff" />
-          <stop offset="68%" stopColor="#3f7fe0" />
-          <stop offset="84%" stopColor="#a6cff9" />
-          <stop offset="100%" stopColor="#2f6ad6" />
+          <stop offset="0%" stopColor="#94a3ce" />
+          <stop offset="18%" stopColor="#dfe7ff" />
+          <stop offset="34%" stopColor="#6c7fb1" />
+          <stop offset="52%" stopColor="#becaec" />
+          <stop offset="68%" stopColor="#4e6194" />
+          <stop offset="84%" stopColor="#b0bde6" />
+          <stop offset="100%" stopColor="#55689c" />
         </linearGradient>
         {/* A soft top sheen, like light catching silk. */}
         <linearGradient id={`${id}-sheen`} x1="0" y1="0" x2="0" y2="1">

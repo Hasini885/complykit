@@ -262,8 +262,8 @@
 
 /* The logo's name in blue satin: slanted bands of light, like the page background. */
 .brand-satin-text {
-  background-image: linear-gradient(98deg, #2f6ad6 0%, #5d9be8 16%, #3f7fe0 30%, #4f8fe6 46%, #2f6ad6 62%, #5a97ea 80%, #2a62cf 100%);
+  background-image: linear-gradient(98deg, #3a4b79 0%, #5e6fa1 16%, #2d3b62 30%, #4e6194 46%, #3a4b79 62%, #5e6fa1 80%, #2d3b62 100%);
 }
 .dark .brand-satin-text {
-  background-image: linear-gradient(98deg, #7fb6f2 0%, #e3f1ff 16%, #5d9be8 30%, #c4e0ff 46%, #3f7fe0 62%, #a6cff9 80%, #4f8fe6 100%);
+  background-image: linear-gradient(98deg, #94a3ce 0%, #dfe7ff 16%, #6c7fb1 30%, #becaec 46%, #4e6194 62%, #b0bde6 80%, #55689c 100%);
 }
