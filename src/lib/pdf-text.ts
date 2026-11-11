@@ -15,7 +15,30 @@ const MAX_PAGES = 60;
 
 type Item = { str: string; x: number; y: number; w: number; h: number };
 
+export type PdfLayout = {
+  lines: string[];
+  /** Each line's distance down the document (pages stacked), for telling table rows apart. */
+  ys: number[];
+  /** True when the PDF had no text and the lines came from OCR. */
+  ocr?: boolean;
+};
+
 export async function extractPdfLines(file: File): Promise<string[]> {
+  return (await extractPdfLayout(file)).lines;
+}
+
+/**
+ * The text and where each line sits. A PDF with no text in it (Microsoft Print
+ * to PDF draws the letters as shapes; scans are pictures) is read by OCR.
+ */
+export async function readPdfLayout(file: File): Promise<PdfLayout> {
+  const layout = await extractPdfLayout(file);
+  if (layout.lines.join("").replace(/\s/g, "").length >= 40) return layout;
+  const { ocrPdfLayout } = await import("@/lib/pdf-ocr");
+  return { ...(await ocrPdfLayout(file)), ocr: true };
+}
+
+export async function extractPdfLayout(file: File): Promise<PdfLayout> {
   const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
   // Loading the worker module registers it on globalThis.pdfjsWorker, and
   // pdf.js then runs it on the main thread. No separate worker file to host.
@@ -26,6 +49,7 @@ export async function extractPdfLines(file: File): Promise<string[]> {
   try {
     const doc = await task.promise;
     const lines: string[] = [];
+    const ys: number[] = [];
     const pages = Math.min(doc.numPages, MAX_PAGES);
     for (let p = 1; p <= pages; p++) {
       const page = await doc.getPage(p);
@@ -41,17 +65,21 @@ export async function extractPdfLines(file: File): Promise<string[]> {
           h: Math.abs(it.transform[3]) || it.height || 10,
         });
       }
-      lines.push(...toLines(items));
+      // pdf.js measures up from the bottom; stack pages and count downwards.
+      for (const row of toLines(items)) {
+        lines.push(row.text);
+        ys.push(p * 100_000 - row.y);
+      }
       page.cleanup();
     }
-    return lines;
+    return { lines, ys };
   } finally {
     await task.destroy();
   }
 }
 
 /** Groups items into rows by baseline, then orders each row left to right. */
-function toLines(items: Item[]): string[] {
+function toLines(items: Item[]): { text: string; y: number }[] {
   const sorted = [...items].sort((a, b) => b.y - a.y || a.x - b.x);
   const rows: Item[][] = [];
   for (const item of sorted) {
@@ -72,6 +100,6 @@ function toLines(items: Item[]): string[] {
       line += item.str;
       end = item.x + item.w;
     }
-    return line.replace(/[ \t]+$/, "");
+    return { text: line.replace(/[ \t]+$/, ""), y: row[0].y };
   });
 }

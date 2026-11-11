@@ -313,7 +313,8 @@ function findAddress(lines: string[]): string | null {
   // first line can sit ABOVE a label that stands alone: "Plot 1, Road X,",
   // "Registered Address", "500090".
   if (found.alone) {
-    const before = lines[found.line - 2]?.trim();
+    // OCR can leave a stray mark from the table border in front: "N    Plot No 38, ...".
+    const before = lines[found.line - 2]?.trim().replace(/^\S{1,2}\s{2,}/, "");
     if (before && !COL.test(before) && !before.includes(":") && /,$/.test(before)) parts.unshift(before);
   }
   if (!PIN.test(found.value)) {
@@ -441,15 +442,29 @@ function nameBits(line: string): string[] {
  * carrying the DIN. Lines between two rows are split: the upper half belongs
  * to the row above, the lower half to the row below.
  */
-function wrappedTableNames(lines: string[], rows: number[], headerAt: number, end: number): Map<number, string> {
+function wrappedTableNames(
+  lines: string[],
+  rows: number[],
+  headerAt: number,
+  end: number,
+  ys?: number[],
+): Map<number, string> {
   const names = new Map<number, string>();
+  // A line between two rows: with positions, it goes to the nearer row;
+  // without, the upper half of the gap goes up and the lower half down.
+  const ownedByUpper = (i: number, upper: number, lower: number, gap: number, offset: number) =>
+    ys ? Math.abs(ys[i] - ys[upper]) < Math.abs(ys[i] - ys[lower]) : offset < Math.ceil(gap / 2);
   rows.forEach((row, k) => {
     const prev = k > 0 ? rows[k - 1] : headerAt;
     const next = k < rows.length - 1 ? rows[k + 1] : end;
     const gapAbove = row - prev - 1;
     const gapBelow = next - row - 1;
-    const aboveStart = k > 0 ? row - Math.floor(gapAbove / 2) : prev + 1;
-    const belowEnd = k < rows.length - 1 ? row + Math.ceil(gapBelow / 2) : Math.min(next - 1, row + 3);
+    let aboveStart = row;
+    if (k === 0) aboveStart = prev + 1;
+    else while (aboveStart - 1 > prev && !ownedByUpper(aboveStart - 1, prev, row, gapAbove, aboveStart - 1 - prev - 1)) aboveStart--;
+    let belowEnd = row;
+    if (k === rows.length - 1) belowEnd = Math.min(next - 1, row + 3);
+    else while (belowEnd + 1 < next && ownedByUpper(belowEnd + 1, row, next, gapBelow, belowEnd + 1 - row - 1)) belowEnd++;
     const bits: string[] = [];
     for (let i = aboveStart; i < row; i++) bits.push(...nameBits(lines[i]));
     bits.push(...nameBits(lines[row]));
@@ -460,9 +475,9 @@ function wrappedTableNames(lines: string[], rows: number[], headerAt: number, en
   return names;
 }
 
-function findDirectors(lines: string[]): { name: string; din: string | null }[] {
+function findDirectors(lines: string[], ys?: number[]): { name: string; din: string | null }[] {
   const out = new Map<string, string>();
-  const wrapped = wrappedNamesByLine(lines);
+  const wrapped = wrappedNamesByLine(lines, ys);
   let inTable = false;
   for (let i = 0; i < lines.length && out.size < 50; i++) {
     const line = lines[i];
@@ -498,7 +513,7 @@ function findDirectors(lines: string[]): { name: string; din: string | null }[] 
 }
 
 /** Table rows (by line) whose names wrap, read with wrappedTableNames. */
-function wrappedNamesByLine(lines: string[]): Map<number, string> {
+function wrappedNamesByLine(lines: string[], ys?: number[]): Map<number, string> {
   const headerAt = lines.findIndex(
     (l) => /\b(din|dpin)\b/i.test(l) && /\bname\b/i.test(l) && !/\d{8}/.test(l),
   );
@@ -515,7 +530,7 @@ function wrappedNamesByLine(lines: string[]): Map<number, string> {
   // Only when the rows are not one per line: otherwise the plain reading is right.
   const wraps = rows.some((r, k) => (k === 0 ? r - headerAt > 1 : r - rows[k - 1] > 1)) ||
     (rows.length > 0 && end - rows[rows.length - 1] > 1 && end !== lines.length);
-  return wraps ? wrappedTableNames(lines, rows, headerAt, end) : new Map();
+  return wraps ? wrappedTableNames(lines, rows, headerAt, end, ys) : new Map();
 }
 
 function findAuditor(lines: string[]): string | null {
@@ -547,8 +562,12 @@ function yesNo(value: string | undefined, yes: RegExp, no: RegExp): boolean | nu
   return null;
 }
 
-export function parseCompanyText(rawLines: string[]): ExtractedCompany {
-  const lines = rawLines.map(clean).filter((l) => l.trim() !== "");
+export function parseCompanyText(rawLines: string[], rawYs?: number[]): ExtractedCompany {
+  // `rawYs`, when given, is each line's height down the document, used to tell
+  // which row of a table a wrapped line belongs to.
+  const kept = rawLines.map((l, i) => ({ l: clean(l), y: rawYs?.[i] })).filter((x) => x.l.trim() !== "");
+  const lines = kept.map((x) => x.l);
+  const ys = rawYs && rawYs.length === rawLines.length ? kept.map((x) => x.y as number) : undefined;
   const text = lines.map((l) => l.trim()).join(" ").replace(/\s+/g, " ");
   const result = emptyExtraction();
   if (lines.length === 0) return result;
@@ -633,7 +652,7 @@ export function parseCompanyText(rawLines: string[]): ExtractedCompany {
   );
   result.numberOfDirectors = count ? Number(/^\d{1,3}/.exec(count.value)![0]) || null : null;
 
-  const directors = findDirectors(lines);
+  const directors = findDirectors(lines, ys);
   result.directors = directors.length > 0 ? directors : null;
   result.auditorName = findAuditor(lines);
 

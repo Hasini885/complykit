@@ -277,3 +277,7 @@ test("normaliseEmail turns MCA's spelt-out email into an address", () => {
   assert.equal(normaliseEmail("-"), null);
   assert.equal(normaliseEmail(null), null);
 });
+
+test("normaliseEmail forgives OCR reading ] as J", () => {
+  assert.equal(normaliseEmail("director[at]investorgroves[dotJcom"), "director@investorgroves.com");
+});

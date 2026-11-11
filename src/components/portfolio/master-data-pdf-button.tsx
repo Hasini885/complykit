@@ -24,18 +24,13 @@ export function MasterDataPdfButton({ onRead }: { onRead: (data: ExtractedCompan
     }
     setReading(true);
     try {
-      const [{ extractPdfLines }, { parseCompanyText }] = await Promise.all([
+      const [{ readPdfLayout }, { parseCompanyText }] = await Promise.all([
         import("@/lib/pdf-text"),
         import("@/lib/pdf-text-parser"),
       ]);
-      const lines = await extractPdfLines(file);
-      if (lines.join("").replace(/\s/g, "").length < 40) {
-        toast.error("This PDF has no readable text.", {
-          description: "Download the master data again from the MCA portal; a scan or photo cannot be read.",
-        });
-        return;
-      }
-      const data = parseCompanyText(lines);
+      // A PDF with no text (Microsoft Print to PDF, a scan) is read by OCR, in the browser.
+      const { lines, ys } = await readPdfLayout(file);
+      const data = parseCompanyText(lines, ys);
       if (!data.cin && !data.companyName) {
         toast.error("No company details found.", {
           description: "Use the company master data printout from the MCA portal.",

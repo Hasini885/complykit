@@ -41,7 +41,7 @@ export function MasterDataUpload({ className }: { className?: string }) {
     const found: Item[] = [];
     const rejected: string[] = [];
     try {
-      const [{ extractPdfLines }, { parseCompanyText }] = await Promise.all([
+      const [{ readPdfLayout }, { parseCompanyText }] = await Promise.all([
         import("@/lib/pdf-text"),
         import("@/lib/pdf-text-parser"),
       ]);
@@ -51,8 +51,9 @@ export function MasterDataUpload({ className }: { className?: string }) {
           continue;
         }
         try {
-          const lines = await extractPdfLines(file);
-          const data = parseCompanyText(lines);
+          // A PDF with no text (Microsoft Print to PDF, a scan) is read by OCR, in the browser.
+          const { lines, ys } = await readPdfLayout(file);
+          const data = parseCompanyText(lines, ys);
           if (!data.cin && !data.companyName) rejected.push(file.name);
           else if (!found.some((f) => f.data.cin && data.cin && sameCin(f.data.cin, data.cin))) {
             found.push({ name: file.name, data });
@@ -68,7 +69,7 @@ export function MasterDataUpload({ className }: { className?: string }) {
     if (rejected.length > 0) {
       toast.error(
         files.length === 1
-          ? "No company details found. Use the master data PDF downloaded from the MCA portal (not a scan)."
+          ? "No company details found. Use the master data PDF downloaded from the MCA portal."
           : `${rejected.length} of ${files.length} files could not be read as MCA master data and were skipped`,
         files.length === 1 ? undefined : { description: rejected.slice(0, 5).join(", ") + (rejected.length > 5 ? "…" : "") },
       );
@@ -93,7 +94,7 @@ export function MasterDataUpload({ className }: { className?: string }) {
         title="Upload MCA master data"
         description="Add or update companies and their directors from the MCA master data PDF."
         button="Select master data PDFs"
-        busyLabel="Reading PDFs…"
+        busyLabel="Reading PDFs… printed or scanned ones take a little longer"
         dropHint="or drop one or more master data PDFs here"
         busy={reading}
         onPick={() => inputRef.current?.click()}

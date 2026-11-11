@@ -130,8 +130,9 @@ export function normaliseEmail(raw: string | null | undefined): string | null {
   if (!raw) return null;
   const s = raw
     .trim()
-    .replace(/\s*[[({]\s*at\s*[\])}]\s*/gi, "@")
-    .replace(/\s*[[({]\s*(?:dot|\.)\s*[\])}]\s*/gi, ".")
+    // OCR misreads the closing bracket as J, l, I, 1 or |: "[dotJcom".
+    .replace(/\s*[[({]\s*at\s*[\])}JlI1|]\s*/gi, "@")
+    .replace(/\s*[[({]\s*(?:dot|\.)\s*[\])}JlI1|]\s*/gi, ".")
     .replace(/\s+at\s+/gi, "@")
     .replace(/\s+dot\s+/gi, ".")
     .replace(/\s+/g, "")

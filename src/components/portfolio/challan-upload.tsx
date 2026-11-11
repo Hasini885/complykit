@@ -59,14 +59,15 @@ export function ChallanUploadButton({
     const found: Challan[] = [];
     const rejected: string[] = [];
     try {
-      const { extractPdfLines } = await import("@/lib/pdf-text");
+      const { readPdfLayout } = await import("@/lib/pdf-text");
       for (const file of files) {
         if (file.type !== "application/pdf" && !/\.pdf$/i.test(file.name)) {
           rejected.push(file.name);
           continue;
         }
         try {
-          const result = parseMcaChallan(await extractPdfLines(file));
+          // A challan saved with Microsoft Print to PDF, or scanned, is read by OCR.
+          const result = parseMcaChallan((await readPdfLayout(file)).lines);
           if (!result.ok) rejected.push(file.name);
           // The same challan twice in one batch is reviewed once.
           else if (!found.some((c) => c.srn === result.challan.srn)) found.push(result.challan);
