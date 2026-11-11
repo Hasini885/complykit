@@ -16,8 +16,8 @@ import {
   NOT_A_CHALLAN,
   bestChallanRow,
   challanCandidates,
+  findChallanCompany,
   parseMcaChallan,
-  sameCin,
   type Challan,
 } from "@/lib/challan";
 import { financialYearLabel, formatDate, parseIsoDate, today } from "@/lib/dates";
@@ -102,7 +102,10 @@ function rowLabel(item: ResolvedDueDate): string {
 
 function ChallanReview({ challan, onDone }: { challan: Challan; onDone: () => void }) {
   const { clients } = usePortfolio();
-  const client = clients.find((c) => sameCin(c.cin, challan.cin)) ?? null;
+  const found = findChallanCompany(clients, challan);
+  // When neither the CIN nor the name matches, the user can pick the company.
+  const [pickedId, setPickedId] = React.useState<string>("");
+  const client = found?.client ?? clients.find((c) => c.id === pickedId) ?? null;
   const [adding, setAdding] = React.useState(false);
 
   return (
@@ -132,16 +135,48 @@ function ChallanReview({ challan, onDone }: { challan: Challan; onDone: () => vo
         ) : null}
       </dl>
 
+      {!found && clients.length > 0 ? (
+        <div className="space-y-1.5">
+          <p className="rounded-xl bg-muted p-3 text-sm">
+            No company in your master data has CIN <span className="font-mono">{challan.cin}</span>. Pick the
+            company this challan is for, or add it as a new company.
+          </p>
+          <Select value={pickedId} onValueChange={setPickedId}>
+            <SelectTrigger className="w-full" aria-label="Company this challan is for">
+              <SelectValue placeholder="Choose the company" />
+            </SelectTrigger>
+            <SelectContent>
+              {clients.map((c) => (
+                <SelectItem key={c.id} value={c.id}>
+                  {c.name} · {c.cin}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      ) : null}
+
+      {found?.by === "name" ? (
+        <p className="rounded-xl bg-muted p-3 text-sm">
+          Matched by name. The CIN in master data is <span className="font-mono">{found.client.cin}</span>; the
+          challan says <span className="font-mono">{challan.cin}</span>.
+        </p>
+      ) : null}
+
       {client ? (
-        <ApplyToCompany challan={challan} client={client} onDone={onDone} />
+        <ApplyToCompany key={client.id} challan={challan} client={client} onDone={onDone} />
       ) : (
         <>
-          <p className="rounded-xl bg-muted p-3 text-sm">
-            No company with CIN <span className="font-mono">{challan.cin}</span> is in your master data yet. Add it
-            from this challan, then upload the challan again to mark the filing.
-          </p>
+          {clients.length === 0 ? (
+            <p className="rounded-xl bg-muted p-3 text-sm">
+              Your master data has no companies yet. Add this one from the challan, then upload the challan again
+              to mark the filing.
+            </p>
+          ) : null}
           <DialogFooter>
-            <Button onClick={() => setAdding(true)}>Add company from challan</Button>
+            <Button variant={clients.length > 0 ? "outline" : "default"} onClick={() => setAdding(true)}>
+              Add as a new company
+            </Button>
           </DialogFooter>
           <ClientFormDialog
             open={adding}

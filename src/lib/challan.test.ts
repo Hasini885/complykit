@@ -6,6 +6,7 @@ import {
   NOT_A_CHALLAN,
   bestChallanRow,
   challanCandidates,
+  findChallanCompany,
   normaliseFormCode,
   parseMcaChallan,
   sameCin,
@@ -110,4 +111,15 @@ test("prefers the row already holding the same SRN", () => {
 test("matches rows listing alternative forms", () => {
   const rows = [row("itr", "ITR-7 / ITR-6", "2026-10-31")];
   assert.equal(challanCandidates(rows, ["ITR-6"]).length, 1);
+});
+
+test("finds the company despite look-alike characters, or by name", () => {
+  const clients = [
+    { id: "a", cin: "U35100TS2025PTC202358", name: "Truvoltz Green Energies Pvt. Ltd." },
+    { id: "b", cin: "U12345KA2020PTC000001", name: "Other Co Private Limited" },
+  ];
+  assert.equal(findChallanCompany(clients, { cin: "U351OOTS2025PTC2O2358\u200b", companyName: "x" })?.client.id, "a");
+  const byName = findChallanCompany(clients, { cin: "U99999TS2025PTC999999", companyName: "TRUVOLTZ GREEN ENERGIES PRIVATE LIMITED" });
+  assert.deepEqual([byName?.client.id, byName?.by], ["a", "name"]);
+  assert.equal(findChallanCompany(clients, { cin: "U00000XX0000PTC000000", companyName: "Nobody Ltd" }), null);
 });

@@ -203,8 +203,40 @@ export function bestChallanRow(candidates: ResolvedDueDate[], challan: Challan):
   return nearest(open.length > 0 ? open : candidates);
 }
 
-/** Same CIN, ignoring case, spaces and dashes. */
+/**
+ * Same CIN, ignoring case, spaces, dashes, invisible characters, and the
+ * look-alikes a PDF's text layer can swap (letter O for zero, I or L for one).
+ */
 export function sameCin(a: string, b: string): boolean {
-  const n = (s: string) => s.replace(/[\s-]/g, "").toUpperCase();
+  const n = (s: string) =>
+    s
+      .normalize("NFKC")
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, "")
+      .replace(/O/g, "0")
+      .replace(/[IL]/g, "1");
   return n(a) !== "" && n(a) === n(b);
+}
+
+/** A company name without punctuation, "the", or how "private limited" is spelt. */
+function nameKey(s: string): string {
+  return s
+    .normalize("NFKC")
+    .toUpperCase()
+    .replace(/[^A-Z0-9 ]/g, " ")
+    .replace(/\b(PRIVATE|PVT|LIMITED|LTD|THE|LLP|OPC|COMPANY|CO)\b/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/** The company this challan is for: by CIN, else by name. */
+export function findChallanCompany<T extends { cin: string; name: string }>(
+  clients: T[],
+  challan: Pick<Challan, "cin" | "companyName">,
+): { client: T; by: "cin" | "name" } | null {
+  const byCin = clients.find((c) => sameCin(c.cin, challan.cin));
+  if (byCin) return { client: byCin, by: "cin" };
+  const key = nameKey(challan.companyName);
+  const byName = key ? clients.filter((c) => nameKey(c.name) === key) : [];
+  return byName.length === 1 ? { client: byName[0], by: "name" } : null;
 }
