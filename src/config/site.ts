@@ -13,7 +13,7 @@ export const site = {
   tagline: "Companies Act, 2013 compliance reference for CA, CS and finance teams in India",
   description:
     "A free reference desk for Indian corporate compliance: MCA e-forms, key Companies Act sections, statutory due dates and calculators. Searchable, fast, and built for practitioners.",
-  url: "https://complykitapp.vercel.app",
+  url: "https://cacompliancetool.com",
   /** Shown on the Privacy Policy and Terms pages (Google requires a contact). */
   contactEmail: "hasinisaimaram@gmail.com",
 } as const;
