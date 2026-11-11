@@ -113,7 +113,7 @@ export function ChallanUploadButton({
     variant === "hero" ? (
       <UploadHero
         title="Upload MCA challan & ITR Acknowledgement"
-        description="Mark filings as filed: the SRN from an MCA challan, or the acknowledgement number from an ITR acknowledgement."
+        description="Accepts only MCA challans of ADT-1, AOC-4, MGT-7 / MGT-7A, INC-20A and DPT-3, and the ITR Acknowledgement copy."
         button="Select PDFs"
         busyLabel="Reading…"
         dropHint="or drop challans and ITR acknowledgements here"
