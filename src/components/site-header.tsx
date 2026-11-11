@@ -30,24 +30,27 @@ export function SiteHeader() {
       {/* A straight, full-width bar with a line under it; solid, so the page never shows through while scrolling. */}
       <header className="sticky top-0 z-40 border-b bg-card shadow-[0_8px_16px_-12px] shadow-foreground/10 print:hidden">
         <div className="flex h-16 w-full items-center gap-3 px-3 sm:px-6">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="2xl:hidden"
-            aria-label="Open navigation"
-            onClick={() => setMobileOpen(true)}
-          >
-            <Menu className="size-5" aria-hidden />
-          </Button>
+          {/* Left and right take equal shares of the spare width, so the menu sits in the middle. */}
+          <div className="flex min-w-0 flex-1 basis-0 items-center gap-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="2xl:hidden"
+              aria-label="Open navigation"
+              onClick={() => setMobileOpen(true)}
+            >
+              <Menu className="size-5" aria-hidden />
+            </Button>
 
-          <Brand />
+            <Brand />
+          </div>
 
-          {/* The menu (about 900px) keeps its full width, inline from 2xl. */}
-          <div className="ml-2 hidden shrink-0 2xl:block">
+          {/* The menu (about 900px) keeps its full width, inline from 2xl, centred. */}
+          <div className="hidden shrink-0 2xl:block">
             <TopNav />
           </div>
 
-          <div className="ml-auto flex shrink-0 items-center gap-1">
+          <div className="flex flex-1 basis-0 items-center justify-end gap-1">
             <Tip label="Search companies, SRNs, DINs (Ctrl K)">
               <Button
                 variant="ghost"
