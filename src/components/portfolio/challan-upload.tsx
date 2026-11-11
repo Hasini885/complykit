@@ -46,27 +46,52 @@ export function ChallanUploadButton({
   const inputRef = React.useRef<HTMLInputElement>(null);
   const [reading, setReading] = React.useState(false);
   const [dragging, setDragging] = React.useState(false);
-  const [challan, setChallan] = React.useState<Challan | null>(null);
+  // Challans waiting to be reviewed, one at a time; `total` is for "2 of 5".
+  const [queue, setQueue] = React.useState<Challan[]>([]);
+  const [total, setTotal] = React.useState(0);
+  const challan = queue[0] ?? null;
 
-  async function onFile(file: File | undefined) {
-    if (!file) return;
-    if (file.type !== "application/pdf" && !/\.pdf$/i.test(file.name)) {
-      toast.error(NOT_A_CHALLAN);
-      return;
-    }
+  /** Reads every PDF given; the challans among them are queued for review. */
+  async function onFiles(list: FileList | File[] | null | undefined) {
+    const files = Array.from(list ?? []);
+    if (files.length === 0) return;
     setReading(true);
+    const found: Challan[] = [];
+    const rejected: string[] = [];
     try {
       const { extractPdfLines } = await import("@/lib/pdf-text");
-      const result = parseMcaChallan(await extractPdfLines(file));
-      if (!result.ok) toast.error(result.error);
-      else setChallan(result.challan);
-    } catch {
-      toast.error("Could not read that PDF.", { description: NOT_A_CHALLAN });
+      for (const file of files) {
+        if (file.type !== "application/pdf" && !/\.pdf$/i.test(file.name)) {
+          rejected.push(file.name);
+          continue;
+        }
+        try {
+          const result = parseMcaChallan(await extractPdfLines(file));
+          if (!result.ok) rejected.push(file.name);
+          // The same challan twice in one batch is reviewed once.
+          else if (!found.some((c) => c.srn === result.challan.srn)) found.push(result.challan);
+        } catch {
+          rejected.push(file.name);
+        }
+      }
     } finally {
       setReading(false);
       if (inputRef.current) inputRef.current.value = "";
     }
+    if (rejected.length > 0) {
+      toast.error(
+        files.length === 1 ? NOT_A_CHALLAN : `${rejected.length} of ${files.length} files are not MCA challans and were skipped`,
+        files.length === 1 ? undefined : { description: rejected.slice(0, 5).join(", ") + (rejected.length > 5 ? "…" : "") },
+      );
+    }
+    if (found.length > 0) {
+      setQueue(found);
+      setTotal(found.length);
+    }
   }
+
+  /** On to the next challan in the batch. */
+  const next = () => setQueue((q) => q.slice(1));
 
   const drop = {
     onDragOver: (e: React.DragEvent) => {
@@ -77,7 +102,7 @@ export function ChallanUploadButton({
     onDrop: (e: React.DragEvent) => {
       e.preventDefault();
       setDragging(false);
-      void onFile(e.dataTransfer.files?.[0]);
+      void onFiles(e.dataTransfer.files);
     },
   };
 
@@ -101,9 +126,9 @@ export function ChallanUploadButton({
           className="mt-4 h-12 w-full max-w-xs rounded-2xl text-base font-semibold shadow-md shadow-primary/25"
         >
           {reading ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Upload className="size-4" aria-hidden />}
-          {reading ? "Reading challan…" : "Select challan PDF"}
+          {reading ? "Reading challans…" : "Select challan PDFs"}
         </Button>
-        <p className="mt-2 text-xs text-muted-foreground">or drop the challan PDF here</p>
+        <p className="mt-2 text-xs text-muted-foreground">or drop one or more challan PDFs here</p>
       </section>
     ) : (
       <Tip label="Upload MCA challan (marks the filing and SRN)">
@@ -127,12 +152,20 @@ export function ChallanUploadButton({
         ref={inputRef}
         type="file"
         accept="application/pdf,.pdf"
+        multiple
         className="hidden"
-        onChange={(e) => onFile(e.target.files?.[0])}
+        onChange={(e) => onFiles(e.target.files)}
       />
-      <Dialog open={challan !== null} onOpenChange={(o) => !o && setChallan(null)}>
+      <Dialog open={challan !== null} onOpenChange={(o) => !o && setQueue([])}>
         <DialogContent className="max-w-lg">
-          {challan ? <ChallanReview key={challan.srn} challan={challan} onDone={() => setChallan(null)} /> : null}
+          {challan ? (
+            <ChallanReview
+              key={challan.srn}
+              challan={challan}
+              position={total > 1 ? { index: total - queue.length + 1, total } : null}
+              onDone={next}
+            />
+          ) : null}
         </DialogContent>
       </Dialog>
     </>
@@ -149,7 +182,16 @@ function rowLabel(item: ResolvedDueDate): string {
   return parts.join(" · ");
 }
 
-function ChallanReview({ challan, onDone }: { challan: Challan; onDone: () => void }) {
+function ChallanReview({
+  challan,
+  position,
+  onDone,
+}: {
+  challan: Challan;
+  /** In a batch: which challan this is. */
+  position: { index: number; total: number } | null;
+  onDone: () => void;
+}) {
   const { clients } = usePortfolio();
   const found = findChallanCompany(clients, challan);
   // When neither the CIN nor the name matches, the user can pick the company.
@@ -160,7 +202,16 @@ function ChallanReview({ challan, onDone }: { challan: Challan; onDone: () => vo
   return (
     <div className="space-y-4">
       <div>
-        <DialogTitle className="font-heading text-lg">MCA challan</DialogTitle>
+        <div className="flex items-center justify-between gap-3 pr-6">
+          <DialogTitle className="font-heading text-lg">
+            MCA challan{position ? ` ${position.index} of ${position.total}` : ""}
+          </DialogTitle>
+          {position ? (
+            <Button type="button" variant="ghost" size="sm" onClick={onDone}>
+              Skip
+            </Button>
+          ) : null}
+        </div>
         <DialogDescription className="mt-1 text-sm">
           SRN <b className="font-mono text-foreground">{challan.srn}</b> paid on {formatDate(parseIsoDate(challan.srnDate)!)}
           {challan.total !== null ? ` · ${formatInr(challan.total)}` : ""}
