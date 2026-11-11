@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { Menu, Scale, Search } from "lucide-react";
+import { Menu, Scale } from "lucide-react";
 
 import { site } from "@/config/site";
 import { LAW_UPDATED } from "@/config/navigation";
@@ -42,27 +42,15 @@ export function SiteHeader() {
 
           <Brand />
 
-          {/* The menu (about 900px) keeps its full width and the right-hand tools never
-              overlap it. Inline from 2xl; the full search box shows when the menu is
-              collapsed, or from 1800px where both fit; otherwise search is an icon. */}
+          {/* The menu (about 900px) keeps its full width, inline from 2xl. */}
           <div className="ml-2 hidden shrink-0 2xl:block">
             <TopNav />
           </div>
 
-          <div className="ml-auto flex shrink-0 items-center gap-1">
-            <SiteSearchTrigger
-              onOpen={() => palette.setOpen(true)}
-              className="mr-1 hidden w-56 md:flex 2xl:hidden min-[1800px]:flex"
-            />
-            <Button
-              variant="ghost"
-              size="icon"
-              className="md:hidden 2xl:inline-flex min-[1800px]:hidden"
-              aria-label="Search companies, SRNs, DINs and mobiles"
-              onClick={() => palette.setOpen(true)}
-            >
-              <Search className="size-4" aria-hidden />
-            </Button>
+          {/* Everything right of the menu shares what is left: the search box
+              shrinks (down to a magnifier) so it can never run under the menu. */}
+          <div className="ml-auto flex min-w-0 flex-1 items-center justify-end gap-1">
+            <SiteSearchTrigger onOpen={() => palette.setOpen(true)} className="mr-1 max-w-56" />
             <AccountSyncStatus />
             <NotificationsBell />
             <ModeToggle />
