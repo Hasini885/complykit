@@ -84,9 +84,14 @@ export function MasterDataUpload({ className }: { className?: string }) {
     if (already.length > 0) {
       toast.info(
         already.length === 1
-          ? `${already[0]} is already in master data, so it was not added again`
-          : `${already.length} companies are already in master data and were not added again`,
-        already.length === 1 ? undefined : { description: already.slice(0, 5).join(", ") + (already.length > 5 ? "…" : "") },
+          ? `You already uploaded ${already[0]}`
+          : `You already uploaded ${already.length} of these companies`,
+        {
+          description:
+            already.length === 1
+              ? "It is already in master data, so it was not added again."
+              : already.slice(0, 5).join(", ") + (already.length > 5 ? "…" : ""),
+        },
       );
     }
     if (found.length > 0) {

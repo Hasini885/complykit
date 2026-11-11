@@ -24,6 +24,7 @@ import { financialYearLabel, formatDate, parseIsoDate, today } from "@/lib/dates
 import { formatInr } from "@/lib/fees";
 import { appointmentCovering } from "@/lib/portfolio/auditor";
 import { applyFilings, filingKey } from "@/lib/portfolio/filings";
+import { normaliseSrn } from "@/lib/portfolio/srn";
 import { buildPortfolioReport } from "@/lib/portfolio/report";
 import { auditorTermOf, postIncorporationItems } from "@/lib/portfolio/schedule";
 import type { Client } from "@/lib/portfolio/types";
@@ -43,6 +44,7 @@ export function ChallanUploadButton({
   /** "icon" for toolbars; "hero" for a large drop area with a big button. */
   variant?: "icon" | "hero";
 }) {
+  const { clients, directors } = usePortfolio();
   const inputRef = React.useRef<HTMLInputElement>(null);
   const [reading, setReading] = React.useState(false);
   // Challans waiting to be reviewed, one at a time; `total` is for "2 of 5".
@@ -56,6 +58,8 @@ export function ChallanUploadButton({
     if (files.length === 0) return;
     setReading(true);
     const found: Challan[] = [];
+    // Documents whose SRN / acknowledgement number is already recorded: not reviewed again.
+    const already: string[] = [];
     const rejected: string[] = [];
     try {
       const { readPdfLayout } = await import("@/lib/pdf-text");
@@ -69,7 +73,11 @@ export function ChallanUploadButton({
           const result = parseFilingDocument((await readPdfLayout(file)).lines);
           if (!result.ok) rejected.push(file.name);
           // The same challan twice in one batch is reviewed once.
-          else if (!found.some((c) => c.srn === result.challan.srn)) found.push(result.challan);
+          else {
+            const owner = recordedBy(result.challan.srn, clients, directors);
+            if (owner) already.push(`${result.challan.kind === "itr" ? "Ack. no." : "SRN"} ${result.challan.srn} (${owner})`);
+            else if (!found.some((c) => c.srn === result.challan.srn)) found.push(result.challan);
+          }
         } catch {
           rejected.push(file.name);
         }
@@ -77,6 +85,12 @@ export function ChallanUploadButton({
     } finally {
       setReading(false);
       if (inputRef.current) inputRef.current.value = "";
+    }
+    if (already.length > 0) {
+      toast.info(
+        already.length === 1 ? "You already uploaded this document" : `You already uploaded ${already.length} of these documents`,
+        { description: already.slice(0, 4).join(" · ") + (already.length > 4 ? "…" : "") },
+      );
     }
     if (rejected.length > 0) {
       toast.error(
@@ -149,6 +163,23 @@ export function ChallanUploadButton({
       </Dialog>
     </>
   );
+}
+
+/**
+ * The company (or director) that already has this SRN / acknowledgement number
+ * recorded, or null: a document uploaded once is not marked again.
+ */
+function recordedBy(
+  srn: string,
+  clients: Client[],
+  directors: { name: string; lastKycSrn?: string | null }[],
+): string | null {
+  const ref = normaliseSrn(srn);
+  if (!ref) return null;
+  const client = clients.find((c) => (c.filings ?? []).some((f) => normaliseSrn(f.srn) === ref));
+  if (client) return client.name;
+  const director = directors.find((d) => d.lastKycSrn && normaliseSrn(d.lastKycSrn) === ref);
+  return director ? director.name : null;
 }
 
 function rowLabel(item: ResolvedDueDate): string {
