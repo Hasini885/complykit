@@ -14,27 +14,29 @@ import { AuditorYearsField } from "@/components/dashboard/auditor-years-field";
 import { ClientFormDialog } from "@/components/portfolio/client-form-dialog";
 import { usePortfolio } from "@/components/portfolio/portfolio-provider";
 import {
-  NOT_A_CHALLAN,
+  NOT_A_DOCUMENT,
   bestChallanRow,
   challanCandidates,
   findChallanCompany,
-  parseMcaChallan,
+  parseFilingDocument,
   type Challan,
 } from "@/lib/challan";
 import { financialYearLabel, formatDate, parseIsoDate, today } from "@/lib/dates";
 import { formatInr } from "@/lib/fees";
 import { draftFrom } from "@/lib/portfolio/clients";
 import { appointmentCovering } from "@/lib/portfolio/auditor";
-import { filingKey } from "@/lib/portfolio/filings";
+import { applyFilings, filingKey } from "@/lib/portfolio/filings";
 import { buildPortfolioReport } from "@/lib/portfolio/report";
-import { auditorTermOf } from "@/lib/portfolio/schedule";
+import { auditorTermOf, postIncorporationItems } from "@/lib/portfolio/schedule";
 import type { Client } from "@/lib/portfolio/types";
 import type { ResolvedDueDate } from "@/lib/resolve-due-dates";
 
 /**
- * Upload an MCA payment challan (G.A.R.7) and it updates the company's master
- * data (name, registered office) from it and marks the filing it paid for as
- * filed, with the SRN and the SRN date. Only G.A.R.7 receipts are accepted.
+ * Upload MCA payment challans (G.A.R.7) and ITR acknowledgements. A challan
+ * marks the filing it paid for as filed with its SRN and SRN date (and can
+ * update the company's name and registered office); an ITR acknowledgement
+ * marks that year's ITR filed with its acknowledgement number and date of
+ * filing. Any other document is refused.
  */
 export function ChallanUploadButton({
   className,
@@ -66,8 +68,8 @@ export function ChallanUploadButton({
           continue;
         }
         try {
-          // A challan saved with Microsoft Print to PDF, or scanned, is read by OCR.
-          const result = parseMcaChallan((await readPdfLayout(file)).lines);
+          // A document saved with Microsoft Print to PDF, or scanned, is read by OCR.
+          const result = parseFilingDocument((await readPdfLayout(file)).lines);
           if (!result.ok) rejected.push(file.name);
           // The same challan twice in one batch is reviewed once.
           else if (!found.some((c) => c.srn === result.challan.srn)) found.push(result.challan);
@@ -81,7 +83,9 @@ export function ChallanUploadButton({
     }
     if (rejected.length > 0) {
       toast.error(
-        files.length === 1 ? NOT_A_CHALLAN : `${rejected.length} of ${files.length} files are not MCA challans and were skipped`,
+        files.length === 1
+          ? NOT_A_DOCUMENT
+          : `${rejected.length} of ${files.length} files are not MCA challans or ITR acknowledgements and were skipped`,
         files.length === 1 ? undefined : { description: rejected.slice(0, 5).join(", ") + (rejected.length > 5 ? "…" : "") },
       );
     }
@@ -97,25 +101,25 @@ export function ChallanUploadButton({
   const trigger =
     variant === "hero" ? (
       <UploadHero
-        title="Upload MCA challan"
-        description="Mark a filing as filed with its SRN, straight from the MCA payment receipt."
-        button="Select challan PDFs"
-        busyLabel="Reading challans…"
-        dropHint="or drop one or more challan PDFs here"
+        title="Upload MCA challan & ITR Acknowledgement"
+        description="Mark filings as filed: the SRN from an MCA challan, or the acknowledgement number from an ITR acknowledgement."
+        button="Select PDFs"
+        busyLabel="Reading…"
+        dropHint="or drop challans and ITR acknowledgements here"
         busy={reading}
         onPick={() => inputRef.current?.click()}
         onDropFiles={(files) => void onFiles(files)}
         className={className}
       />
     ) : (
-      <Tip label="Upload MCA challan (marks the filing and SRN)">
+      <Tip label="Upload MCA challan or ITR acknowledgement (marks the filing)">
         <Button
           size="icon-sm"
           variant="outline"
           className={className ?? "size-9"}
           onClick={() => inputRef.current?.click()}
           disabled={reading}
-          aria-label="Upload MCA challan"
+          aria-label="Upload MCA challan or ITR acknowledgement"
         >
           {reading ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Receipt className="size-4" aria-hidden />}
         </Button>
@@ -134,13 +138,14 @@ export function ChallanUploadButton({
         onChange={(e) => onFiles(e.target.files)}
       />
       <Dialog open={challan !== null} onOpenChange={(o) => !o && setQueue([])}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="sm:max-w-xl">
           {challan ? (
             <ChallanReview
               key={challan.srn}
               challan={challan}
               position={total > 1 ? { index: total - queue.length + 1, total } : null}
               onDone={next}
+              onSkip={total > 1 ? next : undefined}
             />
           ) : null}
         </DialogContent>
@@ -163,12 +168,16 @@ function ChallanReview({
   challan,
   position,
   onDone,
+  onSkip,
 }: {
   challan: Challan;
-  /** In a batch: which challan this is. */
+  /** In a batch: which document this is. */
   position: { index: number; total: number } | null;
   onDone: () => void;
+  /** In a batch: on to the next without saving. */
+  onSkip?: () => void;
 }) {
+  const itr = challan.kind === "itr";
   const { clients } = usePortfolio();
   const found = findChallanCompany(clients, challan);
   // When neither the CIN nor the name matches, the user can pick the company.
@@ -178,31 +187,40 @@ function ChallanReview({
 
   return (
     <div className="space-y-4">
-      <div>
-        <div className="flex items-center justify-between gap-3 pr-6">
-          <DialogTitle className="font-heading text-lg">
-            MCA challan{position ? ` ${position.index} of ${position.total}` : ""}
-          </DialogTitle>
-          {position ? (
-            <Button type="button" variant="ghost" size="sm" onClick={onDone}>
-              Skip
-            </Button>
-          ) : null}
-        </div>
+      <div className="pr-6">
+        <DialogTitle className="font-heading text-lg">
+          {itr ? "ITR acknowledgement" : "MCA challan"}
+          {position ? ` ${position.index} of ${position.total}` : ""}
+        </DialogTitle>
         <DialogDescription className="mt-1 text-sm">
-          SRN <b className="font-mono text-foreground">{challan.srn}</b> paid on {formatDate(parseIsoDate(challan.srnDate)!)}
+          {itr ? "Acknowledgement no." : "SRN"} <b className="font-mono text-foreground">{challan.srn}</b>{" "}
+          {itr ? "filed on" : "paid on"} {formatDate(parseIsoDate(challan.srnDate)!)}
           {challan.total !== null ? ` · ${formatInr(challan.total)}` : ""}
         </DialogDescription>
       </div>
 
-      <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 rounded-xl border p-3 text-sm">
+      <dl className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1.5 rounded-xl border p-3 text-sm [&_dd]:break-words">
         <dt className="text-muted-foreground">Company</dt>
         <dd className="font-medium">{challan.companyName}</dd>
-        <dt className="text-muted-foreground">CIN</dt>
-        <dd className="font-mono">{challan.cin}</dd>
-        <dt className="text-muted-foreground">Address</dt>
-        <dd>{challan.address || "—"}</dd>
-        <dt className="text-muted-foreground">Fee for</dt>
+        {challan.cin ? (
+          <>
+            <dt className="text-muted-foreground">CIN</dt>
+            <dd className="font-mono">{challan.cin}</dd>
+          </>
+        ) : null}
+        {challan.pan ? (
+          <>
+            <dt className="text-muted-foreground">PAN</dt>
+            <dd className="font-mono">{challan.pan}</dd>
+          </>
+        ) : null}
+        {challan.address ? (
+          <>
+            <dt className="text-muted-foreground">Address</dt>
+            <dd>{challan.address}</dd>
+          </>
+        ) : null}
+        <dt className="text-muted-foreground">{itr ? "Return" : "Fee for"}</dt>
         <dd>{challan.fees.map((f) => f.description).join(", ") || "—"}</dd>
         {challan.payerName ? (
           <>
@@ -215,11 +233,17 @@ function ChallanReview({
       {!found && clients.length > 0 ? (
         <div className="space-y-1.5">
           <p className="rounded-xl bg-muted p-3 text-sm">
-            No company in your master data has CIN <span className="font-mono">{challan.cin}</span>. Pick the
-            company this challan is for, or add it as a new company.
+            {itr ? (
+              <>No company in your master data is named {challan.companyName}. Pick the company this return is for.</>
+            ) : (
+              <>
+                No company in your master data has CIN <span className="font-mono">{challan.cin}</span>. Pick the
+                company this challan is for, or add it as a new company.
+              </>
+            )}
           </p>
           <Select value={pickedId} onValueChange={setPickedId}>
-            <SelectTrigger className="w-full" aria-label="Company this challan is for">
+            <SelectTrigger className="w-full min-w-0" aria-label="Company this document is for">
               <SelectValue placeholder="Choose the company" />
             </SelectTrigger>
             <SelectContent>
@@ -233,7 +257,7 @@ function ChallanReview({
         </div>
       ) : null}
 
-      {found?.by === "name" ? (
+      {found?.by === "name" && !itr ? (
         <p className="rounded-xl bg-muted p-3 text-sm">
           Matched by name. The CIN in master data is <span className="font-mono">{found.client.cin}</span>; the
           challan says <span className="font-mono">{challan.cin}</span>.
@@ -241,7 +265,7 @@ function ChallanReview({
       ) : null}
 
       {client ? (
-        <ApplyToCompany key={client.id} challan={challan} client={client} onDone={onDone} />
+        <ApplyToCompany key={client.id} challan={challan} client={client} onDone={onDone} onSkip={onSkip} />
       ) : (
         <>
           {clients.length === 0 ? (
@@ -250,10 +274,17 @@ function ChallanReview({
               to mark the filing.
             </p>
           ) : null}
-          <DialogFooter>
-            <Button variant={clients.length > 0 ? "outline" : "default"} onClick={() => setAdding(true)}>
-              Add as a new company
-            </Button>
+          <DialogFooter className="gap-2">
+            {onSkip ? (
+              <Button variant="ghost" onClick={onSkip}>
+                Skip
+              </Button>
+            ) : null}
+            {itr ? null : (
+              <Button variant={clients.length > 0 ? "outline" : "default"} onClick={() => setAdding(true)}>
+                Add as a new company
+              </Button>
+            )}
           </DialogFooter>
           <ClientFormDialog
             open={adding}
@@ -269,31 +300,58 @@ function ChallanReview({
   );
 }
 
+type AuditorKind = "first" | "subsequent";
+
 function ApplyToCompany({
   challan,
   client,
   onDone,
+  onSkip,
 }: {
   challan: Challan;
   client: Client;
   onDone: () => void;
+  onSkip?: () => void;
 }) {
   const { directors, markFiled, updateClient, setAuditorTerm } = usePortfolio();
-  const candidates = React.useMemo(() => {
-    const report = buildPortfolioReport([client], directors, { clientId: client.id, asOf: today() });
-    const items = report.sections[0]?.items.map((i) => i.item) ?? [];
-    const codes = challan.fees.map((f) => f.formCode).filter((c): c is string => c !== null);
-    return challanCandidates(items, codes);
-  }, [client, directors, challan]);
-  const [rowKey, setRowKey] = React.useState<string>(() => {
-    const best = bestChallanRow(candidates, challan);
-    return best ? filingKey(best) : "";
-  });
-  const row = candidates.find((c) => filingKey(c) === rowKey) ?? null;
+  const itr = challan.kind === "itr";
+  const codes = React.useMemo(
+    () => challan.fees.map((f) => f.formCode).filter((c): c is string => c !== null),
+    [challan],
+  );
+  const isAdtChallan = codes.includes("ADT-1");
 
-  const nameDiffers = challan.companyName.trim() !== client.name.trim();
-  const addressDiffers = challan.address !== "" && challan.address.trim() !== client.registeredOffice.trim();
+  // The company's rows: this year's schedule, plus the one-time post incorporation
+  // forms (the first auditor's ADT-1), which stay open until filed however old the company.
+  const items = React.useMemo(() => {
+    const report = buildPortfolioReport([client], directors, { clientId: client.id, asOf: today() });
+    const rows = report.sections[0]?.items.map((i) => i.item) ?? [];
+    const seen = new Set(rows.map(filingKey));
+    const once = applyFilings(postIncorporationItems(client), client).filter((i) => !seen.has(filingKey(i)));
+    return [...rows, ...once];
+  }, [client, directors]);
+
+  // ADT-1: first auditor or subsequent? Asked only while the first auditor's ADT-1 is not yet filed.
+  const firstAuditorRow = isAdtChallan ? (items.find((i) => i.source.id === "first-auditor" && i.due) ?? null) : null;
+  const askAuditor = firstAuditorRow !== null && !firstAuditorRow.filedOn;
+  const [auditorKind, setAuditorKind] = React.useState<AuditorKind>("first");
+
+  const candidates = React.useMemo(() => {
+    const all = challanCandidates(items, codes);
+    if (!isAdtChallan) return all;
+    if (askAuditor && auditorKind === "first") return all.filter((i) => i.source.id === "first-auditor");
+    return all.filter((i) => i.source.id !== "first-auditor");
+  }, [items, codes, isAdtChallan, askAuditor, auditorKind]);
+  // The row picked by hand, else the best match for this document.
+  const [pickedKey, setRowKey] = React.useState<string | null>(null);
+  const row = candidates.find((c) => filingKey(c) === pickedKey) ?? bestChallanRow(candidates, challan);
+  const rowKey = row ? filingKey(row) : "";
+
+  // An ITR acknowledgement's address is in the tax department's format: never copied to master data.
+  const nameDiffers = !itr && challan.companyName.trim() !== client.name.trim();
+  const addressDiffers = !itr && challan.address !== "" && challan.address.trim() !== client.registeredOffice.trim();
   const [updateMaster, setUpdateMaster] = React.useState(nameDiffers || addressDiffers);
+  const refLabel = itr ? "Acknowledgement no." : "SRN";
 
   const isAdt1 = row?.source.id === "adt-1";
   // Years the auditor is appointed for, per ADT-1 row (as in the mark-filed dialog).
@@ -319,7 +377,7 @@ function ApplyToCompany({
         if (isAdt1) await setAuditorTerm(client.id, row.fyEndingYear, years);
       }
       toast.success(row ? `${row.source.title} marked filed` : "Master data updated", {
-        description: row ? `SRN ${challan.srn} · ${client.name}` : client.name,
+        description: row ? `${refLabel} ${challan.srn} · ${client.name}` : client.name,
       });
       onDone();
     } finally {
@@ -329,13 +387,48 @@ function ApplyToCompany({
 
   return (
     <>
-      <div className="space-y-1.5">
+      {askAuditor ? (
+        <div className="space-y-1.5">
+          <span className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+            This ADT-1 is for the
+          </span>
+          <div className="grid grid-cols-2 gap-1 rounded-full bg-muted p-1" role="radiogroup" aria-label="Which auditor">
+            {(
+              [
+                ["first", "First auditor"],
+                ["subsequent", "Subsequent auditor"],
+              ] as const
+            ).map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                role="radio"
+                aria-checked={auditorKind === value}
+                onClick={() => {
+                  setAuditorKind(value);
+                  setRowKey(null);
+                }}
+                className={`rounded-full py-1.5 text-sm font-medium transition-colors ${
+                  auditorKind === value ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      <div className="min-w-0 space-y-1.5">
         <span className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
           Mark as filed
         </span>
         {candidates.length > 0 ? (
           <Select value={rowKey} onValueChange={setRowKey}>
-            <SelectTrigger className="w-full" aria-label="Filing this challan is for">
+            <SelectTrigger
+              className="w-full min-w-0 [&>span]:min-w-0 [&>span]:truncate"
+              aria-label="Filing this document is for"
+            >
               <SelectValue placeholder="Choose the filing" />
             </SelectTrigger>
             <SelectContent>
@@ -349,12 +442,12 @@ function ApplyToCompany({
         ) : (
           <p className="text-sm text-muted-foreground">
             {client.name} has no {challan.fees.map((f) => f.formCode ?? f.description).join(", ")} filing in its
-            schedule, so only the master data can be updated.
+            schedule{itr ? "." : ", so only the master data can be updated."}
           </p>
         )}
         {row ? (
           <p className="text-[11px] text-muted-foreground">
-            Filed on {formatDate(parseIsoDate(challan.srnDate)!)} with SRN {challan.srn}.
+            Filed on {formatDate(parseIsoDate(challan.srnDate)!)} with {refLabel} {challan.srn}.
           </p>
         ) : null}
       </div>
@@ -371,7 +464,12 @@ function ApplyToCompany({
         </label>
       ) : null}
 
-      <DialogFooter>
+      <DialogFooter className="gap-2">
+        {onSkip ? (
+          <Button type="button" variant="ghost" onClick={onSkip} disabled={busy}>
+            Skip
+          </Button>
+        ) : null}
         <Button onClick={apply} disabled={busy || (!row && !(updateMaster && (nameDiffers || addressDiffers)))}>
           {busy ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <CheckCircle2 className="size-4" aria-hidden />}{" "}
           Save

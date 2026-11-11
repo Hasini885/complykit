@@ -4,6 +4,8 @@ import test from "node:test";
 import { parseIsoDate } from "@/lib/dates";
 import {
   NOT_A_CHALLAN,
+  NOT_A_DOCUMENT,
+  parseFilingDocument,
   bestChallanRow,
   challanCandidates,
   findChallanCompany,
@@ -122,4 +124,45 @@ test("finds the company despite look-alike characters, or by name", () => {
   const byName = findChallanCompany(clients, { cin: "U99999TS2025PTC999999", companyName: "TRUVOLTZ GREEN ENERGIES PRIVATE LIMITED" });
   assert.deepEqual([byName?.client.id, byName?.by], ["a", "name"]);
   assert.equal(findChallanCompany(clients, { cin: "U00000XX0000PTC000000", companyName: "Nobody Ltd" }), null);
+});
+
+// The text lines of an ITR acknowledgement (ITR-6) from the e-filing portal.
+const ITR_ACK = [
+  "Acknowledgement Number:982638041251026    Date of filing : 25-Oct-2026",
+  "INDIAN INCOME TAX RETURN ACKNOWLEDGEMENT    Assessment",
+  "[Where the data of the Return of Income in Form ITR-1(SAHAJ), ITR-2, ITR-3, ITR-4(SUGAM), ITR-5, ITR-6, ITR-7    Year",
+  "filed and verified]",
+  "(Please see Rule 12 of the Income-tax Rules, 1962)    2026-27",
+  "PAN    AAICI5890D",
+  "Name    IGPL GROUPS PRIVATE LIMITED",
+  "Status    7-Private company    Form Number    ITR-6",
+  "Filed u/s    139(1)-On or before due date    e-Filing Acknowledgement Number    982638041251026",
+];
+
+test("reads an ITR acknowledgement", () => {
+  const r = parseFilingDocument(ITR_ACK);
+  assert.ok(r.ok);
+  assert.equal(r.challan.kind, "itr");
+  assert.equal(r.challan.srn, "982638041251026");
+  assert.equal(r.challan.srnDate, "2026-10-25");
+  assert.equal(r.challan.fyEndingYear, 2026);
+  assert.equal(r.challan.pan, "AAICI5890D");
+  assert.equal(r.challan.companyName, "IGPL GROUPS PRIVATE LIMITED");
+  assert.equal(r.challan.fees[0].formCode, "ITR-6");
+});
+
+test("a challan still reads as a challan, and other PDFs are refused", () => {
+  const c = parseFilingDocument(GAR7);
+  assert.ok(c.ok && c.challan.kind !== "itr");
+  assert.deepEqual(parseFilingDocument(["Some invoice", "Total 500"]), { ok: false, error: NOT_A_DOCUMENT });
+});
+
+test("an ITR acknowledgement picks the row for its year", () => {
+  const r = parseFilingDocument(ITR_ACK);
+  assert.ok(r.ok);
+  const rows = [row("itr:company", "ITR-6", "2025-10-31"), row("itr:company", "ITR-6", "2026-10-31")];
+  rows[0].fyEndingYear = 2025;
+  rows[1].fyEndingYear = 2026;
+  const best = bestChallanRow(challanCandidates(rows, ["ITR-6"]), r.challan);
+  assert.equal(best?.fyEndingYear, 2026);
 });

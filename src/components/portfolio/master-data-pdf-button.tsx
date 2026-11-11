@@ -18,8 +18,10 @@ export function MasterDataPdfButton({ onRead }: { onRead: (data: ExtractedCompan
 
   async function onFile(file: File | undefined) {
     if (!file) return;
-    if (file.type !== "application/pdf" && !/\.pdf$/i.test(file.name)) {
-      toast.error("Choose the MCA master data PDF.");
+    const { isExcelFile, readXlsxLines } = await import("@/lib/xlsx-lines");
+    const excel = isExcelFile(file);
+    if (!excel && file.type !== "application/pdf" && !/\.pdf$/i.test(file.name)) {
+      toast.error("Choose the MCA master data PDF or Excel file.");
       return;
     }
     setReading(true);
@@ -28,9 +30,10 @@ export function MasterDataPdfButton({ onRead }: { onRead: (data: ExtractedCompan
         import("@/lib/pdf-text"),
         import("@/lib/pdf-text-parser"),
       ]);
-      // A PDF with no text (Microsoft Print to PDF, a scan) is read by OCR, in the browser.
-      const { lines, ys } = await readPdfLayout(file);
-      const data = parseCompanyText(lines, ys);
+      // Excel: its rows. PDF: its text, or OCR when it has none (Microsoft Print to PDF, a scan).
+      const data = excel
+        ? parseCompanyText(await readXlsxLines(file))
+        : await readPdfLayout(file).then(({ lines, ys }) => parseCompanyText(lines, ys));
       if (!data.cin && !data.companyName) {
         toast.error("No company details found.", {
           description: "Use the company master data printout from the MCA portal.",
@@ -50,12 +53,12 @@ export function MasterDataPdfButton({ onRead }: { onRead: (data: ExtractedCompan
     <>
       <Button type="button" variant="outline" size="sm" onClick={() => inputRef.current?.click()} disabled={reading}>
         {reading ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <FileUp className="size-4" aria-hidden />}
-        Fill from MCA master data PDF
+        Fill from MCA master data (PDF or Excel)
       </Button>
       <input
         ref={inputRef}
         type="file"
-        accept="application/pdf,.pdf"
+        accept="application/pdf,.pdf,.xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         className="hidden"
         onChange={(e) => onFile(e.target.files?.[0])}
       />

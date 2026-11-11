@@ -15,6 +15,34 @@ const MAX_PAGES = 60;
 
 type Item = { str: string; x: number; y: number; w: number; h: number };
 
+/**
+ * The PDF inside a file. The income-tax portal's ITR acknowledgement downloads
+ * wrapped in Java data, with the real PDF a little way in: find "%PDF" near the
+ * start and keep up to the last "%%EOF".
+ */
+export async function pdfBytes(file: Blob): Promise<Uint8Array> {
+  const all = new Uint8Array(await file.arrayBuffer());
+  const marker = [0x25, 0x50, 0x44, 0x46]; // %PDF
+  const limit = Math.min(all.length - 4, 4096);
+  let start = -1;
+  for (let i = 0; i <= limit; i++) {
+    if (all[i] === marker[0] && all[i + 1] === marker[1] && all[i + 2] === marker[2] && all[i + 3] === marker[3]) {
+      start = i;
+      break;
+    }
+  }
+  if (start <= 0) return all;
+  let end = all.length;
+  for (let i = all.length - 5; i > start; i--) {
+    // %%EOF
+    if (all[i] === 0x25 && all[i + 1] === 0x25 && all[i + 2] === 0x45 && all[i + 3] === 0x4f && all[i + 4] === 0x46) {
+      end = i + 5;
+      break;
+    }
+  }
+  return all.slice(start, end);
+}
+
 export type PdfLayout = {
   lines: string[];
   /** Each line's distance down the document (pages stacked), for telling table rows apart. */
@@ -44,7 +72,7 @@ export async function extractPdfLayout(file: File): Promise<PdfLayout> {
   // pdf.js then runs it on the main thread. No separate worker file to host.
   await import("pdfjs-dist/legacy/build/pdf.worker.mjs");
 
-  const data = new Uint8Array(await file.arrayBuffer());
+  const data = await pdfBytes(file);
   const task = pdfjs.getDocument({ data });
   try {
     const doc = await task.promise;

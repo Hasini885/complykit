@@ -23,6 +23,12 @@ export type ChallanFee = {
 };
 
 export type Challan = {
+  /** "challan": an MCA G.A.R.7 receipt (srn = SRN). "itr": an ITR acknowledgement (srn = acknowledgement number). */
+  kind?: "challan" | "itr";
+  /** ITR only: the financial year the return is for (year of its 31 March), from the assessment year. */
+  fyEndingYear?: number;
+  /** ITR only. */
+  pan?: string;
   srn: string;
   /** ISO yyyy-mm-dd: the date the fee was paid, used as the filing date. */
   srnDate: string;
@@ -168,6 +174,97 @@ export function parseMcaChallan(lines: string[]): ChallanResult {
   };
 }
 
+const MONTHS: Record<string, number> = {
+  jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6, jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12,
+};
+
+/** "25-Oct-2026" or "25/10/2026" → "2026-10-25". */
+function anyDateToIso(raw: string | undefined): string | null {
+  if (!raw) return null;
+  const m = /(\d{1,2})[-/ ]([A-Za-z]{3})[A-Za-z]*[-/ ](\d{4})/.exec(raw);
+  if (m) {
+    const month = MONTHS[m[2].toLowerCase()];
+    if (!month) return null;
+    const iso = `${m[3]}-${String(month).padStart(2, "0")}-${m[1].padStart(2, "0")}`;
+    return parseIsoDate(iso) ? iso : null;
+  }
+  return dmyToIso(raw);
+}
+
+export const NOT_A_DOCUMENT =
+  "Only MCA payment challans (G.A.R.7) and ITR acknowledgements can be uploaded here.";
+
+/**
+ * Reads the income-tax return acknowledgement (ITR-V) the e-filing portal
+ * issues: acknowledgement number, date of filing, assessment year, PAN, name
+ * and form. Returned in the challan's shape (srn = acknowledgement number) so
+ * the same review marks the ITR row filed.
+ */
+export function parseItrAck(lines: string[]): ChallanResult {
+  const text = lines.join("\n");
+  if (!/INCOME\s*TAX\s*RETURN\s*ACKNOWLEDGEMENT|ITR-V/i.test(text)) return { ok: false, error: NOT_A_DOCUMENT };
+  const ack = /Acknowledgement\s*Number\s*:?\s*(\d{15})/i.exec(text)?.[1];
+  const filedOn = anyDateToIso(/Date\s*of\s*filing\s*:?\s*([0-9A-Za-z/ -]{8,12})/i.exec(text)?.[1]);
+  if (!ack || !filedOn) {
+    return { ok: false, error: "This acknowledgement has no readable acknowledgement number and date of filing." };
+  }
+  // The assessment year, e.g. 2026-27 (the second part is the next year).
+  let fyEndingYear: number | undefined;
+  for (const m of text.matchAll(/\b(20\d{2})\s*-\s*(\d{2})\b/g)) {
+    const a = Number(m[1]);
+    if ((a + 1) % 100 === Number(m[2])) {
+      fyEndingYear = a;
+      break;
+    }
+  }
+  const pan = /\bPAN\s+([A-Z]{5}\d{4}[A-Z])\b/.exec(text)?.[1];
+  let name = "";
+  for (const line of lines) {
+    const n = /^\s*Name\s*:?\s{2,}(.+)$/i.exec(line) ?? /^\s*Name\s*:\s*(.+)$/i.exec(line);
+    if (n) {
+      name = clean(n[1].split(/\s{4,}/)[0]);
+      break;
+    }
+  }
+  if (!name) return { ok: false, error: "Could not read the name on this acknowledgement." };
+  const formRaw = /Form\s*Number\s*:?\s*(ITR\s*-?\s*\d)/i.exec(text)?.[1];
+  const form = formRaw ? normaliseFormCode(formRaw) : null;
+  const ay = fyEndingYear ? `${fyEndingYear}-${String((fyEndingYear + 1) % 100).padStart(2, "0")}` : null;
+  return {
+    ok: true,
+    challan: {
+      kind: "itr",
+      fyEndingYear,
+      pan,
+      srn: ack,
+      srnDate: filedOn,
+      serviceRequestDate: null,
+      cin: "",
+      companyName: name,
+      address: "",
+      payerName: null,
+      fees: [
+        {
+          description: `${form ?? "Income-tax return"}${ay ? ` for AY ${ay}` : ""}`,
+          formCode: form ?? "ITR",
+          normal: null,
+          additional: null,
+        },
+      ],
+      total: null,
+    },
+  };
+}
+
+/** An MCA challan or an ITR acknowledgement; anything else is refused. */
+export function parseFilingDocument(lines: string[]): ChallanResult {
+  const challan = parseMcaChallan(lines);
+  if (challan.ok || challan.error !== NOT_A_CHALLAN) return challan;
+  const itr = parseItrAck(lines);
+  if (itr.ok || itr.error !== NOT_A_DOCUMENT) return itr;
+  return { ok: false, error: NOT_A_DOCUMENT };
+}
+
 /** Form codes a row answers to: "ITR-7 / ITR-6" → ["ITR-7", "ITR-6"]. */
 function rowCodes(item: ResolvedDueDate): string[] {
   const code = item.source.formCode;
@@ -181,9 +278,13 @@ function rowCodes(item: ResolvedDueDate): string[] {
 /** The company's rows this challan's form could be the filing for, oldest due first. */
 export function challanCandidates(items: ResolvedDueDate[], formCodes: string[]): ResolvedDueDate[] {
   const wanted = new Set(formCodes);
-  return items
-    .filter((i) => i.due !== null && !kycDirectorId(i) && rowCodes(i).some((c) => wanted.has(c)))
-    .sort((a, b) => a.due!.getTime() - b.due!.getTime());
+  const usable = items.filter((i) => i.due !== null && !kycDirectorId(i));
+  let found = usable.filter((i) => rowCodes(i).some((c) => wanted.has(c)));
+  // An ITR acknowledgement fits the company's ITR row whichever ITR form it names.
+  if (found.length === 0 && formCodes.some((c) => c.startsWith("ITR"))) {
+    found = usable.filter((i) => i.source.id.split(":")[0] === "itr");
+  }
+  return found.sort((a, b) => a.due!.getTime() - b.due!.getTime());
 }
 
 /**
@@ -194,6 +295,11 @@ export function bestChallanRow(candidates: ResolvedDueDate[], challan: Challan):
   if (candidates.length === 0) return null;
   const same = candidates.find((c) => c.srn && normaliseSrn(c.srn) === challan.srn);
   if (same) return same;
+  // An ITR acknowledgement names its year: that year's row.
+  if (challan.fyEndingYear !== undefined) {
+    const year = candidates.find((c) => c.fyEndingYear === challan.fyEndingYear);
+    if (year) return year;
+  }
   const paid = parseIsoDate(challan.srnDate)!.getTime();
   const nearest = (list: ResolvedDueDate[]) =>
     list.reduce((best, c) =>

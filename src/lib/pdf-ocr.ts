@@ -65,7 +65,8 @@ export async function ocrPdfLayout(file: File): Promise<{ lines: string[]; ys: n
   await import("pdfjs-dist/legacy/build/pdf.worker.mjs");
   const { createWorker } = await import("tesseract.js");
 
-  const data = new Uint8Array(await file.arrayBuffer());
+  const { pdfBytes } = await import("@/lib/pdf-text");
+  const data = await pdfBytes(file);
   const task = pdfjs.getDocument({ data });
   const worker = await createWorker("eng");
   try {

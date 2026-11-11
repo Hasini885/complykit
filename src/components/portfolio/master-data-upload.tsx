@@ -12,10 +12,10 @@ import type { ExtractedCompany } from "@/lib/pdf-extraction";
 type Item = { name: string; data: ExtractedCompany };
 
 /**
- * Upload one or more MCA company master data PDFs. Each is read in the
- * browser (no AI, nothing sent anywhere) and opens the company form filled
- * in: the company with that CIN if it is already saved, otherwise a new one,
- * with its directors on the board. Several files open one after another.
+ * Upload one or more MCA company master data files, PDF or Excel. Each is read
+ * in the browser (no AI, nothing sent anywhere) and opens the new-company form
+ * filled in, with its directors on the board; several open one after another.
+ * A company whose CIN is already saved is not added again.
  */
 export function MasterDataUpload({ className }: { className?: string }) {
   const { clients } = usePortfolio();
@@ -24,7 +24,6 @@ export function MasterDataUpload({ className }: { className?: string }) {
   const [queue, setQueue] = React.useState<Item[]>([]);
   const [total, setTotal] = React.useState(0);
   const current = queue[0] ?? null;
-  const existing = current?.data.cin ? (clients.find((c) => sameCin(c.cin, current.data.cin!)) ?? null) : null;
 
   function announce(item: Item | undefined, index: number, of: number) {
     if (!item) return;
@@ -40,22 +39,30 @@ export function MasterDataUpload({ className }: { className?: string }) {
     setReading(true);
     const found: Item[] = [];
     const rejected: string[] = [];
+    // Companies already in master data are not added a second time.
+    const already: string[] = [];
     try {
-      const [{ readPdfLayout }, { parseCompanyText }] = await Promise.all([
+      const [{ readPdfLayout }, { parseCompanyText }, { isExcelFile, readXlsxLines }] = await Promise.all([
         import("@/lib/pdf-text"),
         import("@/lib/pdf-text-parser"),
+        import("@/lib/xlsx-lines"),
       ]);
       for (const file of files) {
-        if (file.type !== "application/pdf" && !/\.pdf$/i.test(file.name)) {
+        const excel = isExcelFile(file);
+        if (!excel && file.type !== "application/pdf" && !/\.pdf$/i.test(file.name)) {
           rejected.push(file.name);
           continue;
         }
         try {
-          // A PDF with no text (Microsoft Print to PDF, a scan) is read by OCR, in the browser.
-          const { lines, ys } = await readPdfLayout(file);
-          const data = parseCompanyText(lines, ys);
+          // Excel: every sheet's rows as lines. PDF: its text, or OCR when it has none
+          // (Microsoft Print to PDF, a scan). All read in the browser.
+          const data = excel
+            ? parseCompanyText(await readXlsxLines(file))
+            : await readPdfLayout(file).then(({ lines, ys }) => parseCompanyText(lines, ys));
           if (!data.cin && !data.companyName) rejected.push(file.name);
-          else if (!found.some((f) => f.data.cin && data.cin && sameCin(f.data.cin, data.cin))) {
+          else if (data.cin && clients.some((c) => sameCin(c.cin, data.cin!))) {
+            already.push(data.companyName ?? data.cin);
+          } else if (!found.some((f) => f.data.cin && data.cin && sameCin(f.data.cin, data.cin))) {
             found.push({ name: file.name, data });
           }
         } catch {
@@ -69,9 +76,17 @@ export function MasterDataUpload({ className }: { className?: string }) {
     if (rejected.length > 0) {
       toast.error(
         files.length === 1
-          ? "No company details found. Use the master data PDF downloaded from the MCA portal."
+          ? "No company details found. Use the company master data PDF or Excel from the MCA portal."
           : `${rejected.length} of ${files.length} files could not be read as MCA master data and were skipped`,
         files.length === 1 ? undefined : { description: rejected.slice(0, 5).join(", ") + (rejected.length > 5 ? "…" : "") },
+      );
+    }
+    if (already.length > 0) {
+      toast.info(
+        already.length === 1
+          ? `${already[0]} is already in master data, so it was not added again`
+          : `${already.length} companies are already in master data and were not added again`,
+        already.length === 1 ? undefined : { description: already.slice(0, 5).join(", ") + (already.length > 5 ? "…" : "") },
       );
     }
     if (found.length > 0) {
@@ -92,10 +107,10 @@ export function MasterDataUpload({ className }: { className?: string }) {
     <>
       <UploadHero
         title="Upload MCA master data"
-        description="Add or update companies and their directors from the MCA master data PDF."
-        button="Select master data PDFs"
-        busyLabel="Reading PDFs… printed or scanned ones take a little longer"
-        dropHint="or drop one or more master data PDFs here"
+        description="Add companies and their directors from the MCA master data PDF or Excel."
+        button="Select PDF or Excel files"
+        busyLabel="Reading… printed or scanned PDFs take a little longer"
+        dropHint="or drop master data PDFs or Excel files here"
         busy={reading}
         onPick={() => inputRef.current?.click()}
         onDropFiles={(files) => void onFiles(files)}
@@ -104,7 +119,7 @@ export function MasterDataUpload({ className }: { className?: string }) {
       <input
         ref={inputRef}
         type="file"
-        accept="application/pdf,.pdf"
+        accept="application/pdf,.pdf,.xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         multiple
         className="hidden"
         onChange={(e) => onFiles(e.target.files)}
@@ -114,7 +129,7 @@ export function MasterDataUpload({ className }: { className?: string }) {
           key={`${current.name}-${total - queue.length}`}
           open
           onOpenChange={(o) => !o && next()}
-          client={existing}
+          client={null}
           extracted={current.data}
         />
       ) : null}
