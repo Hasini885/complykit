@@ -349,9 +349,7 @@ export function AllDuesGrid({
           ))}
         </div>
         </>
-        ) : (
-          <MatrixKey />
-        )}
+        ) : null}
       </div>
 
       {/* The table, with the aside (if any) beside it from xl, tops level. */}
@@ -602,23 +600,3 @@ function BodyCell({
   }
 }
 
-/** What the matrix colours mean. */
-function MatrixKey() {
-  const items: [string, string][] = [
-    ["bg-destructive/40", "Not filed, overdue"],
-    ["bg-orange-500/40", "Not filed, due within 30 days"],
-    ["bg-emerald-500/40", "Filed"],
-    ["bg-emerald-500/10", "Not yet due"],
-    ["bg-muted", "— does not apply"],
-  ];
-  return (
-    <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-      {items.map(([swatch, label]) => (
-        <span key={label} className="flex items-center gap-1.5">
-          <span className={cn("inline-block size-3 rounded-sm border", swatch)} aria-hidden />
-          {label}
-        </span>
-      ))}
-    </div>
-  );
-}
