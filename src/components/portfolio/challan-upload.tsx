@@ -86,24 +86,24 @@ export function ChallanUploadButton({
       <section
         {...drop}
         aria-label="Upload MCA challan"
-        className={`flex flex-col items-center rounded-3xl border-2 border-dashed px-4 py-10 text-center transition-colors sm:py-12 ${
+        className={`flex flex-col items-center rounded-3xl border-2 border-dashed px-4 py-6 text-center transition-colors ${
           dragging ? "border-primary bg-primary/10" : "border-primary/25 bg-card/60"
         } ${className ?? ""}`}
       >
-        <h2 className="font-heading text-3xl font-bold tracking-tight sm:text-4xl">Upload MCA challan</h2>
-        <p className="mt-3 max-w-[52ch] text-base text-muted-foreground sm:text-lg">
+        <h2 className="font-heading text-2xl font-bold tracking-tight">Upload MCA challan</h2>
+        <p className="mt-1.5 max-w-[52ch] text-sm text-muted-foreground">
           Mark a filing as filed with its SRN, straight from the MCA payment receipt.
         </p>
         <Button
           type="button"
           onClick={() => inputRef.current?.click()}
           disabled={reading}
-          className="mt-7 h-16 w-full max-w-sm rounded-2xl text-xl font-semibold shadow-lg shadow-primary/25"
+          className="mt-4 h-12 w-full max-w-xs rounded-2xl text-base font-semibold shadow-md shadow-primary/25"
         >
-          {reading ? <Loader2 className="size-5 animate-spin" aria-hidden /> : <Upload className="size-5" aria-hidden />}
+          {reading ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Upload className="size-4" aria-hidden />}
           {reading ? "Reading challan…" : "Select challan PDF"}
         </Button>
-        <p className="mt-3 text-sm text-muted-foreground">or drop the challan PDF here</p>
+        <p className="mt-2 text-xs text-muted-foreground">or drop the challan PDF here</p>
       </section>
     ) : (
       <Tip label="Upload MCA challan (marks the filing and SRN)">
