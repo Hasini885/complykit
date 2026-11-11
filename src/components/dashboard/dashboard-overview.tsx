@@ -95,7 +95,7 @@ function AdminDashboard() {
           Its year picker sets the year for the whole dashboard. The calendar sits
           beside it on wide screens and drops below it on narrow ones, so the
           matrix keeps its width. */}
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_16rem] xl:items-start">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_13.5rem] xl:items-start">
         <div className="min-w-0 space-y-8">
           <AllDuesGrid
             section="post-incorporation"
@@ -116,7 +116,7 @@ function AdminDashboard() {
           />
         </div>
 
-        <div className="min-w-0 max-w-64 xl:sticky xl:top-24">
+        <div className="min-w-0 max-w-[13.5rem] xl:sticky xl:top-24">
           <GlassCalendar items={allItems} reference={reference} onOpen={selectCompany} />
         </div>
       </div>

@@ -369,39 +369,39 @@ export function GlassCalendar({
 
   const dayItems = selected ? (byDay.get(selected) ?? []) : [];
   const navButton =
-    "flex size-7 items-center justify-center rounded-full border border-white/50 bg-white/40 text-foreground/80 shadow-[inset_0_1px_0_rgb(255_255_255/0.6)] backdrop-blur-md transition-colors hover:bg-white/70 dark:border-white/10 dark:bg-white/10 dark:hover:bg-white/20";
+    "flex size-6 items-center justify-center rounded-full border border-white/50 bg-white/40 text-foreground/80 shadow-[inset_0_1px_0_rgb(255_255_255/0.6)] backdrop-blur-md transition-colors hover:bg-white/70 dark:border-white/10 dark:bg-white/10 dark:hover:bg-white/20";
 
   return (
-    <section aria-label={title} className="relative isolate overflow-hidden rounded-3xl">
+    <section aria-label={title} className="relative isolate overflow-hidden rounded-2xl">
       {/* Light behind the glass. */}
-      <div aria-hidden className="pointer-events-none absolute -top-12 -left-10 -z-10 size-44 rounded-full bg-sky-400/45 blur-3xl" />
-      <div aria-hidden className="pointer-events-none absolute top-1/3 -right-12 -z-10 size-48 rounded-full bg-violet-500/45 blur-3xl" />
-      <div aria-hidden className="pointer-events-none absolute -bottom-14 left-4 -z-10 size-44 rounded-full bg-pink-400/40 blur-3xl" />
+      <div aria-hidden className="pointer-events-none absolute -top-12 -left-10 -z-10 size-32 rounded-full bg-sky-400/45 blur-3xl" />
+      <div aria-hidden className="pointer-events-none absolute top-1/3 -right-12 -z-10 size-36 rounded-full bg-violet-500/45 blur-3xl" />
+      <div aria-hidden className="pointer-events-none absolute -bottom-14 left-4 -z-10 size-32 rounded-full bg-pink-400/40 blur-3xl" />
 
-      <div className="rounded-3xl border border-white/60 bg-white/30 p-3.5 shadow-[inset_0_1px_0_rgb(255_255_255/0.7),0_14px_34px_-14px_rgb(76_61_160/0.45)] backdrop-blur-2xl dark:border-white/10 dark:bg-white/[0.06] dark:shadow-[inset_0_1px_0_rgb(255_255_255/0.08),0_14px_34px_-14px_rgb(0_0_0/0.6)]">
+      <div className="rounded-2xl border border-white/60 bg-white/30 p-2.5 shadow-[inset_0_1px_0_rgb(255_255_255/0.7),0_14px_34px_-14px_rgb(76_61_160/0.45)] backdrop-blur-2xl dark:border-white/10 dark:bg-white/[0.06] dark:shadow-[inset_0_1px_0_rgb(255_255_255/0.08),0_14px_34px_-14px_rgb(0_0_0/0.6)]">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
             <p className="text-[10px] font-semibold tracking-[0.12em] text-foreground/60 uppercase">{title}</p>
-            <p className="font-heading text-lg leading-tight font-bold">
+            <p className="font-heading text-sm leading-tight font-bold">
               {monthName(month.getMonth())} <span className="font-medium text-foreground/60">{month.getFullYear()}</span>
             </p>
-            <p className="text-[11px] text-foreground/60">
+            <p className="text-[10px] text-foreground/60">
               {monthTotal === 0 ? "Nothing due" : `${monthTotal} due this month`}
             </p>
           </div>
           <div className="flex items-center gap-1">
             <button type="button" onClick={() => shift(-1)} className={navButton} aria-label="Previous month">
-              <ChevronLeft className="size-4" aria-hidden />
+              <ChevronLeft className="size-3.5" aria-hidden />
             </button>
             <button type="button" onClick={() => shift(1)} className={navButton} aria-label="Next month">
-              <ChevronRight className="size-4" aria-hidden />
+              <ChevronRight className="size-3.5" aria-hidden />
             </button>
           </div>
         </div>
 
-        <div className="mt-3 grid grid-cols-7 gap-1 text-center">
+        <div className="mt-2 grid grid-cols-7 gap-0.5 text-center">
           {WEEKDAYS.map((w, i) => (
-            <span key={i} className="pb-0.5 text-[10px] font-semibold text-foreground/50">
+            <span key={i} className="pb-0.5 text-[9px] font-semibold text-foreground/50">
               {w}
             </span>
           ))}
@@ -423,7 +423,7 @@ export function GlassCalendar({
                 aria-pressed={isSelected}
                 aria-label={`${day} ${monthName(month.getMonth())}${due ? `, ${due.length} due` : ""}${isToday ? ", today" : ""}`}
                 className={cn(
-                  "tabular relative flex aspect-square w-full flex-col items-center justify-center rounded-xl text-[11px] transition-all",
+                  "tabular relative mx-auto flex size-6 flex-col items-center justify-center rounded-lg text-[10px] transition-all",
                   due
                     ? "cursor-pointer border border-white/60 bg-white/50 font-semibold shadow-[inset_0_1px_0_rgb(255_255_255/0.7)] backdrop-blur-md hover:bg-white/75 dark:border-white/15 dark:bg-white/10 dark:hover:bg-white/20"
                     : "cursor-default text-foreground/55",
@@ -434,9 +434,9 @@ export function GlassCalendar({
               >
                 {day}
                 {kinds.length > 0 ? (
-                  <span className="absolute bottom-1 flex gap-0.5" aria-hidden>
+                  <span className="absolute bottom-0.5 flex gap-px" aria-hidden>
                     {kinds.map((k) => (
-                      <span key={k} className={cn("size-1 rounded-full", isSelected ? "bg-white" : DOT[k])} />
+                      <span key={k} className={cn("size-[3px] rounded-full", isSelected ? "bg-white" : DOT[k])} />
                     ))}
                   </span>
                 ) : null}
@@ -445,7 +445,7 @@ export function GlassCalendar({
           })}
         </div>
 
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+        <div className="mt-2 flex flex-wrap items-center justify-between gap-1.5">
           <div className="flex flex-wrap gap-x-2.5 gap-y-1 text-[10px] text-foreground/60">
             <Legend dot={DOT.overdue} label="Overdue" />
             <Legend dot={DOT["due-soon"]} label="Due soon" />
@@ -463,7 +463,7 @@ export function GlassCalendar({
         </div>
 
         {selected ? (
-          <div className="mt-3 rounded-2xl border border-white/50 bg-white/40 p-1.5 shadow-[inset_0_1px_0_rgb(255_255_255/0.6)] backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.07]">
+          <div className="mt-2 rounded-xl border border-white/50 bg-white/40 p-1.5 shadow-[inset_0_1px_0_rgb(255_255_255/0.6)] backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.07]">
             <p className="px-1.5 pt-0.5 pb-1 text-[10px] font-semibold tracking-wide text-foreground/60 uppercase">
               {selected} {monthName(month.getMonth())}
             </p>
