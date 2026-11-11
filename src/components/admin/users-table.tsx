@@ -22,7 +22,7 @@ export function UsersTable({ rows }: { rows: UserRow[] }) {
     setBusy(true);
     try {
       const { default: writeXlsxFile } = await import("write-excel-file/browser");
-      const head = ["Name", "Mobile", "Email", "Joined", "Last sign-in"].map((value) => ({
+      const head = ["Name", "Mobile", "Email", "Joined", "Last sign-in", "Subscription"].map((value) => ({
         value,
         fontWeight: "bold" as const,
         backgroundColor: "#344054",
@@ -34,9 +34,10 @@ export function UsersTable({ rows }: { rows: UserRow[] }) {
         { value: r.email },
         { value: when(r.joinedAt) },
         { value: when(r.lastSignInAt) },
+        { value: r.plan ?? "" },
       ]);
       const blob = await writeXlsxFile([head, ...body], {
-        columns: [{ width: 28 }, { width: 16 }, { width: 34 }, { width: 14 }, { width: 14 }],
+        columns: [{ width: 28 }, { width: 16 }, { width: 34 }, { width: 14 }, { width: 14 }, { width: 26 }],
         sheet: "Users",
       }).toBlob();
       const url = URL.createObjectURL(blob);
@@ -81,12 +82,13 @@ export function UsersTable({ rows }: { rows: UserRow[] }) {
               <TableHead>Email</TableHead>
               <TableHead>Joined</TableHead>
               <TableHead>Last sign-in</TableHead>
+              <TableHead>Subscription</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {rows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="py-10 text-center text-sm text-muted-foreground">
+                <TableCell colSpan={6} className="py-10 text-center text-sm text-muted-foreground">
                   No accounts yet.
                 </TableCell>
               </TableRow>
@@ -110,6 +112,7 @@ export function UsersTable({ rows }: { rows: UserRow[] }) {
                   </TableCell>
                   <TableCell className="tabular whitespace-nowrap">{when(r.joinedAt)}</TableCell>
                   <TableCell className="tabular whitespace-nowrap">{when(r.lastSignInAt)}</TableCell>
+                  <TableCell className="whitespace-nowrap text-sm">{r.plan ?? "—"}</TableCell>
                 </TableRow>
               ))
             )}

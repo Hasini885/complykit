@@ -5,7 +5,9 @@ import { UsersRound } from "lucide-react";
 
 import { PageHeader } from "@/components/page-header";
 import { UsersTable } from "@/components/admin/users-table";
+import { BillingSettings } from "@/components/admin/billing-settings";
 import { isAdminEmail, toUserRow, type UserRow } from "@/lib/admin-users";
+import { getBillingConfig, planLabel, razorpayConfigured } from "@/lib/billing-server";
 
 export const metadata: Metadata = { title: "Users" };
 // Always the current list, never a cached page.
@@ -20,10 +22,13 @@ export default async function AdminUsersPage() {
   if (!isAdminEmail(me?.primaryEmailAddress?.emailAddress, process.env.ADMIN_EMAILS)) notFound();
 
   const client = await clerkClient();
+  const config = await getBillingConfig();
   const rows: UserRow[] = [];
   for (let offset = 0; ; offset += 500) {
     const page = await client.users.getUserList({ limit: 500, offset, orderBy: "-created_at" });
-    rows.push(...page.data.map(toUserRow));
+    rows.push(
+      ...page.data.map((u) => ({ ...toUserRow(u), plan: planLabel(u, config) })),
+    );
     if (page.data.length < 500) break;
   }
 
@@ -34,6 +39,11 @@ export default async function AdminUsersPage() {
         eyebrow="Admin"
         title="Users"
         lede="Everyone who has created a CA Compliance Tool account, with the name, mobile and email they gave at sign-up."
+      />
+      <BillingSettings
+        yearlyPrice={config.yearlyPrice}
+        razorpay={razorpayConfigured()}
+        webhook={Boolean(process.env.RAZORPAY_WEBHOOK_SECRET)}
       />
       <UsersTable rows={rows} />
     </div>

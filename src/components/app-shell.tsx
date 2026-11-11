@@ -19,7 +19,7 @@ import { activateUserStorage } from "@/lib/user-storage";
  * other's companies. That account's data is then saved online under the
  * login, so it is the same on every computer.
  */
-export function AppShell({ children }: { children: React.ReactNode }) {
+export function AppShell({ children, banner }: { children: React.ReactNode; banner?: React.ReactNode }) {
   const { isLoaded, user } = useUser();
   const userId = user?.id ?? null;
 
@@ -49,6 +49,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               (reports, "Save as PDF") shows the page content only. */}
           <SiteHeader />
           <UnverifiedDataBanner />
+          {banner}
           <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6 lg:px-8 lg:py-10 print:max-w-none print:p-0">
             {children}
           </main>

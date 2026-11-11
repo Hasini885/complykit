@@ -13,6 +13,8 @@ export type UserRow = {
   /** ms since 1970. */
   joinedAt: number;
   lastSignInAt: number | null;
+  /** Subscription, e.g. "Trial till 11 Dec 2026"; added by the admin page. */
+  plan?: string;
 };
 
 /** The parts of a Clerk user this reads. */

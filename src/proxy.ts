@@ -7,7 +7,8 @@ import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
  * with Clerk, not in this app: CA Compliance Tool itself stores no user data, and each
  * user's companies stay in their own browser.
  */
-const isPublic = createRouteMatcher(["/", "/privacy", "/terms", "/sign-in(.*)", "/sign-up(.*)"]);
+// The Razorpay webhook is called by Razorpay, not a signed-in user; it checks its own signature.
+const isPublic = createRouteMatcher(["/", "/privacy", "/terms", "/sign-in(.*)", "/sign-up(.*)", "/api/billing/webhook"]);
 
 export default clerkMiddleware(
   async (auth, request) => {
