@@ -248,3 +248,50 @@ test("master data fills the whole Add Company form it covers, including AGM, sta
   assert.equal(filled.directorsCount, 2);
   assert.equal(filled.notes, "typed by hand", "fields the PDF does not cover are left alone");
 });
+
+// MCA's current printout: values centred against their labels, names wrapped in the director table.
+const MASTER_DATA_2026 = [
+  "Company Information",
+  "CIN    U66190TS2026PTC224053",
+  "Company Name    VENVAS GLOBAL PRIVATE LIMITED",
+  "Date of Incorporation    06/10/2026",
+  "Plot No 1889, Yalamanchali Bhavan, Pragatinagar, Hyderabad, Hyd, Telangana, India,",
+  "Registered Address",
+  "500090",
+  "Address at which the books of account are to be",
+  "-",
+  "maintained",
+  "Listed in Stock Exchange(s) (Y/N)    No",
+  "Class of Company    Private",
+  "Authorised Capital (Rs)    10,00,000",
+  "Paid up Capital (Rs)    1,00,000",
+  "Company Status    Active",
+  "Index of Charges",
+  "No Records Found",
+  "Director/Signatory Details",
+  "Sr.    Date of    Cessation",
+  "DIN/PAN    Name    Designation    Category    Signatory",
+  "No    Appointment    Date",
+  "SANGALA",
+  "1    11990387    VENKATA    Director    Promoter    06/10/2026    -    Yes",
+  "RAMIREDDY",
+  "BALAJI    Managing",
+  "2    11990388    Promoter    06/10/2026    -    Yes",
+  "NEERUKATTU    Director",
+];
+
+test("master data 2026 layout: centred address and wrapped director names", () => {
+  const r = parseCompanyText(MASTER_DATA_2026);
+  assert.equal(r.cin, "U66190TS2026PTC224053");
+  assert.equal(r.incorporationDate, "2026-10-06");
+  assert.equal(
+    r.registeredOfficeAddress,
+    "Plot No 1889, Yalamanchali Bhavan, Pragatinagar, Hyderabad, Hyd, Telangana, India, 500090",
+  );
+  assert.equal(r.authorisedCapital, 1_000_000);
+  assert.equal(r.paidUpCapital, 100_000);
+  assert.deepEqual(r.directors, [
+    { name: "SANGALA VENKATA RAMIREDDY", din: "11990387" },
+    { name: "BALAJI NEERUKATTU", din: "11990388" },
+  ]);
+});

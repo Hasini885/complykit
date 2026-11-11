@@ -70,6 +70,13 @@ function formatIso(iso: string): string {
   return d ? formatDate(d) : iso;
 }
 import { cn } from "@/lib/utils";
+import { MasterDataPdfButton } from "@/components/portfolio/master-data-pdf-button";
+import {
+  applyExtractionToClientDraft,
+  countExtractedFields,
+  extractionToDirectorDrafts,
+  type ExtractedCompany,
+} from "@/lib/pdf-extraction";
 
 const EMPTY: ClientDraft = {
   name: "",
@@ -238,6 +245,28 @@ function ClientFormFields({
     setRemovedIds((prev) => prev.filter((x) => x !== id));
   }
 
+  /** Fills the form from the MCA master data PDF: company fields, then its directors. */
+  function fillFromPdf(data: ExtractedCompany) {
+    const next = applyExtractionToClientDraft(draft, data);
+    setDraft(next);
+    const since = next.incorporatedOn || isoDate(today());
+    let entries = board;
+    let added = 0;
+    for (const d of extractionToDirectorDrafts(data, since)) {
+      if (entries.some((e) => e.draft.din.trim() === d.din)) continue;
+      const placed = placeOnBoard(entries, "new", d, directors, newId, { appointedOn: since, cessationOn: null });
+      if (placed.errors.length === 0) {
+        entries = placed.entries;
+        added++;
+      }
+    }
+    setBoard(entries);
+    const { found, total } = countExtractedFields(data);
+    toast.success(`Filled ${found} of ${total} fields from the PDF`, {
+      description: added > 0 ? `${added} director${added === 1 ? "" : "s"} added to the board. Check before saving.` : "Check before saving.",
+    });
+  }
+
   function removeFromBoard(entry: BoardEntry) {
     setBoard((prev) => prev.filter((e) => e.key !== entry.key));
     if (authorisedKey === entry.key) setAuthorisedKey(null);
@@ -370,6 +399,10 @@ function ClientFormFields({
         <div className="min-h-0 flex-1 overflow-y-auto p-4">
           {/* 1. Master data: what goes on the letterhead, and the capital. */}
           <TabsContent value="master" className="mt-0">
+            <div className="mb-4 flex flex-wrap items-center gap-2">
+              <MasterDataPdfButton onRead={fillFromPdf} />
+              <span className="text-xs text-muted-foreground">Read in your browser; nothing is uploaded.</span>
+            </div>
             {/* Six columns, so every row is full: 6 | 2·2·2 | 6 | 3·3 | 3·3. */}
             <div className="grid gap-4 sm:grid-cols-6">
               <Field label="Company / LLP name" error={errors.name} className="sm:col-span-6">

@@ -37,7 +37,13 @@ function stripLead(value: string): string {
 const CURRENCY_TAG = String.raw`(?:\s*\((?:in\s*)?(?:rs\.?|₹|inr|rupees)\.?\))?`;
 
 /** `value` is the next column; `rest` is everything after the label on that line. */
-type Found = { value: string; rest: string; line: number };
+type Found = {
+  value: string;
+  rest: string;
+  line: number;
+  /** The label stood alone on its line and the value came from the next one. */
+  alone?: boolean;
+};
 
 /**
  * Finds a label at the start of a line or of a column, and returns the value
@@ -65,7 +71,7 @@ function labelled(
     const next = lines[i + 1]?.trim();
     if (next) {
       const value = stripLead(next.split(COL)[0] ?? "");
-      if (accept(value)) return { value, rest: next, line: i + 1 };
+      if (accept(value)) return { value, rest: next, line: i + 1, alone: true };
     }
   }
   return null;
@@ -303,6 +309,13 @@ function findAddress(lines: string[]): string | null {
   if (!found) return null;
   // An address wraps across lines; keep reading until the PIN code.
   const parts = [found.value];
+  // MCA's printout centres a label against a wrapped value, so the value's
+  // first line can sit ABOVE a label that stands alone: "Plot 1, Road X,",
+  // "Registered Address", "500090".
+  if (found.alone) {
+    const before = lines[found.line - 2]?.trim();
+    if (before && !COL.test(before) && !before.includes(":") && /,$/.test(before)) parts.unshift(before);
+  }
   if (!PIN.test(found.value)) {
     for (const line of lines.slice(found.line + 1, found.line + 4)) {
       const t = line.trim().split(COL)[0];
@@ -390,8 +403,50 @@ function stripDates(s: string): string {
  * blocks in financial statements, where the name sits a line or two above
  * "DIN: 07712345", often with two directors side by side in columns.
  */
+/** Words in an MCA director table that are never part of a name. */
+const TABLE_WORDS =
+  /^(?:sr\.?|no\.?|yes|promoter|professional|independent|nominee|category|designation|signatory|appointment|date|cessation|of|director|managing|whole[\s-]?time|additional|designated|partner|company|secretary|ceo|cfo|chief|financial|executive|officer|manager|authorised|representative|-)$/i;
+
+/** ROLE_WORDS without the global flag, to test one word at a time. */
+const ROLE_WORD = new RegExp(`^(?:${ROLE_WORDS.source})$`, "i");
+
+/** The name fragments in one line of an MCA director table. */
+function nameBits(line: string): string[] {
+  return line
+    .trim()
+    .split(COL)
+    .flatMap((c) => c.trim().split(/\s+/))
+    .filter((w) => /^[A-Za-z][A-Za-z.'\-]*$/.test(w) && !TABLE_WORDS.test(w) && !ROLE_WORD.test(w));
+}
+
+/**
+ * In MCA's director table a long name wraps, and the printout centres each
+ * row's cells vertically, so the name's lines sit above and below the line
+ * carrying the DIN. Lines between two rows are split: the upper half belongs
+ * to the row above, the lower half to the row below.
+ */
+function wrappedTableNames(lines: string[], rows: number[], headerAt: number, end: number): Map<number, string> {
+  const names = new Map<number, string>();
+  rows.forEach((row, k) => {
+    const prev = k > 0 ? rows[k - 1] : headerAt;
+    const next = k < rows.length - 1 ? rows[k + 1] : end;
+    const gapAbove = row - prev - 1;
+    const gapBelow = next - row - 1;
+    const aboveStart = k > 0 ? row - Math.floor(gapAbove / 2) : prev + 1;
+    const belowEnd = k < rows.length - 1 ? row + Math.ceil(gapBelow / 2) : Math.min(next - 1, row + 3);
+    const bits: string[] = [];
+    for (let i = aboveStart; i < row; i++) bits.push(...nameBits(lines[i]));
+    bits.push(...nameBits(lines[row]));
+    for (let i = row + 1; i <= belowEnd; i++) bits.push(...nameBits(lines[i]));
+    const name = bits.join(" ").trim();
+    if (/^[A-Za-z][A-Za-z.'\- ]{2,80}$/.test(name)) names.set(row, name);
+  });
+  return names;
+}
+
 function findDirectors(lines: string[]): { name: string; din: string | null }[] {
   const out = new Map<string, string>();
+  const wrapped = wrappedNamesByLine(lines);
   let inTable = false;
   for (let i = 0; i < lines.length && out.size < 50; i++) {
     const line = lines[i];
@@ -409,8 +464,8 @@ function findDirectors(lines: string[]): { name: string; din: string | null }[] 
       if (!din || out.has(din)) return;
 
       // Same row (table layout), else the same column one or two lines up.
-      let name: string | null = null;
-      if (inTable) {
+      let name: string | null = wrapped.get(i) ?? null;
+      if (inTable && !name) {
         name = cols.map((c) => (c.includes(din) ? null : nameLike(stripDates(c)))).find((n) => n) ?? null;
       }
       name ??= nameLike(stripDates(col.replace(din, " ")));
@@ -424,6 +479,27 @@ function findDirectors(lines: string[]): { name: string; din: string | null }[] 
     });
   }
   return [...out].map(([din, name]) => ({ name, din }));
+}
+
+/** Table rows (by line) whose names wrap, read with wrappedTableNames. */
+function wrappedNamesByLine(lines: string[]): Map<number, string> {
+  const headerAt = lines.findIndex(
+    (l) => /\b(din|dpin)\b/i.test(l) && /\bname\b/i.test(l) && !/\d{8}/.test(l),
+  );
+  if (headerAt < 0) return new Map();
+  let end = lines.length;
+  const rows: number[] = [];
+  for (let i = headerAt + 1; i < lines.length; i++) {
+    if (/\b(?:charges|index\s+of\s+charges|financial\s+details)\b/i.test(lines[i])) {
+      end = i;
+      break;
+    }
+    if (lines[i].trim().split(COL).some((c) => /^\d{8}$/.test(c.trim()))) rows.push(i);
+  }
+  // Only when the rows are not one per line: otherwise the plain reading is right.
+  const wraps = rows.some((r, k) => (k === 0 ? r - headerAt > 1 : r - rows[k - 1] > 1)) ||
+    (rows.length > 0 && end - rows[rows.length - 1] > 1 && end !== lines.length);
+  return wraps ? wrappedTableNames(lines, rows, headerAt, end) : new Map();
 }
 
 function findAuditor(lines: string[]): string | null {
