@@ -32,7 +32,7 @@ export function SetDueDatesDialog({
 }) {
   return (
     <Dialog open={columnKey !== null} onOpenChange={(open) => (open ? null : onClose())}>
-      <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-lg">
+      <DialogContent className="max-h-[92vh] overflow-x-hidden overflow-y-auto sm:max-w-2xl [&>*]:min-w-0">
         {columnKey !== null && matrix.columns.length > 0 ? (
           <SetDueDatesBody
             key={columnKey}
