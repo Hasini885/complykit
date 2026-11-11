@@ -1,3 +1,4 @@
+import { features } from "@/config/site";
 import { currentUser } from "@clerk/nextjs/server";
 
 import { isAdminEmail } from "@/lib/admin-users";
@@ -6,6 +7,7 @@ import { saveBillingConfig } from "@/lib/billing-server";
 
 /** The owner sets the yearly price (whole rupees, GST included). Admins only. */
 export async function PUT(request: Request) {
+  if (!features.subscriptions) return Response.json({ error: "Subscriptions are off." }, { status: 404 });
   const me = await currentUser();
   if (!isAdminEmail(me?.primaryEmailAddress?.emailAddress, process.env.ADMIN_EMAILS)) {
     return Response.json({ error: "Not allowed." }, { status: 403 });

@@ -1,9 +1,11 @@
+import { features } from "@/config/site";
 import { currentUser } from "@clerk/nextjs/server";
 
 import { createOrder, getBillingConfig, razorpayConfigured, razorpayKeyId } from "@/lib/billing-server";
 
 /** Starts a yearly payment: a Razorpay order at the price the owner set. */
 export async function POST() {
+  if (!features.subscriptions) return Response.json({ error: "Subscriptions are off." }, { status: 404 });
   const user = await currentUser();
   if (!user) return Response.json({ error: "Sign in first." }, { status: 401 });
   const config = await getBillingConfig();

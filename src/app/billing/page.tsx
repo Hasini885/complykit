@@ -4,6 +4,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { BillingPanel } from "@/components/billing/billing-panel";
+import { features } from "@/config/site";
 import { currentAccess, razorpayConfigured } from "@/lib/billing-server";
 
 export const metadata: Metadata = { title: "Subscription" };
@@ -11,6 +12,7 @@ export const dynamic = "force-dynamic";
 
 /** The subscription page: trial or plan status, and the yearly payment. */
 export default async function BillingPage() {
+  if (!features.subscriptions) redirect("/dashboard");
   const found = await currentAccess();
   if (!found) redirect("/sign-in?redirect_url=/billing");
   const { access, config } = found;

@@ -16,13 +16,15 @@ const when = (ms: number | null) => (ms ? formatDate(new Date(ms)) : "—");
 
 /** Everyone with an account, and an Excel download of the same list. */
 export function UsersTable({ rows }: { rows: UserRow[] }) {
+  // The Subscription column only when the rows carry one (subscriptions switched on).
+  const withPlan = rows.some((r) => r.plan !== undefined);
   const [busy, setBusy] = React.useState(false);
 
   async function download() {
     setBusy(true);
     try {
       const { default: writeXlsxFile } = await import("write-excel-file/browser");
-      const head = ["Name", "Mobile", "Email", "Joined", "Last sign-in", "Subscription"].map((value) => ({
+      const head = ["Name", "Mobile", "Email", "Joined", "Last sign-in", ...(withPlan ? ["Subscription"] : [])].map((value) => ({
         value,
         fontWeight: "bold" as const,
         backgroundColor: "#344054",
@@ -34,7 +36,7 @@ export function UsersTable({ rows }: { rows: UserRow[] }) {
         { value: r.email },
         { value: when(r.joinedAt) },
         { value: when(r.lastSignInAt) },
-        { value: r.plan ?? "" },
+        ...(withPlan ? [{ value: r.plan ?? "" }] : []),
       ]);
       const blob = await writeXlsxFile([head, ...body], {
         columns: [{ width: 28 }, { width: 16 }, { width: 34 }, { width: 14 }, { width: 14 }, { width: 26 }],
@@ -82,7 +84,7 @@ export function UsersTable({ rows }: { rows: UserRow[] }) {
               <TableHead>Email</TableHead>
               <TableHead>Joined</TableHead>
               <TableHead>Last sign-in</TableHead>
-              <TableHead>Subscription</TableHead>
+              {withPlan ? <TableHead>Subscription</TableHead> : null}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -112,7 +114,7 @@ export function UsersTable({ rows }: { rows: UserRow[] }) {
                   </TableCell>
                   <TableCell className="tabular whitespace-nowrap">{when(r.joinedAt)}</TableCell>
                   <TableCell className="tabular whitespace-nowrap">{when(r.lastSignInAt)}</TableCell>
-                  <TableCell className="whitespace-nowrap text-sm">{r.plan ?? "—"}</TableCell>
+                  {withPlan ? <TableCell className="whitespace-nowrap text-sm">{r.plan ?? "—"}</TableCell> : null}
                 </TableRow>
               ))
             )}

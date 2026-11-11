@@ -1,9 +1,11 @@
+import { features } from "@/config/site";
 import { auth } from "@clerk/nextjs/server";
 
 import { checkoutSignatureOk, verifyAndCredit } from "@/lib/billing-server";
 
 /** After Razorpay Checkout succeeds: check the signature, confirm with Razorpay, extend the account. */
 export async function POST(request: Request) {
+  if (!features.subscriptions) return Response.json({ error: "Subscriptions are off." }, { status: 404 });
   const { userId } = await auth();
   if (!userId) return Response.json({ error: "Sign in first." }, { status: 401 });
   const body = (await request.json().catch(() => ({}))) as {

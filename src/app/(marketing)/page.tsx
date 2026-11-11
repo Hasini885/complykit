@@ -61,7 +61,7 @@ const STEPS = [
 const FAQ = [
   {
     q: "How much does it cost?",
-    a: "Your first month is free. After that it is a yearly subscription, paid securely through Razorpay (UPI, cards or netbanking).",
+    a: "Nothing at the moment: it is free to use. Create an account and start adding companies.",
   },
   {
     q: "Where is my client data stored?",
@@ -89,7 +89,7 @@ export default function LandingPage() {
           <div>
             <p className="mb-6 inline-flex items-center gap-2 rounded-full border bg-card/70 px-3.5 py-1.5 text-xs font-semibold text-muted-foreground shadow-card backdrop-blur">
               <Sparkles className="size-3.5 text-pink-500" aria-hidden />
-              Free for your first month · Companies Act, 2013
+              Free to use · Companies Act, 2013
             </p>
             <h1 className="font-heading text-5xl leading-[1.02] font-extrabold tracking-tight sm:text-6xl lg:text-7xl">
               Never miss an{" "}
@@ -234,7 +234,7 @@ export default function LandingPage() {
               Make this filing season the calm one.
             </h2>
             <p className="relative mx-auto mt-4 max-w-[50ch] text-muted-foreground sm:text-lg">
-              Add your first company in under a minute. Free for your first month.
+              Add your first company in under a minute. Free to use.
             </p>
             <div className="relative mt-8 flex flex-wrap justify-center gap-3">
               <Button asChild size="lg">

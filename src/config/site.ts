@@ -7,6 +7,16 @@
  *  - `legal.disclaimer`  -> your exact approved wording
  */
 
+/**
+ * Features that can be switched on and off.
+ * `subscriptions`: the free month then yearly Razorpay plan (src/lib/billing*.ts,
+ * /billing, Admin price settings). Off for now: the tool is free, nobody is
+ * asked to pay, and no subscription text is shown. Set to true to turn it back on.
+ */
+export const features = {
+  subscriptions: false,
+} as const;
+
 export const site = {
   name: "CA Compliance Tool",
   edition: "Professional Edition",

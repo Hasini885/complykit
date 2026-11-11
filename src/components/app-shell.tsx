@@ -10,6 +10,7 @@ import { PortfolioProvider } from "@/components/portfolio/portfolio-provider";
 import { AccountSyncProvider } from "@/components/sync/account-sync";
 import { SubscriptionBanner } from "@/components/billing/subscription-banner";
 import { activateUserStorage } from "@/lib/user-storage";
+import { features } from "@/config/site";
 import type { Access } from "@/lib/billing";
 
 /**
@@ -52,7 +53,10 @@ function useSubscription(userId: string | null): { checked: boolean; billing: Bi
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { isLoaded, user } = useUser();
   const userId = user?.id ?? null;
-  const { checked, billing } = useSubscription(userId);
+  // With subscriptions off there is nothing to check: the app opens straight away.
+  const subscription = useSubscription(features.subscriptions ? userId : null);
+  const checked = !features.subscriptions || subscription.checked;
+  const billing = features.subscriptions ? subscription.billing : null;
 
   // Switch storage to this account before the data is read. Safe to repeat:
   // it does nothing when the account is already the active one.
