@@ -82,11 +82,11 @@ export function AlertsSignup({ className }: { className?: string }) {
   }
 
   return (
-    <aside className={cn("relative overflow-hidden rounded-3xl border bg-gradient-to-br from-sky-50 via-violet-50 to-pink-50 p-6 shadow-card sm:p-8 dark:from-sky-500/10 dark:via-violet-500/10 dark:to-pink-500/10", className)}>
+    <aside className={cn("relative overflow-hidden rounded-3xl border-2 border-dashed border-primary/25 bg-transparent p-6 sm:p-8", className)}>
       <div className="flex items-start gap-3">
         <span
           aria-hidden
-          className="mt-0.5 flex size-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-400 via-violet-500 to-pink-400 text-white shadow-md shadow-violet-500/30"
+          className="mt-0.5 flex size-11 shrink-0 items-center justify-center rounded-2xl bg-primary/15 text-primary"
         >
           <BellRing className="size-4" />
         </span>

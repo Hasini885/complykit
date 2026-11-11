@@ -60,12 +60,12 @@ const STEPS = [
 
 const FAQ = [
   {
-    q: "Is it really free?",
-    a: "Yes. There is no account, no trial and nothing to pay. Every form, section, calculator and due date is open to anyone.",
+    q: "How much does it cost?",
+    a: "Your first month is free. After that it is a yearly subscription, paid securely through Razorpay (UPI, cards or netbanking).",
   },
   {
     q: "Where is my client data stored?",
-    a: "In your own browser, and nowhere else. Companies and directors are never uploaded to a server. The one exception: when a PDF can't be read in the browser, that file is sent to an AI service to extract its text.",
+    a: "Under your own login, in private encrypted storage, so the same account shows the same companies on any computer. Other users cannot see it. MCA master data, challans and ITR acknowledgements you upload are read in your browser.",
   },
   {
     q: "How current is the law?",
@@ -89,11 +89,11 @@ export default function LandingPage() {
           <div>
             <p className="mb-6 inline-flex items-center gap-2 rounded-full border bg-card/70 px-3.5 py-1.5 text-xs font-semibold text-muted-foreground shadow-card backdrop-blur">
               <Sparkles className="size-3.5 text-pink-500" aria-hidden />
-              Free forever · No sign-up · Companies Act, 2013
+              Free for your first month · Companies Act, 2013
             </p>
             <h1 className="font-heading text-5xl leading-[1.02] font-extrabold tracking-tight sm:text-6xl lg:text-7xl">
               Never miss an{" "}
-              <span className="bg-gradient-to-r from-sky-500 via-violet-500 to-pink-500 bg-clip-text text-transparent">
+              <span className="brand-satin-text bg-clip-text text-transparent">
                 MCA deadline
               </span>{" "}
               again.
@@ -117,7 +117,7 @@ export default function LandingPage() {
             </div>
             <p className="mt-6 flex items-center gap-2 text-sm text-muted-foreground">
               <Lock className="size-4 text-emerald-500" aria-hidden />
-              Your client data stays in your browser.
+              Your client data is private to your account.
             </p>
           </div>
 
@@ -172,7 +172,7 @@ export default function LandingPage() {
         </section>
 
         {/* ---------------------------------------------------- how it works */}
-        <section id="how-it-works" className="scroll-mt-24 bg-gradient-to-b from-transparent via-accent/50 to-transparent py-24">
+        <section id="how-it-works" className="scroll-mt-24 py-24">
           <div className="mx-auto max-w-6xl px-4 sm:px-6">
             <SectionHeading
               eyebrow="How it works"
@@ -195,20 +195,20 @@ export default function LandingPage() {
 
         {/* --------------------------------------------------------- privacy */}
         <section id="privacy" className="mx-auto max-w-6xl scroll-mt-24 px-4 py-24 sm:px-6">
-          <div className="grid items-center gap-10 overflow-hidden rounded-[2.5rem] border bg-gradient-to-br from-sky-50 via-violet-50 to-pink-50 p-8 shadow-card sm:p-12 lg:grid-cols-2 dark:from-sky-500/10 dark:via-violet-500/10 dark:to-pink-500/10">
+          <div className="grid items-center gap-10 overflow-hidden rounded-[2.5rem] border-2 border-dashed border-primary/25 bg-transparent p-8 sm:p-12 lg:grid-cols-2">
             <div>
               <p className="mb-4 inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">
                 <ShieldCheck className="size-3.5" aria-hidden /> Private by design
               </p>
-              <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">Your clients&apos; data never leaves your browser.</h2>
+              <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">Your clients&apos; data stays private.</h2>
               <p className="mt-4 max-w-[52ch] leading-relaxed text-muted-foreground">
-                There&apos;s no account and no server-side database. The portfolio lives in this
-                browser&apos;s storage, so nobody else, including us, can see who your clients are.
+                It&apos;s saved under your own login in encrypted storage, so you see the same companies on
+                any computer, and no other user can see who your clients are.
               </p>
             </div>
             <ul className="grid gap-3">
-              <PrivacyPoint icon={HardDrive} tint="sky" title="Stored locally" body="Companies, directors and checklists are saved in your browser only." />
-              <PrivacyPoint icon={UserX} tint="violet" title="No sign-up, no account" body="Open it and start working. There's nothing to register and no password to forget." />
+              <PrivacyPoint icon={HardDrive} tint="sky" title="Saved to your account" body="Companies, directors and checklists are saved under your login and kept in step on every device." />
+              <PrivacyPoint icon={UserX} tint="violet" title="Only you can open it" body="Your account's data is yours alone; other users never see your companies." />
               <PrivacyPoint icon={BellRing} tint="pink" title="Alerts are opt-in" body="Deadline emails are a separate list, and nothing on the site requires them." />
             </ul>
           </div>
@@ -229,22 +229,20 @@ export default function LandingPage() {
 
         {/* ------------------------------------------------------- final CTA */}
         <section className="mx-auto max-w-6xl px-4 sm:px-6">
-          <div className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-sky-500 via-violet-600 to-pink-500 px-8 py-16 text-center text-white shadow-lift sm:px-16">
-            <div aria-hidden className="absolute -top-24 -left-16 size-72 rounded-full bg-white/15 blur-3xl" />
-            <div aria-hidden className="absolute -right-10 -bottom-28 size-80 rounded-full bg-pink-300/30 blur-3xl" />
+          <div className="relative overflow-hidden rounded-[2.5rem] border-2 border-dashed border-primary/25 bg-transparent px-8 py-16 text-center sm:px-16">
             <h2 className="relative mx-auto max-w-[22ch] text-3xl font-extrabold tracking-tight sm:text-5xl">
               Make this filing season the calm one.
             </h2>
-            <p className="relative mx-auto mt-4 max-w-[50ch] text-white/85 sm:text-lg">
-              Add your first company in under a minute. No sign-up, no card, no catch.
+            <p className="relative mx-auto mt-4 max-w-[50ch] text-muted-foreground sm:text-lg">
+              Add your first company in under a minute. Free for your first month.
             </p>
             <div className="relative mt-8 flex flex-wrap justify-center gap-3">
-              <Button asChild size="lg" className="bg-white text-violet-700 shadow-lg shadow-black/10 hover:bg-white/90">
+              <Button asChild size="lg">
                 <Link href="/portfolio">
                   Add your first company <ArrowRight className="size-4" aria-hidden />
                 </Link>
               </Button>
-              <Button asChild size="lg" variant="ghost" className="text-white hover:bg-white/15 hover:text-white">
+              <Button asChild size="lg" variant="outline">
                 <Link href="/due-dates">
                   <CalendarDays className="size-4" aria-hidden /> See the compliance calendar
                 </Link>
@@ -284,7 +282,7 @@ function Stat({ value, label }: { value: React.ReactNode; label: string }) {
   return (
     <div className="flex flex-col rounded-3xl bg-background/70 px-5 py-6 text-center">
       <dt className="order-2 mt-2 text-sm text-muted-foreground">{label}</dt>
-      <dd className="tabular order-1 bg-gradient-to-r from-sky-500 via-violet-500 to-pink-500 bg-clip-text text-4xl font-extrabold text-transparent">
+      <dd className="tabular brand-satin-text order-1 bg-clip-text text-4xl font-extrabold text-transparent">
         {value}
       </dd>
     </div>
