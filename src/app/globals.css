@@ -171,9 +171,11 @@
   }
   body {
     @apply bg-background text-foreground;
+    /* Three layers: grain (tiled), then the satin's vignette and bands (one piece, the whole screen). */
     background-image: var(--grain), var(--satin);
-    background-size: 180px 180px, 100% 100%;
-    background-attachment: fixed;
+    background-size: 180px 180px, 100% 100%, 100% 100%;
+    background-repeat: repeat, no-repeat, no-repeat;
+    background-attachment: fixed, fixed, fixed;
   }
   html {
     @apply font-sans;
