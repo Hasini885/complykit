@@ -27,8 +27,9 @@ export function SiteHeader() {
 
   return (
     <>
-      <header className="sticky top-0 z-40 px-3 pt-3 sm:px-4 print:hidden">
-        <div className="mx-auto flex h-16 w-full max-w-[1600px] items-center gap-3 rounded-full 2xl:w-fit border border-white/60 bg-card/75 pr-2 pl-3 shadow-card backdrop-blur-xl sm:pl-4 dark:border-white/10">
+      {/* A solid band behind the bar, so the page never shows through or around it while scrolling. */}
+      <header className="sticky top-0 z-40 bg-background px-3 pt-3 pb-3 shadow-[0_8px_16px_-12px] shadow-foreground/10 sm:px-4 print:hidden">
+        <div className="mx-auto flex h-16 w-full max-w-[1600px] items-center gap-3 rounded-full 2xl:w-fit border border-white/60 bg-card pr-2 pl-3 shadow-card sm:pl-4 dark:border-white/10">
           <Button
             variant="ghost"
             size="icon"
