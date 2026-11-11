@@ -112,7 +112,6 @@ export function MasterDataUpload({ className }: { className?: string }) {
     <>
       <UploadHero
         title="Upload MCA master data"
-        description="Add companies and their directors from the MCA master data PDF or Excel."
         button="Select PDF or Excel files"
         busyLabel="Reading… printed or scanned PDFs take a little longer"
         dropHint="or drop master data PDFs or Excel files here"
