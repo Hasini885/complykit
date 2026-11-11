@@ -60,10 +60,8 @@
      washes behind the page, white cards with big radii and violet-tinted
      shadows. Status colours (red/amber/green) stay as they were. */
   --background: oklch(0.986 0.006 285);
-  /* Satin texture behind every page (see body below): soft slanted bands of light and fine grain. */
-  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.1 0 0 0 0 0.12 0 0 0 0 0.3 0 0 0 0.06 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  /* Satin behind every page (see body below): one smooth gradient of slanted bands of light. */
   --satin:
-    radial-gradient(120% 90% at 50% 35%, transparent 55%, oklch(0.9 0.03 275 / 0.5)),
     linear-gradient(98deg,
       oklch(0.95 0.02 272) 0%,
       oklch(0.995 0.005 285) 22%,
@@ -113,11 +111,9 @@
 }
 
 .dark {
-  /* Blue satin: the reference texture's bands and grain in the app's periwinkle blues. */
+  /* Blue satin: soft slanted bands of light in the app's periwinkle blues. */
   --background: oklch(0.17 0.025 280);
-  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.09 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   --satin:
-    radial-gradient(120% 90% at 50% 38%, transparent 50%, oklch(0.12 0.03 275 / 0.65)),
     linear-gradient(98deg,
       oklch(0.17 0.03 278) 0%,
       oklch(0.38 0.035 268) 23%,
@@ -171,11 +167,11 @@
   }
   body {
     @apply bg-background text-foreground;
-    /* Three layers: grain (tiled), then the satin's vignette and bands (one piece, the whole screen). */
-    background-image: var(--grain), var(--satin);
-    background-size: 180px 180px, 100% 100%, 100% 100%;
-    background-repeat: repeat, no-repeat, no-repeat;
-    background-attachment: fixed, fixed, fixed;
+    /* One blue satin sheet over the whole screen: a single gradient, never tiled. */
+    background-image: var(--satin);
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
   }
   html {
     @apply font-sans;

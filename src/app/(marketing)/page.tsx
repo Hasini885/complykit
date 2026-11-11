@@ -80,7 +80,6 @@ const FAQ = [
 export default function LandingPage() {
   return (
     <div className="relative isolate min-h-full overflow-x-clip">
-      <div aria-hidden className="pastel-wash pointer-events-none absolute inset-x-0 top-0 -z-10 h-[820px]" />
 
       <LandingHeader />
 

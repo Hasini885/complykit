@@ -12,8 +12,6 @@ import { cn } from "@/lib/utils";
 export function AuthShell({ mode, children }: { mode: "sign-in" | "sign-up"; children: React.ReactNode }) {
   return (
     <main className="relative isolate flex min-h-screen items-center justify-center overflow-hidden px-4 py-10">
-      {/* The soft colour wash is blurred on its own layer, behind the card. */}
-      <div aria-hidden className="pastel-wash pointer-events-none absolute inset-x-0 top-0 -z-10 h-[560px]" />
       <div className="w-full max-w-md space-y-5 rounded-3xl border bg-card p-6 shadow-card sm:p-7">
         <div className="flex items-center gap-3">
           <span

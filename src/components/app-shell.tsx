@@ -44,7 +44,6 @@ export function AppShell({ children, banner }: { children: React.ReactNode; bann
     <PortfolioProvider key={user.id}>
       <AccountSyncProvider userId={user.id}>
         <div className="relative isolate flex min-h-full flex-col">
-          <div aria-hidden className="pastel-wash pointer-events-none absolute inset-x-0 top-0 -z-10 h-[560px] print:hidden" />
           {/* Header, banner and footer carry print:hidden themselves, so printing
               (reports, "Save as PDF") shows the page content only. */}
           <SiteHeader />
