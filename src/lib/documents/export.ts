@@ -144,7 +144,7 @@ export async function toDocx(blocks: Block[], title: string): Promise<Blob> {
 
   const doc = new Document({
     title,
-    creator: "ComplyKit",
+    creator: "CA Compliance Tool",
     sections: [{ properties: { page: { margin: { top: 709, bottom: 1134, left: 1304, right: 1134 } } }, children }],
   });
   return Packer.toBlob(doc);

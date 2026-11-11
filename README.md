@@ -1,8 +1,8 @@
-# ComplyKit
+# CA Compliance Tool
 
 **Live website: [complykitapp.vercel.app](https://complykitapp.vercel.app)**
 
-ComplyKit is a compliance tracker for companies registered under India's Companies Act, 2013. It keeps every company's statutory due dates, directors and filings in one place, so deadlines aren't missed.
+CA Compliance Tool is a compliance tracker for companies registered under India's Companies Act, 2013. It keeps every company's statutory due dates, directors and filings in one place, so deadlines aren't missed.
 
 ## Features
 
@@ -19,6 +19,6 @@ Next.js, React, TypeScript, Tailwind CSS, Clerk (login) and Vercel (hosting and 
 
 ## Disclaimer
 
-ComplyKit is a reference tool for general information only and is not legal or professional advice. Always verify due dates and requirements against the Companies Act, the Rules and the official MCA portal.
+CA Compliance Tool is a reference tool for general information only and is not legal or professional advice. Always verify due dates and requirements against the Companies Act, the Rules and the official MCA portal.
 
-© 2026 ComplyKit. All rights reserved.
+© 2026 CA Compliance Tool. All rights reserved.

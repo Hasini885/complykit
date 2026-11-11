@@ -109,7 +109,7 @@ function Brand({ onNavigate }: { onNavigate?: () => void }) {
       >
         <Scale className="size-4" />
       </span>
-      <span className="font-heading text-lg font-bold tracking-tight">{site.name}</span>
+      <span className="font-heading text-lg font-bold tracking-tight whitespace-nowrap">{site.name}</span>
     </Link>
   );
 }

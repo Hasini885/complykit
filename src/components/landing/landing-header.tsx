@@ -25,7 +25,7 @@ export function LandingHeader() {
           >
             <Scale className="size-4" />
           </span>
-          <span className="font-heading text-lg font-bold tracking-tight">{site.name}</span>
+          <span className="font-heading text-lg font-bold tracking-tight whitespace-nowrap">{site.name}</span>
         </Link>
 
         <nav aria-label="Page sections" className="ml-4 hidden items-center md:flex">

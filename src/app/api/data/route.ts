@@ -43,7 +43,7 @@ export async function PUT(request: Request) {
     return Response.json({ error: "Unreadable upload." }, { status: 400, headers: noStore });
   }
   if (!isAccountData(data)) {
-    return Response.json({ error: "That is not ComplyKit data." }, { status: 400, headers: noStore });
+    return Response.json({ error: "That is not CA Compliance Tool data." }, { status: 400, headers: noStore });
   }
   try {
     await put(pathFor(userId), JSON.stringify(data), {

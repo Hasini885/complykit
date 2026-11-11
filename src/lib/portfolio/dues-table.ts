@@ -244,7 +244,7 @@ export const DUES_COLUMNS: DuesColumn[] = [
 ];
 
 export function duesFileName(asOf: Date, ext: "xlsx" | "pdf"): string {
-  return `complykit-all-dues-${isoDate(asOf)}.${ext}`;
+  return `cacompliancetool-all-dues-${isoDate(asOf)}.${ext}`;
 }
 
 /**

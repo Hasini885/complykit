@@ -2,7 +2,7 @@ import type { PortfolioSnapshot } from "@/lib/portfolio/types";
 
 /**
  * Keeping a signed-in user's data the same on every computer. The copy saved
- * online (under their ComplyKit account) and the copy in this browser are
+ * online (under their CA Compliance Tool account) and the copy in this browser are
  * compared when the app opens, and after every change.
  */
 

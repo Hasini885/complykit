@@ -146,7 +146,7 @@ export function NotificationsBell() {
       writePref(true);
       setEnabled(true);
       toast.success("Desktop notifications on", {
-        description: `You'll be notified ${REMIND_DAYS_BEFORE} days before each due while ComplyKit is open.`,
+        description: `You'll be notified ${REMIND_DAYS_BEFORE} days before each due while CA Compliance Tool is open.`,
       });
     } else {
       toast.error("Notifications were not allowed", {
@@ -167,7 +167,7 @@ export function NotificationsBell() {
       toast.info("Nothing upcoming to add");
       return;
     }
-    downloadIcs(events, "complykit-reminders.ics", "ComplyKit — compliance reminders");
+    downloadIcs(events, "cacompliancetool-reminders.ics", "CA Compliance Tool — compliance reminders");
     toast.success(`Calendar file with ${events.length} dues downloaded`, {
       description: `Import it into Outlook, Apple or Google Calendar. Each due reminds you ${REMIND_DAYS_BEFORE} days before, at 9 am.`,
     });
@@ -250,7 +250,7 @@ export function NotificationsBell() {
             <CalendarPlus className="size-3.5" aria-hidden /> Add reminders to my calendar (.ics)
           </Button>
           <p className="text-[11px] leading-snug text-muted-foreground">
-            Desktop notifications appear while ComplyKit is open. For reminders when it is closed,
+            Desktop notifications appear while CA Compliance Tool is open. For reminders when it is closed,
             add the calendar file to Outlook, Apple or Google Calendar.
           </p>
         </div>

@@ -8,7 +8,7 @@
  */
 
 export const site = {
-  name: "ComplyKit",
+  name: "CA Compliance Tool",
   edition: "Professional Edition",
   tagline: "Companies Act, 2013 compliance reference for CA, CS and finance teams in India",
   description:
@@ -27,7 +27,7 @@ export const brand = {
 export const legal = {
   // TODO(client): replace with your exact approved wording.
   disclaimer:
-    "ComplyKit is a reference tool provided for general information and educational purposes only. It does not constitute legal, financial, secretarial or professional advice, and no professional relationship is created by its use. Statutory thresholds, fees, forms and due dates are amended frequently by notification, circular and general exemption. Always verify against the bare Act, the relevant Rules and the official MCA portal before filing or advising.",
+    "CA Compliance Tool is a reference tool provided for general information and educational purposes only. It does not constitute legal, financial, secretarial or professional advice, and no professional relationship is created by its use. Statutory thresholds, fees, forms and due dates are amended frequently by notification, circular and general exemption. Always verify against the bare Act, the relevant Rules and the official MCA portal before filing or advising.",
   sourceNote:
     "Form particulars are compiled from the Ministry of Corporate Affairs (mca.gov.in) and the Companies Act, 2013.",
   // When true, shows the "Pre-launch: seeded data is unverified" banner on every

@@ -5,7 +5,7 @@ import { site } from "@/config/site";
 import { cn } from "@/lib/utils";
 
 /**
- * The ComplyKit login card, with Clerk's form inside it: the brand at the
+ * The CA Compliance Tool login card, with Clerk's form inside it: the brand at the
  * top, a Sign in / Create account switch, then the form. Shown to everyone
  * who opens the site signed out.
  */
@@ -63,7 +63,7 @@ export function AuthShell({ mode, children }: { mode: "sign-in" | "sign-up"; chi
 
 /**
  * Clerk's form, restyled to sit inside the card: no box or heading of its
- * own (the card has them), ComplyKit's colour, font and rounded fields.
+ * own (the card has them), CA Compliance Tool's colour, font and rounded fields.
  */
 export const clerkAppearance = {
   // The site's own theme colours, so the form follows light and dark mode with the card.

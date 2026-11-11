@@ -33,7 +33,7 @@ export default async function AdminUsersPage() {
         icon={UsersRound}
         eyebrow="Admin"
         title="Users"
-        lede="Everyone who has created a ComplyKit account, with the name, mobile and email they gave at sign-up."
+        lede="Everyone who has created a CA Compliance Tool account, with the name, mobile and email they gave at sign-up."
       />
       <UsersTable rows={rows} />
     </div>

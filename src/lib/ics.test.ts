@@ -11,7 +11,7 @@ test("produces a well-formed VCALENDAR wrapper", () => {
   assert.ok(ics.startsWith("BEGIN:VCALENDAR\r\n"));
   assert.ok(ics.trimEnd().endsWith("END:VCALENDAR"));
   assert.match(ics, /VERSION:2\.0/);
-  assert.match(ics, /PRODID:-\/\/ComplyKit/);
+  assert.match(ics, /PRODID:-\/\/CA Compliance Tool/);
   assert.ok(ics.endsWith("\r\n"), "file ends with a trailing CRLF");
 });
 

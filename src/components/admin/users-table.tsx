@@ -42,7 +42,7 @@ export function UsersTable({ rows }: { rows: UserRow[] }) {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `complykit-users-${isoDate(new Date())}.xlsx`;
+      a.download = `cacompliancetool-users-${isoDate(new Date())}.xlsx`;
       a.click();
       setTimeout(() => URL.revokeObjectURL(url), 10_000);
       toast.success(`Downloaded ${rows.length} ${rows.length === 1 ? "user" : "users"}`);

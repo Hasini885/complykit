@@ -176,7 +176,7 @@ export async function downloadMasterData(kind: "xlsx" | "pdf", rows: MasterDataR
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `complykit-company-master-data-${isoDate(asOf)}.${kind}`;
+  a.download = `cacompliancetool-company-master-data-${isoDate(asOf)}.${kind}`;
   document.body.appendChild(a);
   a.click();
   a.remove();

@@ -25,7 +25,7 @@ export function ProductPreview({ className }: { className?: string }) {
   return (
     <div className={cn("relative", className)}>
       <p className="sr-only">
-        Preview of the ComplyKit dashboard: portfolio stats and a list of filings that are overdue or due soon.
+        Preview of the CA Compliance Tool dashboard: portfolio stats and a list of filings that are overdue or due soon.
       </p>
       <div aria-hidden className="relative">
         {/* Window */}

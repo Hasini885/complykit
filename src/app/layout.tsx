@@ -29,7 +29,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full">
         {/* Accounts (sign up, sign in) are handled by Clerk; nothing about users is stored by this app. */}
         <ClerkProvider
-          // Clerk's styles sit in their own CSS layer, below the site's, so ComplyKit's styling wins.
+          // Clerk's styles sit in their own CSS layer, below the site's, so CA Compliance Tool's styling wins.
           appearance={{ cssLayerName: "clerk" }}
           signInUrl="/sign-in"
           signUpUrl="/sign-up"

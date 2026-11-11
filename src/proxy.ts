@@ -4,7 +4,7 @@ import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
  * Every page of the app needs a signed-in account (Clerk). Open to everyone:
  * the public home page ("Never miss an MCA deadline again"), the Privacy
  * Policy and Terms (Google requires them public), and sign-in / sign-up. Entering the app from the home page asks to sign in. Accounts live
- * with Clerk, not in this app: ComplyKit itself stores no user data, and each
+ * with Clerk, not in this app: CA Compliance Tool itself stores no user data, and each
  * user's companies stay in their own browser.
  */
 const isPublic = createRouteMatcher(["/", "/privacy", "/terms", "/sign-in(.*)", "/sign-up(.*)"]);

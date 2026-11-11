@@ -16,7 +16,7 @@ export type IcsEvent = {
   description?: string;
   /**
    * Adds an alarm this many days before, at 9:00 that morning, so the
-   * calendar app reminds the user even when ComplyKit is closed.
+   * calendar app reminds the user even when CA Compliance Tool is closed.
    */
   remindDaysBefore?: number;
 };
@@ -69,13 +69,13 @@ export function alarmTrigger(daysBefore: number): string {
 
 export function buildIcs(
   events: IcsEvent[],
-  calendarName = "ComplyKit compliance calendar",
+  calendarName = "CA Compliance Tool compliance calendar",
 ): string {
   const stamp = nowStamp();
   const lines: string[] = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//ComplyKit//Compliance Calendar//EN",
+    "PRODID:-//CA Compliance Tool//Compliance Calendar//EN",
     "CALSCALE:GREGORIAN",
     `X-WR-CALNAME:${escapeText(calendarName)}`,
   ];

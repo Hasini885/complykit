@@ -103,7 +103,7 @@ export function CommandPalette({
     <CommandDialog
       open={open}
       onOpenChange={onOpenChange}
-      title="Search ComplyKit"
+      title="Search CA Compliance Tool"
       description="Search your companies, directors, consultants, SRNs and DINs"
       className="max-w-2xl"
     >

@@ -17,7 +17,7 @@ test("which copy wins", () => {
   assert.equal(syncPlan({ ...synced, changedSinceSync: true }, { updatedAt: 8 }), "ask", "changed on both");
 });
 
-test("the server accepts only ComplyKit data", () => {
+test("the server accepts only CA Compliance Tool data", () => {
   const good: AccountData = { app: "complykit", version: 1, updatedAt: 1, portfolio: emptySnapshot(), extras: { a: "b" } };
   assert.equal(isAccountData(good), true);
   assert.equal(isAccountData({ ...good, app: "other" }), false);

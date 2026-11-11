@@ -31,13 +31,13 @@ export type ExportMeta = {
   fileTag?: string;
 };
 
-/** The file name, with the tag (if any) after "complykit-". */
+/** The file name, with the tag (if any) after "cacompliancetool-". */
 function tagged(name: string, meta: ExportMeta): string {
   const tag = meta.fileTag
     ?.toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
-  return tag ? name.replace(/^complykit-/, `complykit-${tag}-`) : name;
+  return tag ? name.replace(/^cacompliancetool-/, `cacompliancetool-${tag}-`) : name;
 }
 
 /**
@@ -127,7 +127,7 @@ export async function createDuesXlsx(
       "Covers obligations due from 90 days ago to 12 months ahead, across financial years, computed from each company's own profile.",
     ],
     [
-      "Status \"Filed\" means a filing date was recorded in ComplyKit (with its SRN where given). Other rows are pending until filed.",
+      "Status \"Filed\" means a filing date was recorded in CA Compliance Tool (with its SRN where given). Other rows are pending until filed.",
     ],
     [""],
     [{ value: "Colour key", fontWeight: "bold" as const }],

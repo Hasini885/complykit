@@ -59,7 +59,7 @@ export function reminderCalendarEvents(
         `${r.obligation}${r.form ? `, ${r.form}` : ""} for ${r.fy}${r.period ? `, ${r.period}` : ""}.`,
         `Provision: ${r.section}.`,
         r.basis ? "Counted from the statutory last date for the AGM; record the actual AGM to firm it up." : "",
-        "Mark it filed with its SRN in ComplyKit once done.",
+        "Mark it filed with its SRN in CA Compliance Tool once done.",
       ]
         .filter(Boolean)
         .join("\n"),
