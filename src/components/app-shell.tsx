@@ -74,7 +74,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     // Keyed by account, so a different sign-in starts fresh with its own data.
     <PortfolioProvider key={user.id}>
       <AccountSyncProvider userId={user.id}>
-        <div className="relative isolate flex min-h-full flex-col">
+        <div className="relative isolate flex min-h-dvh flex-col">
           {/* Header, banner and footer carry print:hidden themselves, so printing
               (reports, "Save as PDF") shows the page content only. */}
           <SiteHeader />
