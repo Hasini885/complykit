@@ -364,9 +364,6 @@ export function AllDuesGrid({
             onOpenColumn={(key) => setSettingDue(key)}
             onOpenAuditorTerm={(clientId, year) => setTermCell({ clientId, fy: year })}
           />
-          <p className="text-xs text-muted-foreground">
-            {matrix.rows.length} compan{matrix.rows.length === 1 ? "y" : "ies"} × {matrix.columns.length} dues
-          </p>
         </>
       ) : (
       <>
@@ -425,9 +422,6 @@ export function AllDuesGrid({
           </tbody>
         </table>
       </div>
-      <p className="text-xs text-muted-foreground">
-        {visible.length} of {rows.length} rows
-      </p>
       </>
       )}
       </div>
