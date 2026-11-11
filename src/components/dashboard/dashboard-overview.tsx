@@ -92,33 +92,28 @@ function AdminDashboard() {
       </div>
 
       {/* The full sheet of dues leads the firm view: it is what the desk works from.
-          Its year picker sets the year for the whole dashboard. The calendar sits
-          beside it on wide screens and drops below it on narrow ones, so the
-          matrix keeps its width. */}
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_13.5rem] xl:items-start">
-        <div className="min-w-0 space-y-8">
-          <AllDuesGrid
-            section="post-incorporation"
-            clients={clients}
-            directors={directors}
-            reference={reference}
-            onOpenClient={selectCompany}
-            fy={null}
-          />
-          <AllDuesGrid
-            section="annual"
-            clients={clients}
-            directors={directors}
-            reference={reference}
-            onOpenClient={selectCompany}
-            fy={fy}
-            yearControl={<YearPicker years={years} value={fy} onChange={setFy} reference={reference} />}
-          />
-        </div>
-
-        <div className="min-w-0 max-w-[13.5rem] xl:sticky xl:top-24">
-          <GlassCalendar items={allItems} reference={reference} onOpen={selectCompany} />
-        </div>
+          The calendar sits beside the first table, level with its top, on wide
+          screens, and drops below it on narrow ones. The annual table's year
+          picker sets the year for the whole dashboard. */}
+      <div className="min-w-0 space-y-8">
+        <AllDuesGrid
+          section="post-incorporation"
+          clients={clients}
+          directors={directors}
+          reference={reference}
+          onOpenClient={selectCompany}
+          fy={null}
+          aside={<GlassCalendar items={allItems} reference={reference} onOpen={selectCompany} />}
+        />
+        <AllDuesGrid
+          section="annual"
+          clients={clients}
+          directors={directors}
+          reference={reference}
+          onOpenClient={selectCompany}
+          fy={fy}
+          yearControl={<YearPicker years={years} value={fy} onChange={setFy} reference={reference} />}
+        />
       </div>
 
       <ClientFormDialog open={editing !== null} onOpenChange={(o) => !o && setEditingId(null)} client={editing} />

@@ -92,6 +92,7 @@ export function AllDuesGrid({
   singleCompany = false,
   fy: controlledFy,
   yearControl,
+  aside,
 }: {
   section: DuesSection;
   clients: Client[];
@@ -108,6 +109,8 @@ export function AllDuesGrid({
   fy?: number | null;
   /** The page's own year picker, shown in the toolbar beside the view switch. */
   yearControl?: React.ReactNode;
+  /** Shown beside the table on wide screens, its top level with the table's (e.g. the calendar). */
+  aside?: React.ReactNode;
 }) {
   // Null is the rolling window (90 days back to 12 months ahead); a number is
   // one financial year, by the calendar year its 31 March falls in.
@@ -359,6 +362,9 @@ export function AllDuesGrid({
         )}
       </div>
 
+      {/* The table, with the aside (if any) beside it from xl, tops level. */}
+      <div className={aside ? "grid gap-4 xl:grid-cols-[minmax(0,1fr)_13.5rem] xl:items-start" : "contents"}>
+      <div className="min-w-0 space-y-3">
       {view === "matrix" ? (
         <>
           <FilingMatrixTable
@@ -439,6 +445,9 @@ export function AllDuesGrid({
       </p>
       </>
       )}
+      </div>
+      {aside ? <div className="min-w-0 max-w-[13.5rem] xl:sticky xl:top-24">{aside}</div> : null}
+      </div>
 
       <MarkFiledDialog
         clientId={marking?.clientId ?? ""}
