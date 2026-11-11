@@ -29,7 +29,7 @@ export function SiteHeader() {
     <>
       {/* A straight, full-width bar with a line under it; solid, so the page never shows through while scrolling. */}
       <header className="sticky top-0 z-40 border-b bg-card shadow-[0_8px_16px_-12px] shadow-foreground/10 print:hidden">
-        <div className="mx-auto flex h-16 w-full max-w-[1600px] items-center gap-3 px-3 sm:px-6">
+        <div className="flex h-16 w-full items-center gap-3 px-3 sm:px-6">
           <Button
             variant="ghost"
             size="icon"
