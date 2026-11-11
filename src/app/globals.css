@@ -59,7 +59,19 @@
   /* Soft & friendly: periwinkle primary on a lavender-white canvas, pastel
      washes behind the page, white cards with big radii and violet-tinted
      shadows. Status colours (red/amber/green) stay as they were. */
-  --background: oklch(0.986 0.006 285);
+  --background: oklch(0.975 0.01 315);
+  /* Satin texture behind every page (see body below): soft slanted bands of light and fine grain. */
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.2 0 0 0 0 0.1 0 0 0 0 0.25 0 0 0 0.06 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --satin:
+    radial-gradient(120% 90% at 50% 35%, transparent 55%, oklch(0.9 0.025 320 / 0.55)),
+    linear-gradient(98deg,
+      oklch(0.95 0.018 320) 0%,
+      oklch(0.99 0.006 300) 22%,
+      oklch(0.955 0.018 320) 40%,
+      oklch(0.985 0.008 305) 58%,
+      oklch(0.95 0.02 322) 75%,
+      oklch(0.975 0.01 310) 88%,
+      oklch(0.945 0.02 322) 100%);
   --foreground: oklch(0.25 0.035 275);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.25 0.035 275);
@@ -101,17 +113,29 @@
 }
 
 .dark {
-  --background: oklch(0.17 0.025 280);
+  /* Plum satin, as in the reference texture. */
+  --background: oklch(0.2 0.04 330);
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.09 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --satin:
+    radial-gradient(120% 90% at 50% 38%, transparent 50%, oklch(0.13 0.04 330 / 0.65)),
+    linear-gradient(98deg,
+      oklch(0.2 0.045 332) 0%,
+      oklch(0.43 0.022 300) 23%,
+      oklch(0.24 0.04 330) 40%,
+      oklch(0.34 0.028 310) 57%,
+      oklch(0.2 0.045 332) 73%,
+      oklch(0.3 0.03 315) 87%,
+      oklch(0.19 0.045 332) 100%);
   --foreground: oklch(0.96 0.01 285);
-  --card: oklch(0.215 0.03 280);
+  --card: oklch(0.24 0.035 325);
   --card-foreground: oklch(0.96 0.01 285);
-  --popover: oklch(0.225 0.032 280);
+  --popover: oklch(0.25 0.036 325);
   --popover-foreground: oklch(0.96 0.01 285);
   --primary: oklch(0.74 0.14 278);
   --primary-foreground: oklch(0.2 0.05 278);
-  --secondary: oklch(0.27 0.04 280);
+  --secondary: oklch(0.29 0.04 322);
   --secondary-foreground: oklch(0.95 0.01 285);
-  --muted: oklch(0.255 0.03 280);
+  --muted: oklch(0.28 0.035 322);
   --muted-foreground: oklch(0.72 0.03 280);
   --accent: oklch(0.3 0.06 278);
   --accent-foreground: oklch(0.92 0.05 278);
@@ -147,6 +171,9 @@
   }
   body {
     @apply bg-background text-foreground;
+    background-image: var(--grain), var(--satin);
+    background-size: 180px 180px, 100% 100%;
+    background-attachment: fixed;
   }
   html {
     @apply font-sans;
