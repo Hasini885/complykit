@@ -48,3 +48,6 @@ next-env.d.ts
 
 # local Claude Code settings
 /.claude/
+
+# tesseract.js language data cached by local OCR runs
+*.traineddata
