@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { toast } from "sonner";
-import { CheckCircle2, Loader2, Receipt } from "lucide-react";
+import { CheckCircle2, Loader2, Receipt, Upload } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -35,9 +35,17 @@ import type { ResolvedDueDate } from "@/lib/resolve-due-dates";
  * data (name, registered office) from it and marks the filing it paid for as
  * filed, with the SRN and the SRN date. Only G.A.R.7 receipts are accepted.
  */
-export function ChallanUploadButton({ className }: { className?: string }) {
+export function ChallanUploadButton({
+  className,
+  variant = "icon",
+}: {
+  className?: string;
+  /** "icon" for toolbars; "bar" for a full-width strip that also takes a dropped PDF. */
+  variant?: "icon" | "bar";
+}) {
   const inputRef = React.useRef<HTMLInputElement>(null);
   const [reading, setReading] = React.useState(false);
+  const [dragging, setDragging] = React.useState(false);
   const [challan, setChallan] = React.useState<Challan | null>(null);
 
   async function onFile(file: File | undefined) {
@@ -60,8 +68,38 @@ export function ChallanUploadButton({ className }: { className?: string }) {
     }
   }
 
-  return (
-    <>
+  const trigger =
+    variant === "bar" ? (
+      <button
+        type="button"
+        onClick={() => inputRef.current?.click()}
+        onDragOver={(e) => {
+          e.preventDefault();
+          setDragging(true);
+        }}
+        onDragLeave={() => setDragging(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setDragging(false);
+          void onFile(e.dataTransfer.files?.[0]);
+        }}
+        disabled={reading}
+        className={`group flex w-full items-center gap-3 rounded-2xl border border-dashed p-3 text-left transition-colors hover:border-primary/60 hover:bg-primary/5 disabled:opacity-70 ${
+          dragging ? "border-primary bg-primary/10" : "border-primary/30 bg-card"
+        } ${className ?? ""}`}
+      >
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+          {reading ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Receipt className="size-4" aria-hidden />}
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-sm font-semibold">{reading ? "Reading challan…" : "Upload MCA challan"}</span>
+          <span className="block text-[11px] leading-snug text-muted-foreground">
+            PDF receipt: marks the filing filed with its SRN
+          </span>
+        </span>
+        <Upload className="size-4 shrink-0 text-muted-foreground group-hover:text-primary" aria-hidden />
+      </button>
+    ) : (
       <Tip label="Upload MCA challan (marks the filing and SRN)">
         <Button
           size="icon-sm"
@@ -74,6 +112,11 @@ export function ChallanUploadButton({ className }: { className?: string }) {
           {reading ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Receipt className="size-4" aria-hidden />}
         </Button>
       </Tip>
+    );
+
+  return (
+    <>
+      {trigger}
       <input
         ref={inputRef}
         type="file"

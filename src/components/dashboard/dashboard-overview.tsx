@@ -21,6 +21,7 @@ import { DEFAULT_WINDOW, selectableYears } from "@/lib/portfolio/schedule";
 import { addDays, financialYearEnd, financialYearLabel, formatDate } from "@/lib/dates";
 import { site } from "@/config/site";
 import { MiniCalendar, Panel } from "@/components/dashboard/dashboard-parts";
+import { ChallanUploadButton } from "@/components/portfolio/challan-upload";
 
 /**
  * The dashboard follows the company switcher in the top bar:
@@ -105,7 +106,8 @@ function AdminDashboard() {
           />
         </div>
 
-        <div className="min-w-0 max-w-64 xl:sticky xl:top-24">
+        <div className="min-w-0 max-w-64 space-y-3 xl:sticky xl:top-24">
+          <ChallanUploadButton variant="bar" />
           <Panel title="Compliance calendar" compact>
             <MiniCalendar items={allItems} reference={reference} onOpen={selectCompany} />
           </Panel>
