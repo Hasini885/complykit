@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
+import { BrandWordmark, LogoMark } from "@/components/brand-logo";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Scale } from "lucide-react";
 
 import { site } from "@/config/site";
 import { BillingPanel } from "@/components/billing/billing-panel";
@@ -20,14 +20,9 @@ export default async function BillingPage() {
     <main className="relative isolate flex min-h-screen items-center justify-center overflow-hidden px-4 py-10">
       <div className="w-full max-w-md space-y-5 rounded-3xl border bg-card p-6 shadow-card sm:p-7">
         <div className="flex items-center gap-3">
-          <span
-            aria-hidden
-            className="flex size-11 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-400 via-violet-500 to-pink-400 text-white shadow-md shadow-violet-500/30"
-          >
-            <Scale className="size-5" />
-          </span>
+          <LogoMark className="size-11" />
           <div>
-            <p className="font-heading text-xl font-bold tracking-tight">{site.name}</p>
+            <BrandWordmark name={site.name} className="block text-base" />
             <p className="text-sm text-muted-foreground">Subscription</p>
           </div>
         </div>

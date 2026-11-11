@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { Scale } from "lucide-react";
 
+import { BrandWordmark, LogoMark } from "@/components/brand-logo";
 import { site } from "@/config/site";
 import { cn } from "@/lib/utils";
 
@@ -14,14 +14,9 @@ export function AuthShell({ mode, children }: { mode: "sign-in" | "sign-up"; chi
     <main className="relative isolate flex min-h-screen items-center justify-center overflow-hidden px-4 py-10">
       <div className="w-full max-w-md space-y-5 rounded-3xl border bg-card p-6 shadow-card sm:p-7">
         <div className="flex items-center gap-3">
-          <span
-            aria-hidden
-            className="flex size-11 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-400 via-violet-500 to-pink-400 text-white shadow-md shadow-violet-500/30"
-          >
-            <Scale className="size-5" />
-          </span>
+          <LogoMark className="size-11" />
           <div>
-            <p className="font-heading text-xl font-bold tracking-tight">{site.name}</p>
+            <BrandWordmark name={site.name} className="block text-base" />
             <p className="text-sm text-muted-foreground">
               {mode === "sign-in" ? "Sign in to your account" : "Create your free account"}
             </p>

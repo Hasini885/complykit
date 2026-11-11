@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { Scale } from "lucide-react";
 
+import { BrandWordmark, LogoMark } from "@/components/brand-logo";
 import { site } from "@/config/site";
 
 /** Public pages for the Privacy Policy and Terms: simple, readable, no sign-in. */
@@ -9,14 +9,9 @@ export default function LegalLayout({ children }: { children: React.ReactNode })
     <div className="min-h-screen">
       <header className="border-b bg-card/70">
         <div className="mx-auto flex max-w-3xl items-center gap-2.5 px-4 py-4">
-          <span
-            aria-hidden
-            className="flex size-8 items-center justify-center rounded-xl bg-gradient-to-br from-sky-400 via-violet-500 to-pink-400 text-white"
-          >
-            <Scale className="size-4" />
-          </span>
-          <Link href="/" className="font-heading text-lg font-bold">
-            {site.name}
+          <LogoMark className="size-8" />
+          <Link href="/">
+            <BrandWordmark name={site.name} className="text-[15px]" />
           </Link>
           <nav className="ml-auto flex gap-4 text-sm text-muted-foreground">
             <Link href="/privacy" className="hover:text-foreground">

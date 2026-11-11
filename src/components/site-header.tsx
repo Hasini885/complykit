@@ -1,8 +1,9 @@
 "use client";
 
+import { BrandWordmark, LogoMark } from "@/components/brand-logo";
 import * as React from "react";
 import Link from "next/link";
-import { Menu, Scale, Search } from "lucide-react";
+import { Menu, Search } from "lucide-react";
 
 import { site } from "@/config/site";
 import { Button } from "@/components/ui/button";
@@ -88,12 +89,7 @@ export function SiteHeader() {
 function Brand({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <Link href="/dashboard" onClick={onNavigate} className="flex shrink-0 items-center gap-2.5">
-      <span
-        aria-hidden
-        className="flex size-10 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-400 via-violet-500 to-pink-400 text-white shadow-md shadow-violet-500/30"
-      >
-        <Scale className="size-4" />
-      </span>
+      <LogoMark className="size-10" />
       <BrandName />
     </Link>
   );
@@ -101,5 +97,5 @@ function Brand({ onNavigate }: { onNavigate?: () => void }) {
 
 /** The name on one line beside the logo. */
 function BrandName() {
-  return <span className="font-heading text-lg font-bold tracking-tight whitespace-nowrap">{site.name}</span>;
+  return <BrandWordmark name={site.name} className="text-[15px]" />;
 }
