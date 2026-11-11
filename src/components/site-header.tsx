@@ -113,24 +113,7 @@ function Brand({ onNavigate }: { onNavigate?: () => void }) {
   );
 }
 
-/**
- * The name on two lines ("CA Compliance" over "Tool"), so the top bar has the
- * room its menu, search box and tools need.
- */
+/** The name on one line beside the logo. */
 function BrandName() {
-  const words = site.name.split(" ");
-  const last = words.pop();
-  return (
-    <span className="font-heading text-[15px] leading-[1.1] font-bold tracking-tight whitespace-nowrap">
-      {words.length > 0 ? (
-        <>
-          {words.join(" ")}
-          <br />
-          {last}
-        </>
-      ) : (
-        last
-      )}
-    </span>
-  );
+  return <span className="font-heading text-lg font-bold tracking-tight whitespace-nowrap">{site.name}</span>;
 }
