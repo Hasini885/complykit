@@ -63,7 +63,7 @@ export function FilingMatrixTable({
       <table className="w-max min-w-full border-collapse text-left text-xs">
         <thead className="sticky top-0 z-20 bg-muted">
           <tr>
-            <th className="sticky left-0 z-30 min-w-[13rem] border-r border-b bg-muted px-2 py-2 font-bold">
+            <th className="sticky left-0 z-30 min-w-[13rem] border-r border-b border-dotted border-foreground/20 bg-muted px-2 py-2 font-bold">
               Company
             </th>
             {matrix.columns.map((c) => (
@@ -78,7 +78,7 @@ export function FilingMatrixTable({
               <tr key={row.clientId} className="hover:bg-primary/5">
                 <th
                   scope="row"
-                  className="sticky left-0 z-10 max-w-[16rem] border-r border-b bg-card px-2 py-1.5 text-left font-bold"
+                  className="sticky left-0 z-10 max-w-[16rem] border-r border-b border-dotted border-foreground/20 bg-card px-2 py-1.5 text-left font-bold"
                 >
                   {onOpenClient ? (
                     <button
@@ -134,7 +134,7 @@ function ColumnHead({ column, onOpen }: { column: MatrixColumn; onOpen?: (key: s
     </>
   );
   return (
-    <th className="min-w-[8.5rem] border-r border-b px-2 py-1.5 align-bottom font-semibold last:border-r-0">
+    <th className="min-w-[8.5rem] border-r border-b border-dotted border-foreground/20 px-2 py-1.5 align-bottom font-semibold last:border-r-0">
       {onOpen ? (
         <button
           type="button"
@@ -170,7 +170,7 @@ function Cell({
   if (!cell) {
     return (
       <td
-        className="border-r border-b px-2 py-1.5 text-center text-muted-foreground/60 last:border-r-0"
+        className="border-r border-b border-dotted border-foreground/20 px-2 py-1.5 text-center text-muted-foreground/60 last:border-r-0"
         title={`${column.form} does not apply to this company`}
       >
         —
@@ -187,7 +187,7 @@ function Cell({
     return (
       <td
         className={cn(
-          "border-r border-b bg-muted/40 whitespace-nowrap text-muted-foreground last:border-r-0",
+          "border-r border-b border-dotted border-foreground/20 bg-muted/40 whitespace-nowrap text-muted-foreground last:border-r-0",
           onOpenTerm ? "p-0" : "px-2 py-1.5",
         )}
         title={cellText(cell, formatDate)}
@@ -260,7 +260,7 @@ function Cell({
   return (
     <td
       className={cn(
-        "border-r border-b whitespace-nowrap last:border-r-0",
+        "border-r border-b border-dotted border-foreground/20 whitespace-nowrap last:border-r-0",
         clickable ? "p-0" : "px-2 py-1.5",
         CELL_STYLE[cell.status],
       )}

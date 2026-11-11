@@ -380,8 +380,8 @@ export function AllDuesGrid({
         <table className="w-max min-w-full border-collapse text-left text-xs">
           <thead className="sticky top-0 z-10 bg-muted">
             <tr>
-              <th className="w-10 border-r border-b px-2 py-2 text-center font-semibold text-muted-foreground">#</th>
-              <th className="border-r border-b px-2 py-2 font-medium whitespace-nowrap">Filing</th>
+              <th className="w-10 border-r border-b border-dotted border-foreground/20 px-2 py-2 text-center font-semibold text-muted-foreground">#</th>
+              <th className="border-r border-b border-dotted border-foreground/20 px-2 py-2 font-medium whitespace-nowrap">Filing</th>
               {columns.map((c) => (
                 <HeaderCell key={c.key} column={c} sort={sort} onSort={toggleSort} />
               ))}
@@ -397,8 +397,8 @@ export function AllDuesGrid({
             ) : (
               visible.map((r, i) => (
                 <tr key={r.id} className="even:bg-muted/30 hover:bg-primary/5">
-                  <td className="border-r border-b px-2 py-1.5 text-center tabular text-muted-foreground">{i + 1}</td>
-                  <td className="border-r border-b px-1.5 py-1 whitespace-nowrap">
+                  <td className="border-r border-b border-dotted border-foreground/20 px-2 py-1.5 text-center tabular text-muted-foreground">{i + 1}</td>
+                  <td className="border-r border-b border-dotted border-foreground/20 px-1.5 py-1 whitespace-nowrap">
                     {r.item ? (
                       <Button
                         size="xs"
@@ -531,7 +531,7 @@ function HeaderCell({
   const active = sort.key === column.key;
   return (
     <th
-      className="border-r border-b px-2 py-2 font-medium whitespace-nowrap last:border-r-0"
+      className="border-r border-b border-dotted border-foreground/20 px-2 py-2 font-medium whitespace-nowrap last:border-r-0"
       aria-sort={active ? (sort.dir === 1 ? "ascending" : "descending") : "none"}
     >
       <button
@@ -558,7 +558,7 @@ function BodyCell({
   onOpenClient?: (clientId: string) => void;
 }) {
   // One line per row, like a spreadsheet: the sheet scrolls sideways instead.
-  const base = "border-r border-b px-2 py-1.5 whitespace-nowrap last:border-r-0";
+  const base = "border-r border-b border-dotted border-foreground/20 px-2 py-1.5 whitespace-nowrap last:border-r-0";
   switch (column.key) {
     case "company":
       if (!onOpenClient) return <td className={cn(base, "max-w-[15rem] truncate font-medium")}>{row.company}</td>;
