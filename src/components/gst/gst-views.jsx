@@ -2,10 +2,11 @@
 
 import * as React from "react";
 import { toast } from "sonner";
-import { Download, ExternalLink, FolderOpen, Plus, Search, Trash2, Upload, X } from "lucide-react";
+import { Download, ExternalLink, FolderOpen, Play, Plus, Search, Trash2, Upload, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Tip } from "@/components/shared/tip";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ColumnFilter, useColumnFilters } from "@/components/shared/column-filter";
 import { LegendDot, MiniCalendar } from "@/components/shared/mini-calendar";
@@ -413,9 +414,25 @@ export function GstReturnsView() {
     [data.status, month],
   );
   const table = useColumnFilters(valueOf);
+  const helper = useGstHelper(setData);
+  const [installOpen, setInstallOpen] = React.useState(false);
 
   const words = query.toLowerCase().split(/\s+/).filter(Boolean);
   const listed = data.clients.filter((c) => activeIn(c, month)).map((c, i) => ({ ...c, sno: i + 1 }));
+
+  /** Starts the free check: the GST Helper extension walks through every client on Search Taxpayer. */
+  function checkAll() {
+    if (!helper.present) return setInstallOpen(true);
+    const clients = listed
+      .filter((c) => GSTIN_RE.test(c.gstin))
+      .map((c) => ({ id: c.id, gstin: c.gstin, name: c.name }));
+    const skipped = listed.length - clients.length;
+    if (clients.length === 0) return toast.error("No client this month has a valid GSTIN to check.");
+    helper.start(month, clients);
+    toast.success(
+      `Checking ${clients.length} clients for ${monthLabel(month)} in a new tab${skipped ? ` (${skipped} without a valid GSTIN skipped)` : ""}. Type each captcha there.`,
+    );
+  }
   const rows = table.apply(listed.filter((c) => matches(words, RETURN_COLS.map((col) => valueOf(c, col.key)).join(" "))));
 
   const set = (id, field, value) => setData((d) => withStatus(d, month, id, field, value));
@@ -470,6 +487,9 @@ export function GstReturnsView() {
             className="h-9 rounded-full border bg-background px-3 text-sm"
           />
         </label>
+        <Button size="sm" onClick={checkAll} disabled={listed.length === 0}>
+          <Play className="size-3.5" aria-hidden /> Check all (free)
+        </Button>
         <Button variant="outline" size="sm" onClick={clearMonth}>
           Clear month
         </Button>
@@ -576,6 +596,93 @@ export function GstReturnsView() {
           </TableBody>
         </Table>
       </div>
+      <InstallHelperDialog open={installOpen} onOpenChange={setInstallOpen} />
     </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* The GST Helper extension (free status check on Search Taxpayer)     */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Talks to the GST Helper extension through window messages: whether it is
+ * installed, starting a check, and taking in the results it reads (each one
+ * acknowledged, so it is applied once).
+ */
+function useGstHelper(setData) {
+  const [present, setPresent] = React.useState(false);
+
+  React.useEffect(() => {
+    const origin = window.location.origin;
+    function onMessage(e) {
+      if (e.source !== window || e.origin !== origin || !e.data || typeof e.data !== "object") return;
+      if (e.data.type === "cact-gst-pong") setPresent(true);
+      if (e.data.type === "cact-gst-results" && Array.isArray(e.data.results)) {
+        const results = e.data.results.filter(
+          (r) =>
+            typeof r?.key === "string" &&
+            typeof r.clientId === "string" &&
+            /^\d{4}-\d{2}$/.test(r.month) &&
+            ["filed", "notfiled"].includes(r.g1) &&
+            ["filed", "notfiled"].includes(r.g3b),
+        );
+        if (results.length === 0) return;
+        setData((d) =>
+          results.reduce(
+            (acc, r) =>
+              acc.clients.some((c) => c.id === r.clientId)
+                ? withStatus(withStatus(acc, r.month, r.clientId, "g1", r.g1), r.month, r.clientId, "g3b", r.g3b)
+                : acc,
+            d,
+          ),
+        );
+        window.postMessage({ type: "cact-gst-ack", keys: results.map((r) => r.key) }, origin);
+        toast.success(`GST Helper updated ${results.length} client${results.length === 1 ? "" : "s"}`);
+      }
+    }
+    window.addEventListener("message", onMessage);
+    window.postMessage({ type: "cact-gst-ping" }, origin);
+    window.postMessage({ type: "cact-gst-ready" }, origin);
+    return () => window.removeEventListener("message", onMessage);
+  }, [setData]);
+
+  const start = React.useCallback((month, clients) => {
+    window.postMessage({ type: "cact-gst-start", month, clients }, window.location.origin);
+  }, []);
+
+  return { present, start };
+}
+
+function InstallHelperDialog({ open, onOpenChange }) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="font-heading text-lg">Add the free GST Helper to Chrome</DialogTitle>
+          <DialogDescription>
+            It opens the portal&apos;s public Search Taxpayer page for each client and fills the GSTIN. You type the
+            captcha; it reads GSTR-1 and GSTR-3B from the filing table and brings them back here. No logins, no
+            passwords.
+          </DialogDescription>
+        </DialogHeader>
+        <ol className="list-decimal space-y-2 pl-5 text-sm">
+          <li>
+            <a href="/downloads/gst-helper.zip" download className="font-medium text-primary underline underline-offset-4">
+              Download the GST Helper (.zip)
+            </a>{" "}
+            and unzip it.
+          </li>
+          <li>
+            In Chrome, open <code className="rounded bg-muted px-1">chrome://extensions</code> and turn on{" "}
+            <b>Developer mode</b> (top right).
+          </li>
+          <li>
+            Click <b>Load unpacked</b> and choose the unzipped <b>gst-helper</b> folder.
+          </li>
+          <li>Reload this page, then click Check all (free) again.</li>
+        </ol>
+      </DialogContent>
+    </Dialog>
   );
 }
