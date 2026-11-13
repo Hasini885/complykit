@@ -253,7 +253,11 @@ export function TaskManagerView() {
           <tr>
             <SheetHead sno>S.No</SheetHead>
             {TASK_COLUMNS.map((c) => (
-              <SheetHead key={c.key} req={c.req} filter={table.propsFor(c.key, c.label, numbered)}>
+              <SheetHead
+                key={c.key}
+                req={c.req}
+                filter={table.propsFor(c.key, c.label, numbered, c.key === "status" ? TASK_STATUSES : [])}
+              >
                 {c.label}
               </SheetHead>
             ))}

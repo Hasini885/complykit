@@ -161,13 +161,20 @@ export function useColumnFilters(valueOf) {
     [filters, sort, valueOf],
   );
 
-  /** Props for the ColumnFilter of one column. */
+  /**
+   * Props for the ColumnFilter of one column. `choices` (optional) is a fixed
+   * list, such as the statuses, offered in that order even when no row has
+   * the value yet; any other values in the rows follow.
+   */
   const propsFor = React.useCallback(
-    (key, label, rows) => ({
+    (key, label, rows, choices = []) => ({
       label,
-      values: [...new Set(rows.map((r) => String(valueOf(r, key))))].sort((a, b) =>
-        a.localeCompare(b, undefined, { numeric: true }),
-      ),
+      values: [
+        ...choices,
+        ...[...new Set(rows.map((r) => String(valueOf(r, key))))]
+          .filter((v) => !choices.includes(v))
+          .sort((a, b) => a.localeCompare(b, undefined, { numeric: true })),
+      ],
       selected: filters[key] ?? null,
       sortDir: sort?.key === key ? sort.dir : 0,
       onSort: (dir) => setSort(dir === 0 ? null : { key, dir }),
