@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 
 /**
- * The five tools on the main dashboard. There is no menu across the whole
+ * The six tools on the main dashboard. There is no menu across the whole
  * app: the top bar shows only the items of the tool that is open (MCA shows
  * its dashboard and masters, GST its register and return status, and so on).
  * The logo always leads back to the main dashboard.
@@ -51,11 +51,21 @@ export const TOOLS = [
         icon: Contact,
         description: "Consultants with their mobile numbers, and the companies under each one.",
       },
+    ],
+  },
+  {
+    id: "late-fee",
+    title: "Late Fee Calculator",
+    href: "/late-fee",
+    icon: Calculator,
+    description: "Late fee for any ROC form (AOC-4, MGT-7, ADT-1, DIR-12, CHG-1 and more) and ITR.",
+    items: [
       {
         title: "Late Fee Calculator",
-        href: "/mca/late-fee",
+        href: "/late-fee",
         icon: Calculator,
-        description: "Late fee for AOC-4, MGT-7/7A, ADT-1, DPT-3, DIR-12, PAS-3, CHG-1 and every other ROC form, plus ITR.",
+        description:
+          "Late fee for AOC-4, MGT-7/7A, ADT-1, DPT-3, DIR-12, PAS-3, CHG-1 and every other ROC form, plus ITR.",
       },
     ],
   },
@@ -143,7 +153,8 @@ const DASHBOARD = {
   title: "Dashboard",
   href: "/dashboard",
   icon: House,
-  description: "The five tools: MCA, GST, Document Generator, Bank Statement to Excel and Task Manager.",
+  description:
+    "The six tools: GST, MCA, Late Fee Calculator, Bank Statement to Excel, Document Generator and Task Manager.",
 };
 
 /** Flat list of every page, for the search and the home page. */

@@ -1,5 +1,5 @@
 import { PageHeader } from "@/components/page-header";
-import { McaLateFeeCalculator } from "@/components/tools/mca-late-fee-calculator";
+import { LateFeeTool } from "@/components/tools/late-fee-tool";
 
 export const metadata = {
   title: "Late Fee Calculator",
@@ -10,7 +10,7 @@ export default function LateFeePage() {
   return (
     <>
       <PageHeader title="Late Fee Calculator" />
-      <McaLateFeeCalculator />
+      <LateFeeTool />
     </>
   );
 }

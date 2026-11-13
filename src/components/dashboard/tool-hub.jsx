@@ -13,7 +13,7 @@ import { EMPTY_GST, GST_KEY, currentMonth, monthSummary } from "@/lib/gst/regist
 import { EMPTY_TASKS, TASKS_KEY, isoToday, taskSummary } from "@/lib/tasks/tasks";
 
 /** The order of the boxes on the main dashboard. */
-const ORDER = ["gst", "mca", "bank", "documents", "tasks"];
+const ORDER = ["gst", "mca", "late-fee", "bank", "documents", "tasks"];
 
 /**
  * The main dashboard: one box per tool. Opening a box shows that tool, with

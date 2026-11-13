@@ -39,7 +39,7 @@ const QUICK_FORMS = CALC_FORMS.filter((f) => f.group === "dashboard");
 const OTHER_FORMS = CALC_FORMS.filter((f) => f.group !== "dashboard");
 const digits = (v) => Number(String(v).replace(/[^\d]/g, "")) || 0;
 
-export function McaLateFeeCalculator() {
+export function LateFeeTool() {
   const [formId, setFormId] = React.useState("aoc-4");
   const [companyType, setCompanyType] = React.useState("private");
   const [capital, setCapital] = React.useState("100000");
