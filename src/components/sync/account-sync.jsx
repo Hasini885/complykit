@@ -43,6 +43,8 @@ function readLocal() {
   };
 }
 
+const companies = (n) => `${n} ${n === 1 ? "company" : "companies"}`;
+
 function hasData(p) {
   return !!p && (p.clients?.length > 0 || p.directors?.length > 0 || (p.consultants?.length ?? 0) > 0);
 }
@@ -224,13 +226,25 @@ export function AccountSyncProvider({ userId, children }) {
   return (
     <AccountSyncContext.Provider value={value}>
       {children}
-      {/* This computer and the online copy both have different data: the user decides. */}
-      <Dialog open={choice !== null} onOpenChange={(o) => (o ? null : setChoice(null))}>
-        <DialogContent className="sm:max-w-md">
+      {/*
+        This computer and the online copy both have different data: the user decides.
+        It cannot be closed without a choice: closing used to leave saving paused and
+        bring the same question back on every reload.
+      */}
+      <Dialog open={choice !== null}>
+        <DialogContent
+          className="sm:max-w-md"
+          showCloseButton={false}
+          onEscapeKeyDown={(e) => e.preventDefault()}
+          onInteractOutside={(e) => e.preventDefault()}
+        >
           <DialogTitle className="font-heading text-lg">Which data do you want to keep?</DialogTitle>
           <DialogDescription>
-            Your account has data saved online on {choice ? formatDate(new Date(choice.updatedAt)) : ""} with{" "}
-            {choice?.portfolio.clients.length ?? 0} companies, and this computer has different data.
+            Saved online on {choice ? formatDate(new Date(choice.updatedAt)) : ""}:{" "}
+            <strong>{companies(choice?.portfolio.clients.length ?? 0)}</strong>. On this computer:{" "}
+            <strong>{companies(choice ? (readLocal().portfolio?.clients?.length ?? 0) : 0)}</strong>. The two copies
+            differ (changes were made on another computer or browser, and on this one). The copy you don&apos;t keep is
+            replaced.
           </DialogDescription>
           <DialogFooter className="gap-2 sm:justify-between">
             <Button
