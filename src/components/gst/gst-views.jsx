@@ -792,6 +792,13 @@ function InstallHelperDialog({ open, onOpenChange }) {
           </li>
           <li>Reload this page. Already added an older copy? Click its reload button in chrome://extensions.</li>
         </ol>
+        <p className="text-sm text-muted-foreground">
+          Step-by-step help, updates and troubleshooting:{" "}
+          <a href="/gst/guide" className="font-medium text-primary underline underline-offset-4">
+            GST Helper Guide
+          </a>
+          .
+        </p>
       </DialogContent>
     </Dialog>
   );

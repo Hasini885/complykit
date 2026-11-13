@@ -90,3 +90,8 @@ test("the downloadable GST Helper zip matches the extension folder", async () =>
     assert.equal(strFromU8(zip[`gst-helper/${n}`]), readFileSync(`extensions/gst-helper/${n}`, "utf8"), `${n} is out of date: run npm run zip:extension`);
   }
 });
+
+test("the GST Helper Guide names the extension's current version", () => {
+  const { version } = JSON.parse(readFileSync("extensions/gst-helper/manifest.json", "utf8"));
+  assert.match(readFileSync("src/app/(app)/gst/guide/page.jsx", "utf8"), new RegExp(`HELPER_VERSION = "${version.replace(".", "\.")}"`));
+});

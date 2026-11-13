@@ -1,4 +1,5 @@
 import {
+  BookOpen,
   ClipboardList,
   Contact,
   FilePen,
@@ -69,6 +70,12 @@ export const TOOLS = [
         href: "/gst/returns",
         icon: ListChecks,
         description: "GSTR-1 and GSTR-3B filed or not, month by month, for every GST client.",
+      },
+      {
+        title: "Helper Guide",
+        href: "/gst/guide",
+        icon: BookOpen,
+        description: "How to add the free GST Helper to Chrome, autofill GST logins and check every client's status.",
       },
     ],
   },
