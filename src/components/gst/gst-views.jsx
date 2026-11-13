@@ -70,45 +70,45 @@ function GstTop({ title, data, month, onShift }) {
   }
 
   return (
-    <div className="space-y-6">
-      <h1 className="font-heading text-4xl font-bold tracking-tight sm:text-[3.25rem] sm:leading-[1.05]">{title}</h1>
-      <div className="grid gap-4 lg:grid-cols-[1fr_20rem]">
-        <div className="flex flex-col items-center justify-center rounded-3xl border-2 border-dashed border-primary/25 p-6 text-center">
-          <h2 className="font-heading text-lg font-semibold">Return summary — {monthLabel(month)}</h2>
-          <div className="mt-4 flex gap-10">
-            <Num value={sum.total} label="Clients" />
-            <Num value={sum.notFiled} label="Not filed" className="text-destructive" />
-            <Num value={sum.filed} label="Filed" className="text-emerald-500" />
-          </div>
-          <p className="mt-3 text-xs text-muted-foreground">Filed means both GSTR-1 and GSTR-3B are filed for the month.</p>
+    <div className="flex flex-wrap items-start justify-between gap-4">
+      <div className="space-y-3">
+        <h1 className="font-heading text-3xl font-bold tracking-tight">{title}</h1>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-sm font-medium text-muted-foreground">{monthLabel(month)}:</span>
+          <Num value={sum.total} label="Clients" />
+          <Num value={sum.notFiled} label="Not filed" className="text-destructive" />
+          <Num value={sum.filed} label="Filed" className="text-emerald-500" />
         </div>
-        <MiniCalendar
-          heading="GST due dates"
-          year={y}
-          month={m - 1}
-          marks={marks}
-          today={today}
-          onShift={onShift}
-          note="GSTR-1 on the 11th · GSTR-3B on the 20th"
-          legend={
-            <>
-              <LegendDot className="bg-primary">Due</LegendDot>
-              <LegendDot className="bg-destructive">Past, not all filed</LegendDot>
-              <LegendDot className="bg-emerald-600">All filed</LegendDot>
-            </>
-          }
-        />
+        <p className="text-xs text-muted-foreground">Filed means both GSTR-1 and GSTR-3B are filed for the month.</p>
       </div>
+      <MiniCalendar
+        compact
+        heading="GST due dates"
+        year={y}
+        month={m - 1}
+        marks={marks}
+        today={today}
+        onShift={onShift}
+        note="GSTR-1 on the 11th · GSTR-3B on the 20th"
+        legend={
+          <>
+            <LegendDot className="bg-primary">Due</LegendDot>
+            <LegendDot className="bg-destructive">Past, not all filed</LegendDot>
+            <LegendDot className="bg-emerald-600">All filed</LegendDot>
+          </>
+        }
+      />
     </div>
   );
 }
 
+/** A small count: "3 Clients", "1 Not filed". */
 function Num({ value, label, className }) {
   return (
-    <div>
-      <b className={cn("block font-heading text-3xl", className)}>{value}</b>
-      <small className="text-[10.5px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">{label}</small>
-    </div>
+    <span className="inline-flex items-baseline gap-1.5 rounded-full border-2 border-dashed border-primary/25 px-3 py-1">
+      <b className={cn("font-heading text-lg", className)}>{value}</b>
+      <small className="text-[11px] font-semibold tracking-[0.1em] text-muted-foreground uppercase">{label}</small>
+    </span>
   );
 }
 
@@ -137,7 +137,6 @@ function matches(words, text) {
   const hay = text.toLowerCase();
   return words.every((w) => hay.includes(w));
 }
-
 
 /* ------------------------------------------------------------------ */
 /* Client register                                                     */
@@ -201,7 +200,9 @@ export function GstRegisterView() {
   function setField(id, field, value) {
     setData((d) => ({
       ...d,
-      clients: d.clients.map((c) => (c.id === id ? { ...c, [field]: field === "gstin" ? normaliseGstin(value) : value } : c)),
+      clients: d.clients.map((c) =>
+        c.id === id ? { ...c, [field]: field === "gstin" ? normaliseGstin(value) : value } : c,
+      ),
     }));
   }
   function addClient() {
@@ -282,7 +283,12 @@ export function GstRegisterView() {
 
   return (
     <div className="space-y-6">
-      <GstTop title="GST Client Register" data={data} month={month} onShift={(n) => setMonth((m) => shiftMonth(m, n))} />
+      <GstTop
+        title="GST Client Register"
+        data={data}
+        month={month}
+        onShift={(n) => setMonth((m) => shiftMonth(m, n))}
+      />
 
       <div className="flex flex-wrap items-center gap-2">
         <Button onClick={addClient}>
@@ -391,7 +397,12 @@ export function GstRegisterView() {
                             aria-label="Folder path"
                           />
                           <Tip label="Open in File Explorer (needs the folder opener on this computer)">
-                            <Button size="icon-sm" variant="ghost" onClick={() => openFolder(c)} aria-label="Open folder">
+                            <Button
+                              size="icon-sm"
+                              variant="ghost"
+                              onClick={() => openFolder(c)}
+                              aria-label="Open folder"
+                            >
                               <FolderOpen className="size-4" aria-hidden />
                             </Button>
                           </Tip>
@@ -468,9 +479,9 @@ export function GstRegisterView() {
       </Sheet>
       <p className="text-xs text-muted-foreground">
         Open Portal opens the GST login page with the client&apos;s user name and password filled in (with the GST
-        Helper added to Chrome; without it, the password is copied ready to paste). Passwords are saved
-        privately with your {site.name} account, stay hidden until you tick Show passwords, and are never included
-        in downloads. After a client&apos;s deactivate date, later months no longer list it.
+        Helper added to Chrome; without it, the password is copied ready to paste). Passwords are saved privately with
+        your {site.name} account, stay hidden until you tick Show passwords, and are never included in downloads. After
+        a client&apos;s deactivate date, later months no longer list it.
       </p>
       <InstallHelperDialog open={installOpen} onOpenChange={setInstallOpen} />
     </div>
@@ -527,14 +538,18 @@ export function GstReturnsView() {
       `Checking ${clients.length} clients for ${monthLabel(month)} in a new tab${skipped ? ` (${skipped} without a valid GSTIN skipped)` : ""}. Type each captcha there.`,
     );
   }
-  const rows = table.apply(listed.filter((c) => matches(words, RETURN_COLS.map((col) => valueOf(c, col.key)).join(" "))));
+  const rows = table.apply(
+    listed.filter((c) => matches(words, RETURN_COLS.map((col) => valueOf(c, col.key)).join(" "))),
+  );
 
   const set = (id, field, value) => setData((d) => withStatus(d, month, id, field, value));
   /** A client detail typed here changes it in the Client Register too. */
   const setClient = (id, field, value) =>
     setData((d) => ({
       ...d,
-      clients: d.clients.map((x) => (x.id === id ? { ...x, [field]: field === "gstin" ? normaliseGstin(value) : value } : x)),
+      clients: d.clients.map((x) =>
+        x.id === id ? { ...x, [field]: field === "gstin" ? normaliseGstin(value) : value } : x,
+      ),
     }));
   /** A block pasted from Excel fills the cells from where it lands (rows already listed only). */
   function pasteGrid(block, r, c) {
@@ -801,11 +816,14 @@ function portalOpen(helper, c, copy) {
   const who = c.name || c.user || "this client";
   const fallback = (why) =>
     copy
-      ? void copy(c).then((copied) => toast.info(`${why}${copied ? " The password is copied: paste it on the login page." : ""}`))
+      ? void copy(c).then((copied) =>
+          toast.info(`${why}${copied ? " The password is copied: paste it on the login page." : ""}`),
+        )
       : toast.info(why);
   if (!c.user) return fallback(`Add ${who}'s User name in the Client Register to fill the login automatically.`);
   if (!helper.present) return fallback("The GST Helper is not connected, so the login can't be filled in.");
-  if (helper.outdated) return fallback(`Your GST Helper (${helper.version}) is out of date. Reload it in chrome://extensions.`);
+  if (helper.outdated)
+    return fallback(`Your GST Helper (${helper.version}) is out of date. Reload it in chrome://extensions.`);
   helper.login(c.user, c.pass ?? "");
   toast.success(`Opening the GST login for ${who}. Type the captcha there.`);
 }
@@ -827,7 +845,9 @@ function HelperStatus({ helper, onSetUp }) {
       )}
     >
       <span className={cn("size-1.5 rounded-full", helper.outdated ? "bg-amber-500" : "bg-emerald-500")} aria-hidden />
-      {helper.outdated ? `GST Helper ${helper.version}: reload it to autofill` : `GST Helper ${helper.version} connected`}
+      {helper.outdated
+        ? `GST Helper ${helper.version}: reload it to autofill`
+        : `GST Helper ${helper.version} connected`}
     </span>
   );
 }
@@ -846,7 +866,11 @@ function InstallHelperDialog({ open, onOpenChange }) {
         </DialogHeader>
         <ol className="list-decimal space-y-2 pl-5 text-sm">
           <li>
-            <a href="/downloads/gst-helper.zip" download className="font-medium text-primary underline underline-offset-4">
+            <a
+              href="/downloads/gst-helper.zip"
+              download
+              className="font-medium text-primary underline underline-offset-4"
+            >
               Download the GST Helper (.zip)
             </a>{" "}
             and unzip it.

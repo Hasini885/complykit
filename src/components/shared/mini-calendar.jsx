@@ -25,28 +25,43 @@ const MONTHS = [
  * dashed style. `marks` maps "YYYY-MM-DD" to { tone, title } where tone is
  * "overdue" | "due" | "done"; marked days are buttons when `onDayClick` is given.
  */
-export function MiniCalendar({ heading, year, month, marks = {}, today, active, onDayClick, onShift, note, legend }) {
+export function MiniCalendar({
+  heading,
+  year,
+  month,
+  marks = {},
+  today,
+  active,
+  onDayClick,
+  onShift,
+  note,
+  legend,
+  compact,
+}) {
   const first = new Date(year, month, 1);
   const offset = (first.getDay() + 6) % 7;
   const days = new Date(year, month + 1, 0).getDate();
   const p = (n) => String(n).padStart(2, "0");
 
   return (
-    <div className="rounded-3xl border-2 border-dashed border-primary/25 p-4">
+    <div className={cn("rounded-3xl border-2 border-dashed border-primary/25", compact ? "w-64 p-3" : "p-4")}>
       <div className="flex items-start justify-between gap-2">
         <div>
           <p className="text-[10.5px] font-semibold tracking-[0.16em] text-muted-foreground uppercase">{heading}</p>
-          <p className="mt-0.5 font-heading text-lg font-semibold">
+          <p className={cn("mt-0.5 font-heading font-semibold", compact ? "text-sm" : "text-lg")}>
             {MONTHS[month]} <span className="font-normal text-muted-foreground">{year}</span>
           </p>
-          {note ? <p className="text-xs text-muted-foreground">{note}</p> : null}
+          {note ? <p className={cn("text-muted-foreground", compact ? "text-[10.5px]" : "text-xs")}>{note}</p> : null}
         </div>
         <div className="flex gap-1">
           <button
             type="button"
             onClick={() => onShift(-1)}
             aria-label="Previous month"
-            className="inline-flex size-7 items-center justify-center rounded-full border hover:bg-accent"
+            className={cn(
+              "inline-flex items-center justify-center rounded-full border hover:bg-accent",
+              compact ? "size-6" : "size-7",
+            )}
           >
             <ChevronLeft className="size-4" aria-hidden />
           </button>
@@ -54,15 +69,18 @@ export function MiniCalendar({ heading, year, month, marks = {}, today, active, 
             type="button"
             onClick={() => onShift(1)}
             aria-label="Next month"
-            className="inline-flex size-7 items-center justify-center rounded-full border hover:bg-accent"
+            className={cn(
+              "inline-flex items-center justify-center rounded-full border hover:bg-accent",
+              compact ? "size-6" : "size-7",
+            )}
           >
             <ChevronRight className="size-4" aria-hidden />
           </button>
         </div>
       </div>
-      <div className="mt-3 grid grid-cols-7 gap-1 text-center text-xs">
+      <div className={cn("grid grid-cols-7 text-center", compact ? "mt-2 gap-0.5 text-[11px]" : "mt-3 gap-1 text-xs")}>
         {WEEKDAYS.map((d, i) => (
-          <span key={i} className="py-0.5 text-[11px] text-muted-foreground">
+          <span key={i} className={cn("py-0.5 text-muted-foreground", compact ? "text-[10px]" : "text-[11px]")}>
             {d}
           </span>
         ))}
@@ -73,7 +91,8 @@ export function MiniCalendar({ heading, year, month, marks = {}, today, active, 
           const iso = `${year}-${p(month + 1)}-${p(i + 1)}`;
           const mark = marks[iso];
           const cls = cn(
-            "mx-auto flex size-8 items-center justify-center rounded-full",
+            "mx-auto flex items-center justify-center rounded-full",
+            compact ? "size-6" : "size-8",
             mark?.tone === "overdue" && "bg-destructive font-bold text-white",
             mark?.tone === "due" && "bg-primary font-bold text-primary-foreground",
             mark?.tone === "done" && "bg-emerald-600 font-bold text-white",
@@ -91,7 +110,16 @@ export function MiniCalendar({ heading, year, month, marks = {}, today, active, 
           );
         })}
       </div>
-      {legend ? <div className="mt-3 flex flex-wrap gap-3 text-[11px] text-muted-foreground">{legend}</div> : null}
+      {legend ? (
+        <div
+          className={cn(
+            "flex flex-wrap text-muted-foreground",
+            compact ? "mt-2 gap-2 text-[10px]" : "mt-3 gap-3 text-[11px]",
+          )}
+        >
+          {legend}
+        </div>
+      ) : null}
     </div>
   );
 }

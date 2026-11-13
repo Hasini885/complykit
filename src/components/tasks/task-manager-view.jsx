@@ -77,7 +77,8 @@ export function TaskManagerView() {
     };
   }
   const deadlineFilter = table.filters.deadline;
-  const activeDay = deadlineFilter && deadlineFilter.size === 1 ? [...deadlineFilter][0].split("-").reverse().join("-") : null;
+  const activeDay =
+    deadlineFilter && deadlineFilter.size === 1 ? [...deadlineFilter][0].split("-").reverse().join("-") : null;
 
   function setField(id, field, value) {
     setData((d) => ({ ...d, rows: d.rows.map((t) => (t.id === id ? withField(t, field, value, isoToday()) : t)) }));
@@ -108,7 +109,13 @@ export function TaskManagerView() {
           const col = TASK_COLUMNS[c + j];
           if (!col || col.auto) return;
           const value =
-            col.key === "status" ? (/^fin|^done|^comp/i.test(v) ? "Finished" : "Pending") : col.date ? pastedDate(v) : v;
+            col.key === "status"
+              ? /^fin|^done|^comp/i.test(v)
+                ? "Finished"
+                : "Pending"
+              : col.date
+                ? pastedDate(v)
+                : v;
           next = withField(next, col.key, value, day);
         });
         list[at] = next;
@@ -134,7 +141,10 @@ export function TaskManagerView() {
     const { downloadTableXlsx } = await import("@/lib/simple-xlsx");
     await downloadTableXlsx({
       header: ["S.No", ...TASK_COLUMNS.map((c) => c.label)],
-      rows: rows.map((t) => [t.sno, ...TASK_COLUMNS.map((c) => (c.number ? feeValue(t.fee) || "" : cellValue(t, c.key)))]),
+      rows: rows.map((t) => [
+        t.sno,
+        ...TASK_COLUMNS.map((c) => (c.number ? feeValue(t.fee) || "" : cellValue(t, c.key))),
+      ]),
       sheet: "Tasks",
       fileName: `cacompliancetool-tasks-${today}.xlsx`,
       widths: [6, ...TASK_COLUMNS.map((c) => Math.round(c.width / 8))],
@@ -158,14 +168,10 @@ export function TaskManagerView() {
 
   return (
     <div className="space-y-6">
-      <h1 className="font-heading text-4xl font-bold tracking-tight sm:text-[3.25rem] sm:leading-[1.05]">
-        Task Manager
-      </h1>
-
-      <div className="grid gap-4 lg:grid-cols-[1fr_20rem]">
-        <div className="flex flex-col items-center justify-center rounded-3xl border-2 border-dashed border-primary/25 p-6 text-center">
-          <h2 className="font-heading text-lg font-semibold">Task summary</h2>
-          <div className="mt-4 flex flex-wrap justify-center gap-10">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="space-y-3">
+          <h1 className="font-heading text-3xl font-bold tracking-tight">Task Manager</h1>
+          <div className="flex flex-wrap items-center gap-2">
             <Num value={sum.total} label="Total" />
             <Num value={sum.pending} label="Pending" className="text-destructive" />
             <Num value={sum.finished} label="Finished" className="text-emerald-500" />
@@ -173,6 +179,7 @@ export function TaskManagerView() {
           </div>
         </div>
         <MiniCalendar
+          compact
           heading="Deadline calendar"
           year={cal.y}
           month={cal.m}
@@ -214,8 +221,8 @@ export function TaskManagerView() {
         </Tip>
         <span className="flex-1" />
         <p className="text-sm text-muted-foreground">
-          Showing <b className="text-foreground">{rows.length}</b> tasks · Fee <b className="text-foreground">{inr(shownFee)}</b>{" "}
-          · <span className="text-destructive">*</span> mandatory
+          Showing <b className="text-foreground">{rows.length}</b> tasks · Fee{" "}
+          <b className="text-foreground">{inr(shownFee)}</b> · <span className="text-destructive">*</span> mandatory
         </p>
         {table.any ? (
           <Button variant="ghost" size="sm" onClick={table.clear}>
@@ -337,11 +344,12 @@ export function TaskManagerView() {
   );
 }
 
+/** A small count: "5 Pending". */
 function Num({ value, label, className }) {
   return (
-    <div>
-      <b className={cn("block font-heading text-3xl", className)}>{value}</b>
-      <small className="text-[10.5px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">{label}</small>
-    </div>
+    <span className="inline-flex items-baseline gap-1.5 rounded-full border-2 border-dashed border-primary/25 px-3 py-1">
+      <b className={cn("font-heading text-lg", className)}>{value}</b>
+      <small className="text-[11px] font-semibold tracking-[0.1em] text-muted-foreground uppercase">{label}</small>
+    </span>
   );
 }
