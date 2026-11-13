@@ -7,7 +7,9 @@ window.addEventListener("message", (e) => {
   const d = e.data;
   if (!d || typeof d !== "object") return;
 
-  if (d.type === "cact-gst-ping") window.postMessage({ type: "cact-gst-pong" }, location.origin);
+  if (d.type === "cact-gst-ping") {
+    window.postMessage({ type: "cact-gst-pong", version: chrome.runtime.getManifest().version }, location.origin);
+  }
 
   if (d.type === "cact-gst-start" && /^\d{4}-\d{2}$/.test(d.month) && Array.isArray(d.clients)) {
     const clients = d.clients

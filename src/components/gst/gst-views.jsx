@@ -210,14 +210,7 @@ export function GstRegisterView() {
    * without it, the password is copied ready to paste.
    */
   function onPortalOpen(c) {
-    if (helper.present && c.user) {
-      helper.login(c.user, c.pass ?? "");
-      toast.success(`Opening the GST login for ${c.name || c.user}. Type the captcha there.`);
-      return;
-    }
-    void copyPassword(c).then((copied) => {
-      if (copied) toast.success(`Password for ${c.name || c.user || "this client"} copied. Paste it on the login page.`);
-    });
+    portalOpen(helper, c, copyPassword);
   }
 
   function setField(id, field, value) {
@@ -315,11 +308,7 @@ export function GstRegisterView() {
         <label className="ml-1 flex items-center gap-2 text-sm text-muted-foreground">
           <input type="checkbox" checked={showPw} onChange={(e) => setShowPw(e.target.checked)} /> Show passwords
         </label>
-        {helper.present ? null : (
-          <Button variant="ghost" size="sm" onClick={() => setInstallOpen(true)}>
-            Autofill the GST login: add GST Helper
-          </Button>
-        )}
+        <HelperStatus helper={helper} onSetUp={() => setInstallOpen(true)} />
         <span className="flex-1" />
         {table.any || query ? (
           <Button
@@ -660,13 +649,7 @@ export function GstReturnsView() {
                       />
                     </TableCell>
                     <TableCell className="p-1">
-                      <PortalLink
-                        onOpen={() => {
-                          if (helper.present && c.user) helper.login(c.user, c.pass ?? "");
-                        }}
-                      >
-                        Login
-                      </PortalLink>
+                      <PortalLink onOpen={() => portalOpen(helper, c)}>Login</PortalLink>
                     </TableCell>
                   </TableRow>
                 );
@@ -690,13 +673,14 @@ export function GstReturnsView() {
  * acknowledged, so it is applied once).
  */
 function useGstHelper(setData) {
-  const [present, setPresent] = React.useState(false);
+  // The extension's version once it answers; null while it has not (not added, or this page loaded before it).
+  const [version, setVersion] = React.useState(null);
 
   React.useEffect(() => {
     const origin = window.location.origin;
     function onMessage(e) {
       if (e.source !== window || e.origin !== origin || !e.data || typeof e.data !== "object") return;
-      if (e.data.type === "cact-gst-pong") setPresent(true);
+      if (e.data.type === "cact-gst-pong") setVersion(typeof e.data.version === "string" ? e.data.version : "1.0");
       if (e.data.type === "cact-gst-results" && Array.isArray(e.data.results)) {
         const results = e.data.results.filter(
           (r) =>
@@ -734,7 +718,50 @@ function useGstHelper(setData) {
     window.postMessage({ type: "cact-gst-login", user, pass }, window.location.origin);
   }, []);
 
-  return { present, start, login };
+  const present = version !== null;
+  // Autofill needs 1.2 or later.
+  const outdated = present && Number(version.split(".")[1] ?? 0) < 2 && version.startsWith("1.");
+  return { present, version, outdated, start, login };
+}
+
+/**
+ * As a GST login link is clicked: passes the client's user name and password
+ * to the GST Helper to fill in, or says why it cannot (and copies the
+ * password, when `copy` is given, so it can be pasted).
+ */
+function portalOpen(helper, c, copy) {
+  const who = c.name || c.user || "this client";
+  const fallback = (why) =>
+    copy
+      ? void copy(c).then((copied) => toast.info(`${why}${copied ? " The password is copied: paste it on the login page." : ""}`))
+      : toast.info(why);
+  if (!c.user) return fallback(`Add ${who}'s User name in the Client Register to fill the login automatically.`);
+  if (!helper.present) return fallback("The GST Helper is not connected, so the login can't be filled in.");
+  if (helper.outdated) return fallback(`Your GST Helper (${helper.version}) is out of date. Reload it in chrome://extensions.`);
+  helper.login(c.user, c.pass ?? "");
+  toast.success(`Opening the GST login for ${who}. Type the captcha there.`);
+}
+
+/** Whether the GST Helper is connected, beside the register's buttons. */
+function HelperStatus({ helper, onSetUp }) {
+  if (!helper.present) {
+    return (
+      <Button variant="ghost" size="sm" onClick={onSetUp}>
+        Autofill the GST login: add GST Helper
+      </Button>
+    );
+  }
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium",
+        helper.outdated ? "border-amber-500/50 text-amber-500" : "border-emerald-500/40 text-emerald-500",
+      )}
+    >
+      <span className={cn("size-1.5 rounded-full", helper.outdated ? "bg-amber-500" : "bg-emerald-500")} aria-hidden />
+      {helper.outdated ? `GST Helper ${helper.version}: reload it to autofill` : `GST Helper ${helper.version} connected`}
+    </span>
+  );
 }
 
 function InstallHelperDialog({ open, onOpenChange }) {
