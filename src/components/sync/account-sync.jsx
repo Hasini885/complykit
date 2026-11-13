@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { CloudAlert, CloudCheck, Loader2 } from "lucide-react";
+import { CloudAlert, CloudCheck, CloudOff, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Tip } from "@/components/shared/tip";
@@ -115,7 +115,7 @@ export function useAccountSync() {
   return ctx;
 }
 
-export function AccountSyncProvider({ userId, children }) {
+export function AccountSyncProvider({ userId, offline = false, children }) {
   const META_KEY = `complykit.sync@${userId}`;
   const [status, setStatus] = React.useState("loading");
   const [lastSyncedAt, setLastSyncedAt] = React.useState(() => loadMeta(META_KEY).lastSyncedAt);
@@ -186,25 +186,29 @@ export function AccountSyncProvider({ userId, children }) {
     }
   }, [META_KEY, pull, push, fail]);
 
+  // Opened offline: nothing is checked or saved until sign-in is back (the
+  // changes stay on this computer meanwhile, and are saved then).
   React.useEffect(() => {
+    if (offline) return;
     void Promise.resolve().then(check);
-  }, [check]);
+  }, [check, offline]);
 
   // Every few seconds: anything changed here is saved online. `check` looks at
   // the account first, so if it was updated elsewhere in the meantime the
   // account's copy is loaded instead of being overwritten (the account wins).
   React.useEffect(() => {
+    if (offline) return;
     const timer = window.setInterval(() => {
       if (!ready.current || busy.current) return;
       if (readLocal().signature === loadMeta(META_KEY).signature) return;
       void check();
     }, CHECK_EVERY_MS);
     return () => window.clearInterval(timer);
-  }, [META_KEY, check]);
+  }, [META_KEY, check, offline]);
 
   const value = React.useMemo(
-    () => ({ status, lastSyncedAt, problem, retry: () => void check() }),
-    [status, lastSyncedAt, problem, check],
+    () => ({ status: offline ? "offline" : status, lastSyncedAt, problem, retry: () => void check() }),
+    [status, offline, lastSyncedAt, problem, check],
   );
 
   return <AccountSyncContext.Provider value={value}>{children}</AccountSyncContext.Provider>;
@@ -222,6 +226,10 @@ export function AccountSyncStatus() {
     saved: {
       icon: <CloudCheck className="size-4 text-emerald-600" aria-hidden />,
       label: `Saved to your account${when}`,
+    },
+    offline: {
+      icon: <CloudOff className="size-4 text-amber-500" aria-hidden />,
+      label: "Offline: changes are kept on this computer and saved to your account when the internet is back.",
     },
     error: {
       icon: <CloudAlert className="size-4 text-destructive" aria-hidden />,

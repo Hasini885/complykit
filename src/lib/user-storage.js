@@ -19,7 +19,7 @@ export const USER_DATA_KEYS = [
   "complykit.tasks.v1",
 ];
 
-const OWNER_KEY = "complykit.owner";
+export const OWNER_KEY = "complykit.owner";
 
 const aside = (key, userId) => `${key}@${userId}`;
 

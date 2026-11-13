@@ -23,10 +23,15 @@ test("every icon, the service worker and the offline page exist", () => {
   assert.ok(existsSync("src/app/apple-icon.png"));
 });
 
-test("service worker never caches pages or API calls", () => {
+test("service worker: pages fresh when online, kept for offline; API and other sites never touched", () => {
   const sw = readFileSync("public/sw.js", "utf8");
-  assert.match(sw, /req\.mode === "navigate"[\s\S]*fetch\(req\)\.catch/);
-  assert.doesNotMatch(sw, /\/api\//);
+  // Pages: network first, the kept copy only when the network fails.
+  assert.match(sw, /async function page\(req\)[\s\S]*?await fetch\(req\)[\s\S]*?catch[\s\S]*?cache\.match\(path\)/);
+  // A redirect (to sign-in) is never kept as a page.
+  assert.match(sw, /!res\.redirected/);
+  assert.match(sw, /url\.origin !== self\.location\.origin \|\| url\.pathname\.startsWith\("\/api\/"\)\) return;/);
+  // Signing out clears the kept pages.
+  assert.match(sw, /msg\.type === "clear"[\s\S]*caches\.delete\(PAGES\)/);
   assert.match(sw, /"\/offline\.html"/);
 });
 
