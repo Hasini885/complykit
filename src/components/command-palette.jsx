@@ -69,7 +69,7 @@ export function CommandPalette({ open, onOpenChange }) {
     if (target.kind === "href") return go(target.href);
     // A company result opens that company's dashboard.
     await setActiveClient(target.clientId);
-    go("/dashboard");
+    go("/mca");
   }
 
   // Of the reference index, only the menu pages are offered: the search is for

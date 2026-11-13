@@ -1,15 +1,9 @@
-import { DashboardHero, DashboardOverview } from "@/components/dashboard/dashboard-overview";
+import { ToolHub } from "@/components/dashboard/tool-hub";
 
 export const metadata = {
   title: "Dashboard",
 };
 
 export default function DashboardPage() {
-  return (
-    <>
-      <DashboardHero />
-
-      <DashboardOverview />
-    </>
-  );
+  return <ToolHub />;
 }

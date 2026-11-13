@@ -201,7 +201,7 @@ function YearPicker({ years, value, onChange, reference }) {
 export function DashboardHero() {
   return (
     <section className="mb-6">
-      <h1 className="font-heading text-4xl font-bold tracking-tight sm:text-[3.25rem] sm:leading-[1.05]">Dashboard</h1>
+      <h1 className="font-heading text-4xl font-bold tracking-tight sm:text-[3.25rem] sm:leading-[1.05]">MCA Dashboard</h1>
     </section>
   );
 }

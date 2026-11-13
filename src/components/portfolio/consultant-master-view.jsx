@@ -113,7 +113,7 @@ export function ConsultantMasterView() {
   /** Opens that company's dashboard. */
   async function openCompany(id) {
     await setActiveClient(id);
-    router.push("/dashboard");
+    router.push("/mca");
   }
 
   async function onDelete(c, companies) {

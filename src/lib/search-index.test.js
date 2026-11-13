@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { readdirSync } from "node:fs";
+import { existsSync } from "node:fs";
 
 import { sections } from "@/data/sections";
 import { dueDates } from "@/data/due-dates";
@@ -109,13 +109,8 @@ test("pages are reachable by name", () => {
 test("every nav item points at a route that exists", () => {
   // Guards against a nav entry outliving its page, or arriving before it.
   // App routes live in the (app) route group, which is not part of the URL.
-  const routes = new Set(
-    readdirSync("src/app/(app)", { withFileTypes: true })
-      .filter((e) => e.isDirectory())
-      .map((e) => `/${e.name}`),
-  );
   for (const item of allNavItems) {
-    assert.ok(routes.has(item.href), `${item.title} points at missing route ${item.href}`);
+    assert.ok(existsSync(`src/app/(app)${item.href}/page.jsx`), `${item.title} points at missing route ${item.href}`);
   }
 });
 

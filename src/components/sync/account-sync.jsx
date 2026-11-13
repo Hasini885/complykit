@@ -19,8 +19,14 @@ import { emptySnapshot } from "@/lib/portfolio/types";
  */
 
 const PORTFOLIO_KEY = USER_DATA_KEYS[0];
-/** Saved online besides the companies: checklists, saved documents, firm details. */
-const EXTRA_KEYS = ["complykit.checklists.v1", "complykit.documents.v1", "complykit.documents.firm.v1"];
+/** Saved online besides the companies: checklists, saved documents, firm details, GST register, tasks. */
+const EXTRA_KEYS = [
+  "complykit.checklists.v1",
+  "complykit.documents.v1",
+  "complykit.documents.firm.v1",
+  "complykit.gst.v1",
+  "complykit.tasks.v1",
+];
 const CHECK_EVERY_MS = 4000;
 
 function readLocal() {

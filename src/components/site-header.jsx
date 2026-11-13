@@ -35,7 +35,7 @@ export function SiteHeader() {
             <Button
               variant="ghost"
               size="icon"
-              className="2xl:hidden"
+              className="lg:hidden"
               aria-label="Open navigation"
               onClick={() => setMobileOpen(true)}
             >
@@ -45,8 +45,8 @@ export function SiteHeader() {
             <Brand />
           </div>
 
-          {/* The menu (about 900px) keeps its full width, inline from 2xl, centred. */}
-          <div className="hidden shrink-0 2xl:block">
+          {/* The open tool's own items, inline from lg, centred. */}
+          <div className="hidden shrink-0 lg:block">
             <TopNav />
           </div>
 

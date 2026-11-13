@@ -2,125 +2,77 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronDown } from "lucide-react";
 
-import { LAW_UPDATED, NAV_SECTIONS } from "@/config/navigation";
+import { LAW_UPDATED, TOOLS, toolFor } from "@/config/navigation";
 import { site } from "@/config/site";
-import { NavBadgePill } from "@/components/shared/nav-badge-pill";
 import { IconTile, tintFor } from "@/components/shared/icon-tile";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
-
-/**
- * Sections with more items than this collapse into a dropdown in the top bar;
- * smaller ones sit inline as plain links.
- */
-const INLINE_LIMIT = 3;
 
 const LINK =
   "inline-flex h-10 items-center gap-1.5 whitespace-nowrap rounded-full px-3 text-sm font-medium xl:px-3.5 transition-colors focus-visible:outline-2 focus-visible:outline-ring";
 const LINK_IDLE = "text-muted-foreground hover:bg-accent hover:text-accent-foreground";
 const LINK_ACTIVE = "bg-primary/10 font-semibold text-primary";
 
-/** Desktop navigation, rendered inside the top bar from 2xl up. */
+/**
+ * Desktop navigation in the top bar: only the items of the tool that is open
+ * (MCA: Dashboard, Company Master Data, Director Master, Consultant Master).
+ * Nothing on the main dashboard, which shows the tools as boxes.
+ */
 export function TopNav() {
   const pathname = usePathname();
+  const tool = toolFor(pathname);
+  if (!tool) return null;
 
   return (
-    <nav aria-label="Sections" className="flex items-center">
-      {NAV_SECTIONS.map((section) =>
-        section.items.length > INLINE_LIMIT ? (
-          <SectionMenu key={section.label} label={section.label} items={section.items} pathname={pathname} />
-        ) : (
-          section.items.map((item) => {
-            const active = isActive(pathname, item.href);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                aria-current={active ? "page" : undefined}
-                className={cn(LINK, active ? LINK_ACTIVE : LINK_IDLE)}
-              >
-                {item.title}
-              </Link>
-            );
-          })
-        ),
-      )}
+    <nav aria-label={tool.title} className="flex items-center">
+      {tool.items.map((item) => {
+        const active = activeItem(tool, pathname) === item.href;
+        return (
+          <Link
+            key={item.href}
+            href={item.href}
+            aria-current={active ? "page" : undefined}
+            className={cn(LINK, active ? LINK_ACTIVE : LINK_IDLE)}
+          >
+            {item.title}
+          </Link>
+        );
+      })}
     </nav>
   );
 }
 
-function SectionMenu({ label, items, pathname }) {
-  const active = items.some((item) => isActive(pathname, item.href));
-
-  return (
-    <DropdownMenu modal={false}>
-      <DropdownMenuTrigger className={cn(LINK, "group", active ? LINK_ACTIVE : LINK_IDLE)}>
-        {label}
-        <ChevronDown className="size-3.5 transition-transform group-data-[state=open]:rotate-180" aria-hidden />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent
-        align="start"
-        sideOffset={10}
-        className="w-[min(40rem,calc(100vw-2rem))] rounded-3xl p-2.5 shadow-lift"
-      >
-        <div className="grid grid-cols-2 gap-1">
-          {items.map((item) => {
-            const Icon = item.icon;
-            const current = isActive(pathname, item.href);
-            return (
-              <DropdownMenuItem key={item.href} asChild className="items-start gap-3 rounded-2xl p-3">
-                <Link href={item.href} aria-current={current ? "page" : undefined}>
-                  <IconTile
-                    icon={Icon}
-                    tint={tintFor(item.href)}
-                    className={current ? "ring-2 ring-primary/40" : undefined}
-                  />
-                  <span className="min-w-0 flex-1">
-                    <span className="flex items-center gap-2 text-sm font-semibold">
-                      {item.title}
-                      {item.badge ? <NavBadgePill badge={item.badge} /> : null}
-                    </span>
-                    <span className="mt-0.5 line-clamp-2 block text-xs leading-relaxed text-muted-foreground">
-                      {item.description}
-                    </span>
-                  </span>
-                </Link>
-              </DropdownMenuItem>
-            );
-          })}
-        </div>
-        <p className="mt-2 flex items-center gap-2 border-t px-3 pt-2.5 pb-1 text-[11px] text-muted-foreground">
-          <span className="size-1.5 rounded-full bg-emerald-500" aria-hidden />
-          Law updated: {LAW_UPDATED}
-        </p>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
+/** The item of the open tool that matches the page: the longest href that fits. */
+function activeItem(tool, pathname) {
+  const fits = tool.items.filter((i) => pathname === i.href || pathname.startsWith(`${i.href}/`));
+  return fits.sort((a, b) => b.href.length - a.href.length)[0]?.href ?? null;
 }
 
-/** Full section list for the mobile slide-over. */
+/** The slide-over on small screens: the open tool's items, then every tool. */
 export function MobileNav({ onNavigate }) {
   const pathname = usePathname();
+  const tool = toolFor(pathname);
+  const groups = [
+    ...(tool && tool.items.length > 1 ? [{ label: tool.title, items: tool.items, current: activeItem(tool, pathname) }] : []),
+    {
+      label: "Tools",
+      items: [{ title: "Dashboard", href: "/dashboard", icon: TOOLS[0].icon }, ...TOOLS],
+      current: tool ? tool.href : pathname === "/dashboard" ? "/dashboard" : null,
+    },
+  ];
 
   return (
     <div className="flex h-full flex-col">
       <div className="flex-1 overflow-y-auto px-3 py-4">
         <nav aria-label="Sections" className="flex flex-col gap-6">
-          {NAV_SECTIONS.map((section) => (
-            <div key={section.label}>
+          {groups.map((group) => (
+            <div key={group.label}>
               <h2 className="mb-2 px-3 text-[10.5px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                {section.label}
+                {group.label}
               </h2>
               <ul className="flex flex-col gap-0.5">
-                {section.items.map((item) => {
-                  const active = isActive(pathname, item.href);
+                {group.items.map((item) => {
+                  const active = group.current === item.href;
                   const Icon = item.icon;
                   return (
                     <li key={item.href}>
@@ -137,7 +89,6 @@ export function MobileNav({ onNavigate }) {
                       >
                         <IconTile icon={Icon} tint={tintFor(item.href)} size="sm" />
                         <span className="min-w-0 flex-1 truncate">{item.title}</span>
-                        {item.badge ? <NavBadgePill badge={item.badge} /> : null}
                       </Link>
                     </li>
                   );

@@ -15,6 +15,8 @@ export const USER_DATA_KEYS = [
   "complykit.documents.firm.v1",
   "complykit.dashboard-fy.v1",
   "complykit.notified.v1",
+  "complykit.gst.v1",
+  "complykit.tasks.v1",
 ];
 
 const OWNER_KEY = "complykit.owner";
