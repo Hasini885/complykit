@@ -36,8 +36,19 @@ const CELL_INPUT =
   "h-8 w-full min-w-0 rounded-md bg-transparent px-2 text-sm outline-none focus:bg-background focus:ring-2 focus:ring-ring/40";
 const isoToday = () => new Date().toISOString().slice(0, 10);
 
-function openPortal() {
-  window.open(GST_LOGIN_URL, "_blank", "noopener,noreferrer");
+/**
+ * A real link to the GST login page that opens in a new tab. A link is never
+ * stopped by Chrome's popup blocker (a script-opened window can be). `onOpen`
+ * runs as it is clicked, before the tab opens.
+ */
+function PortalLink({ onOpen, children }) {
+  return (
+    <Button asChild size="sm" variant="outline">
+      <a href={GST_LOGIN_URL} target="_blank" rel="noopener noreferrer" onClick={onOpen}>
+        <ExternalLink className="size-3.5" aria-hidden /> {children}
+      </a>
+    </Button>
+  );
 }
 
 /* ------------------------------------------------------------------ */
@@ -194,21 +205,19 @@ export function GstRegisterView() {
     }
   }
   /**
-   * Opens the GST login page. With the GST Helper extension, the client's user
-   * name and password are filled in there; without it, the password is copied
-   * ready to paste.
+   * As the GST login link is clicked: with the GST Helper extension, the
+   * client's user name and password are passed to it to fill in on the page;
+   * without it, the password is copied ready to paste.
    */
-  async function openPortalFor(c) {
-    // The page opens the tab itself (in the click), so the portal opens with or without the extension.
+  function onPortalOpen(c) {
     if (helper.present && c.user) {
       helper.login(c.user, c.pass ?? "");
-      openPortal();
       toast.success(`Opening the GST login for ${c.name || c.user}. Type the captcha there.`);
       return;
     }
-    const copied = await copyPassword(c);
-    openPortal();
-    if (copied) toast.success(`Password for ${c.name || c.user || "this client"} copied. Paste it on the login page.`);
+    void copyPassword(c).then((copied) => {
+      if (copied) toast.success(`Password for ${c.name || c.user || "this client"} copied. Paste it on the login page.`);
+    });
   }
 
   function setField(id, field, value) {
@@ -421,9 +430,7 @@ export function GstRegisterView() {
                       </TableCell>
                     ))}
                     <TableCell className="p-1 whitespace-nowrap">
-                      <Button size="sm" variant="outline" onClick={() => void openPortalFor(c)}>
-                        <ExternalLink className="size-3.5" aria-hidden /> Open Portal
-                      </Button>
+                      <PortalLink onOpen={() => onPortalOpen(c)}>Open Portal</PortalLink>
                       <Button
                         size="icon-sm"
                         variant="ghost"
@@ -653,16 +660,13 @@ export function GstReturnsView() {
                       />
                     </TableCell>
                     <TableCell className="p-1">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
+                      <PortalLink
+                        onOpen={() => {
                           if (helper.present && c.user) helper.login(c.user, c.pass ?? "");
-                          openPortal();
                         }}
                       >
-                        <ExternalLink className="size-3.5" aria-hidden /> Login
-                      </Button>
+                        Login
+                      </PortalLink>
                     </TableCell>
                   </TableRow>
                 );
