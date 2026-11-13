@@ -76,8 +76,8 @@ const HIGHLIGHTS = [
   {
     icon: MonitorDown,
     tint: "indigo",
-    title: "Install it as an app",
-    body: "Add it to your laptop or phone home screen from the browser. It opens in its own window and updates itself.",
+    title: "Install it, use it offline",
+    body: "Add it to your laptop or phone home screen. It opens in its own window, keeps working without internet, and saves your changes when you're back online.",
   },
 ];
 
