@@ -2,6 +2,8 @@
 
 import * as React from "react";
 
+import { Trash2 } from "lucide-react";
+
 import { ColumnFilter } from "@/components/shared/column-filter";
 import { cn } from "@/lib/utils";
 
@@ -96,7 +98,7 @@ export function Sheet({ children, onPasteGrid, onEnterPastEnd, minWidth }) {
 
   return (
     <div
-      className="sheet max-h-[calc(100dvh-13rem)] min-h-72 overflow-auto rounded-2xl border-2 border-dashed border-primary/30"
+      className="sheet max-h-[calc(100dvh-13rem)] overflow-auto rounded-2xl border-2 border-dashed border-primary/30"
       onKeyDown={onKeyDown}
       onPaste={onPaste}
     >
@@ -127,6 +129,28 @@ export function SheetCell({ children, sno, className, ...props }) {
   return (
     <td className={cn(sno && "sheet-sno px-2", className)} {...props}>
       {children}
+    </td>
+  );
+}
+
+/**
+ * The row number, which turns into a delete button while the row is pointed
+ * at (the row needs className "group/row"). It stays in view however far the
+ * sheet is scrolled sideways.
+ */
+export function SnoCell({ n, onDelete, label }) {
+  return (
+    <td className="sheet-sno px-1">
+      <span className="group-hover/row:hidden group-focus-within/row:hidden">{n}</span>
+      <button
+        type="button"
+        onClick={onDelete}
+        aria-label={label ?? `Delete row ${n}`}
+        title={label ?? `Delete row ${n}`}
+        className="mx-auto hidden size-8 items-center justify-center rounded-lg text-destructive hover:bg-destructive/15 group-hover/row:inline-flex group-focus-within/row:inline-flex"
+      >
+        <Trash2 className="size-4" aria-hidden />
+      </button>
     </td>
   );
 }

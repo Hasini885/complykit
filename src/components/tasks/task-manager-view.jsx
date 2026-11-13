@@ -2,12 +2,12 @@
 
 import * as React from "react";
 import { toast } from "sonner";
-import { Download, Plus, Trash2, X } from "lucide-react";
+import { Download, Plus, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Tip } from "@/components/shared/tip";
 import { useColumnFilters } from "@/components/shared/column-filter";
-import { SHEET_INPUT, Sheet, SheetCell, SheetHead, pastedDate } from "@/components/shared/sheet";
+import { SHEET_INPUT, Sheet, SheetCell, SheetHead, SnoCell, pastedDate } from "@/components/shared/sheet";
 import { LegendDot, MiniCalendar } from "@/components/shared/mini-calendar";
 import { usePortfolio } from "@/components/portfolio/portfolio-provider";
 import { useStoredJson } from "@/lib/stored-json";
@@ -125,7 +125,10 @@ export function TaskManagerView() {
     toast.success(`Pasted ${block.length} row${block.length === 1 ? "" : "s"}`);
   }
   function remove(t) {
-    if (!window.confirm(`Delete task ${t.sno} (${t.client || "blank"})? Later tasks are renumbered.`)) return;
+    // A blank row added by mistake goes straight away; one with anything in it asks first.
+    const blank = TASK_COLUMNS.every((c) => c.auto || c.key === "status" || !String(t[c.key] ?? "").trim());
+    if (!blank && !window.confirm(`Delete task ${t.sno} (${t.client || "no client"})? Later tasks are renumbered.`))
+      return;
     setData((d) => ({ ...d, rows: d.rows.filter((x) => x.id !== t.id) }));
   }
   function filterDay(iso) {
@@ -235,14 +238,13 @@ export function TaskManagerView() {
       <Sheet
         onPasteGrid={pasteGrid}
         onEnterPastEnd={addTask}
-        minWidth={64 + 52 + TASK_COLUMNS.reduce((n, c) => n + c.width, 0)}
+        minWidth={64 + TASK_COLUMNS.reduce((n, c) => n + c.width, 0)}
       >
         <colgroup>
           <col style={{ width: 64 }} />
           {TASK_COLUMNS.map((c) => (
             <col key={c.key} style={{ width: c.width }} />
           ))}
-          <col style={{ width: 52 }} />
         </colgroup>
         <thead>
           <tr>
@@ -252,13 +254,12 @@ export function TaskManagerView() {
                 {c.label}
               </SheetHead>
             ))}
-            <SheetHead />
           </tr>
         </thead>
         <tbody>
           {rows.length === 0 ? (
             <tr>
-              <SheetCell colSpan={TASK_COLUMNS.length + 2} className="py-10 text-center text-muted-foreground">
+              <SheetCell colSpan={TASK_COLUMNS.length + 1} className="py-10 text-center text-muted-foreground">
                 {data.rows.length === 0
                   ? "No tasks yet. Click Add task, or paste rows copied from Excel into a cell."
                   : "No tasks match the current filters."}
@@ -266,8 +267,8 @@ export function TaskManagerView() {
             </tr>
           ) : (
             rows.map((t, r) => (
-              <tr key={t.id} data-task={t.id} className="group">
-                <SheetCell sno>{t.sno}</SheetCell>
+              <tr key={t.id} data-task={t.id} className="group/row">
+                <SnoCell n={t.sno} onDelete={() => remove(t)} label={`Delete task ${t.sno}`} />
                 {TASK_COLUMNS.map((c, ci) => (
                   <SheetCell key={c.key} className={cn(c.auto && "px-3 text-muted-foreground")}>
                     {c.auto ? (
@@ -311,23 +312,12 @@ export function TaskManagerView() {
                     )}
                   </SheetCell>
                 ))}
-                <SheetCell className="text-center">
-                  <Button
-                    size="icon-sm"
-                    variant="ghost"
-                    className="text-destructive opacity-0 group-hover:opacity-100 hover:text-destructive focus-visible:opacity-100"
-                    onClick={() => remove(t)}
-                    aria-label={`Delete task ${t.sno}`}
-                  >
-                    <Trash2 className="size-4" aria-hidden />
-                  </Button>
-                </SheetCell>
               </tr>
             ))
           )}
           <tr className="cursor-pointer text-muted-foreground" onClick={() => addTask()}>
             <SheetCell sno>+</SheetCell>
-            <SheetCell colSpan={TASK_COLUMNS.length + 1} className="px-3">
+            <SheetCell colSpan={TASK_COLUMNS.length} className="px-3">
               Click to add a new task… (or press Enter on the last row)
             </SheetCell>
           </tr>

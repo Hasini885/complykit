@@ -2,13 +2,13 @@
 
 import * as React from "react";
 import { toast } from "sonner";
-import { Copy, Download, ExternalLink, FolderOpen, Play, Plus, Search, Trash2, Upload, X } from "lucide-react";
+import { Copy, Download, ExternalLink, FolderOpen, Play, Plus, Search, Upload, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Tip } from "@/components/shared/tip";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useColumnFilters } from "@/components/shared/column-filter";
-import { SHEET_INPUT, Sheet, SheetCell, SheetHead, pastedDate, pastedFiled } from "@/components/shared/sheet";
+import { SHEET_INPUT, Sheet, SheetCell, SheetHead, SnoCell, pastedDate, pastedFiled } from "@/components/shared/sheet";
 import { LegendDot, MiniCalendar } from "@/components/shared/mini-calendar";
 import { useStoredJson } from "@/lib/stored-json";
 import { newId } from "@/lib/portfolio/clients";
@@ -239,7 +239,9 @@ export function GstRegisterView() {
     toast.success(`Pasted ${block.length} row${block.length === 1 ? "" : "s"}`);
   }
   function remove(c) {
-    if (!window.confirm(`Delete ${c.name || "this client"}?`)) return;
+    // A blank row added by mistake goes straight away; one with anything in it asks first.
+    const blank = REGISTER_COLS.every((col) => !String(c[col.key] ?? "").trim());
+    if (!blank && !window.confirm(`Delete ${c.name || "this client"}?`)) return;
     setData((d) => ({ ...d, clients: d.clients.filter((x) => x.id !== c.id) }));
   }
   function openFolder(c) {
@@ -347,14 +349,14 @@ export function GstRegisterView() {
       <Sheet
         onPasteGrid={pasteGrid}
         onEnterPastEnd={addClient}
-        minWidth={64 + 210 + REGISTER_COLS.reduce((n, c) => n + c.width, 0)}
+        minWidth={64 + 160 + REGISTER_COLS.reduce((n, c) => n + c.width, 0)}
       >
         <colgroup>
           <col style={{ width: 64 }} />
           {REGISTER_COLS.map((col) => (
             <col key={col.key} style={{ width: col.width }} />
           ))}
-          <col style={{ width: 210 }} />
+          <col style={{ width: 160 }} />
         </colgroup>
         <thead>
           <tr>
@@ -384,8 +386,8 @@ export function GstRegisterView() {
             rows.map((c, r) => {
               const dead = c.deact && c.deact <= isoToday();
               return (
-                <tr key={c.id} className={dead ? "opacity-50" : undefined}>
-                  <SheetCell sno>{c.sno}</SheetCell>
+                <tr key={c.id} className={cn("group/row", dead && "opacity-50")}>
+                  <SnoCell n={c.sno} onDelete={() => remove(c)} label={`Delete ${c.name || `client ${c.sno}`}`} />
                   {REGISTER_COLS.map((col, ci) => (
                     <SheetCell key={col.key}>
                       {col.key === "folder" ? (
@@ -458,15 +460,6 @@ export function GstRegisterView() {
                   ))}
                   <SheetCell className="px-2 whitespace-nowrap">
                     <PortalLink onOpen={() => onPortalOpen(c)}>Open Portal</PortalLink>
-                    <Button
-                      size="icon-sm"
-                      variant="ghost"
-                      className="ml-1 text-destructive hover:text-destructive"
-                      onClick={() => remove(c)}
-                      aria-label={`Delete ${c.name || "client"}`}
-                    >
-                      <Trash2 className="size-4" aria-hidden />
-                    </Button>
                   </SheetCell>
                 </tr>
               );
