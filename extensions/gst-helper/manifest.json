@@ -1,19 +1,43 @@
 {
   "manifest_version": 3,
   "name": "CA Compliance Tool - GST Helper",
-  "version": "1.0",
-  "description": "Checks GSTR-1 and GSTR-3B filing status for your GST clients on the portal's public Search Taxpayer page. You type each captcha; no logins or passwords.",
-  "permissions": ["storage"],
-  "background": { "service_worker": "background.js" },
+  "version": "1.1",
+  "description": "For CA Compliance Tool: fills a client's GST login (you type the captcha) and checks GSTR-1 / GSTR-3B status on the public Search Taxpayer page.",
+  "permissions": [
+    "storage"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
   "content_scripts": [
     {
-      "matches": ["https://cacompliancetool.com/*", "https://www.cacompliancetool.com/*", "http://localhost:3000/*"],
-      "js": ["site.js"],
+      "matches": [
+        "https://cacompliancetool.com/*",
+        "https://www.cacompliancetool.com/*",
+        "http://localhost:3000/*"
+      ],
+      "js": [
+        "site.js"
+      ],
       "run_at": "document_start"
     },
     {
-      "matches": ["https://services.gst.gov.in/services/searchtp*"],
-      "js": ["parse.js", "portal.js"],
+      "matches": [
+        "https://services.gst.gov.in/services/searchtp*"
+      ],
+      "js": [
+        "parse.js",
+        "portal.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://services.gst.gov.in/services/login*"
+      ],
+      "js": [
+        "login.js"
+      ],
       "run_at": "document_idle"
     }
   ]

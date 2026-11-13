@@ -1,5 +1,5 @@
-// Runs on CA Compliance Tool. Passes "check these clients" from the page to
-// the extension, and hands the results back to the page.
+// Runs on CA Compliance Tool. Passes "check these clients" and "log in as
+// this client" from the page to the extension, and hands results back.
 const GSTIN = /^[0-9A-Z]{15}$/;
 
 window.addEventListener("message", (e) => {
@@ -15,6 +15,10 @@ window.addEventListener("message", (e) => {
       .slice(0, 500)
       .map((c) => ({ id: c.id.slice(0, 100), gstin: c.gstin, name: String(c.name ?? "").slice(0, 200) }));
     chrome.runtime.sendMessage({ type: "start", month: d.month, clients });
+  }
+
+  if (d.type === "cact-gst-login" && typeof d.user === "string" && d.user) {
+    chrome.runtime.sendMessage({ type: "login", user: d.user.slice(0, 100), pass: String(d.pass ?? "").slice(0, 100) });
   }
 
   if (d.type === "cact-gst-ready") deliver();

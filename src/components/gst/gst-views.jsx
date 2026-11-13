@@ -175,6 +175,8 @@ export function GstRegisterView() {
   const fileRef = React.useRef(null);
   const [showPw, setShowPw] = React.useState(false);
   const plainCols = REGISTER_COLS.filter((col) => !col.secret);
+  const helper = useGstHelper(setData);
+  const [installOpen, setInstallOpen] = React.useState(false);
 
   const words = query.toLowerCase().split(/\s+/).filter(Boolean);
   const numbered = data.clients.map((c, i) => ({ ...c, sno: i + 1 }));
@@ -191,8 +193,17 @@ export function GstRegisterView() {
       return false;
     }
   }
-  /** Opens the GST login page, with the client's password copied ready to paste. */
+  /**
+   * Opens the GST login page. With the GST Helper extension, the client's user
+   * name and password are filled in there; without it, the password is copied
+   * ready to paste.
+   */
   async function openPortalFor(c) {
+    if (helper.present && c.user) {
+      helper.login(c.user, c.pass ?? "");
+      toast.success(`Opening the GST login for ${c.name || c.user}. Type the captcha there.`);
+      return;
+    }
     const copied = await copyPassword(c);
     openPortal();
     if (copied) toast.success(`Password for ${c.name || c.user || "this client"} copied. Paste it on the login page.`);
@@ -293,6 +304,11 @@ export function GstRegisterView() {
         <label className="ml-1 flex items-center gap-2 text-sm text-muted-foreground">
           <input type="checkbox" checked={showPw} onChange={(e) => setShowPw(e.target.checked)} /> Show passwords
         </label>
+        {helper.present ? null : (
+          <Button variant="ghost" size="sm" onClick={() => setInstallOpen(true)}>
+            Autofill the GST login: add GST Helper
+          </Button>
+        )}
         <span className="flex-1" />
         {table.any || query ? (
           <Button
@@ -424,10 +440,12 @@ export function GstRegisterView() {
         </Table>
       </div>
       <p className="text-xs text-muted-foreground">
-        Open Portal opens the GST login page and copies the client&apos;s password, ready to paste. Passwords are saved
+        Open Portal opens the GST login page with the client&apos;s user name and password filled in (with the GST
+        Helper added to Chrome; without it, the password is copied ready to paste). Passwords are saved
         privately with your {site.name} account, stay hidden until you tick Show passwords, and are never included
         in downloads. After a client&apos;s deactivate date, later months no longer list it.
       </p>
+      <InstallHelperDialog open={installOpen} onOpenChange={setInstallOpen} />
     </div>
   );
 }
@@ -633,7 +651,16 @@ export function GstReturnsView() {
                       />
                     </TableCell>
                     <TableCell className="p-1">
-                      <Button size="sm" variant="outline" onClick={openPortal}>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          if (helper.present && c.user) {
+                            helper.login(c.user, c.pass ?? "");
+                            toast.success(`Opening the GST login for ${c.name || c.user}. Type the captcha there.`);
+                          } else openPortal();
+                        }}
+                      >
                         <ExternalLink className="size-3.5" aria-hidden /> Login
                       </Button>
                     </TableCell>
@@ -698,8 +725,12 @@ function useGstHelper(setData) {
   const start = React.useCallback((month, clients) => {
     window.postMessage({ type: "cact-gst-start", month, clients }, window.location.origin);
   }, []);
+  /** Opens the GST login page with this user name and password filled in by the extension. */
+  const login = React.useCallback((user, pass) => {
+    window.postMessage({ type: "cact-gst-login", user, pass }, window.location.origin);
+  }, []);
 
-  return { present, start };
+  return { present, start, login };
 }
 
 function InstallHelperDialog({ open, onOpenChange }) {
@@ -709,9 +740,9 @@ function InstallHelperDialog({ open, onOpenChange }) {
         <DialogHeader>
           <DialogTitle className="font-heading text-lg">Add the free GST Helper to Chrome</DialogTitle>
           <DialogDescription>
-            It opens the portal&apos;s public Search Taxpayer page for each client and fills the GSTIN. You type the
-            captcha; it reads GSTR-1 and GSTR-3B from the filing table and brings them back here. No logins, no
-            passwords.
+            It fills each client&apos;s user name and password on the GST login page when you click Open Portal or
+            Login, and for Check all it opens the public Search Taxpayer page for each client and fills the GSTIN. You
+            type the captchas; it reads GSTR-1 and GSTR-3B from the filing table and brings them back here.
           </DialogDescription>
         </DialogHeader>
         <ol className="list-decimal space-y-2 pl-5 text-sm">
@@ -728,7 +759,7 @@ function InstallHelperDialog({ open, onOpenChange }) {
           <li>
             Click <b>Load unpacked</b> and choose the unzipped <b>gst-helper</b> folder.
           </li>
-          <li>Reload this page, then click Check all (free) again.</li>
+          <li>Reload this page. Already added an older copy? Click its reload button in chrome://extensions.</li>
         </ol>
       </DialogContent>
     </Dialog>
