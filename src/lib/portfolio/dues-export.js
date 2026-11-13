@@ -43,7 +43,11 @@ const GRID = { borderColor: "#D0D5DD", borderStyle: "thin" };
 export async function createDuesXlsx(
   rows,
   meta,
-  /** When given, the first sheet is the company-by-form filing status. */
+  /**
+   * When given, the first sheet is the company-by-form filing status. A list
+   * of { title, matrix } gives one sheet per section instead (e.g. post
+   * incorporation, then annual compliance).
+   */
   matrix,
 ) {
   const { default: writeXlsxFile } = await import("write-excel-file/browser");
@@ -116,7 +120,9 @@ export async function createDuesXlsx(
     stickyRowsCount: 1,
   };
   const info = { data: about, sheet: "About", columns: [{ width: 120 }] };
-  return writeXlsxFile(matrix ? [matrixSheet(matrix), list, info] : [list, info]).toBlob();
+  const sections = !matrix ? [] : Array.isArray(matrix) ? matrix : [{ title: "Filing status", matrix }];
+  const sheets = sections.filter((x) => x.matrix.columns.length > 0).map((x) => matrixSheet(x.matrix, x.title));
+  return writeXlsxFile([...sheets, list, info]).toBlob();
 }
 
 /**
@@ -124,7 +130,7 @@ export async function createDuesXlsx(
  * is filed: red not filed and overdue, orange not filed and due within 30
  * days, green filed, pale green not yet due, grey not applicable.
  */
-function matrixSheet(matrix) {
+function matrixSheet(matrix, title = "Filing status") {
   const head = [
     { value: "Company", fontWeight: "bold", backgroundColor: "#344054", textColor: "#FFFFFF", ...GRID },
     { value: "CIN / LLPIN", fontWeight: "bold", backgroundColor: "#344054", textColor: "#FFFFFF", ...GRID },
@@ -165,7 +171,8 @@ function matrixSheet(matrix) {
   ]);
   return {
     data: [head, ...body],
-    sheet: "Filing status",
+    // Excel sheet names: at most 31 characters, none of : \ / ? * [ ]
+    sheet: title.replace(/[:\/?*[\]]/g, " ").slice(0, 31),
     columns: [{ width: 36 }, { width: 24 }, ...matrix.columns.map(() => ({ width: 26 }))],
     stickyRowsCount: 1,
     stickyColumnsCount: 1,
@@ -272,16 +279,32 @@ export async function downloadDuesPdf(rows, meta) {
 }
 
 /** The filing-status matrix as an A4 landscape PDF, with the same colours. */
-export async function createMatrixPdf(matrix, meta) {
+export async function createMatrixPdf(
+  matrix,
+  meta,
+  /** Instead of one matrix: [{ title, matrix }], each section from a new page. */
+  sections,
+) {
   const [{ jsPDF }, { autoTable }] = await Promise.all([import("jspdf"), import("jspdf-autotable")]);
   const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
+  const parts = (sections ?? [{ title: "filing status by company", matrix }]).filter((x) => x.matrix.columns.length > 0);
+  if (parts.length === 0) parts.push({ title: "filing status by company", matrix });
+  parts.forEach((part, i) => {
+    if (i > 0) doc.addPage();
+    drawMatrix(doc, autoTable, part.matrix, part.title, meta);
+  });
+  return doc.output("blob");
+}
+
+function drawMatrix(doc, autoTable, matrix, title, meta) {
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
   const margin = 28;
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(15);
-  doc.text(pdfSafe(`${site.name} — filing status by company`), margin, margin + 6);
+  doc.setTextColor(0);
+  doc.text(pdfSafe(`${site.name} — ${title}`), margin, margin + 6);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   doc.setTextColor(90);
@@ -352,12 +375,11 @@ ${c.notRequired}`;
       doc.text(`Page ${page}`, pageWidth - margin, pageHeight - 14, { align: "right" });
     },
   });
-  return doc.output("blob");
 }
 
-export async function downloadMatrixPdf(matrix, meta) {
+export async function downloadMatrixPdf(matrix, meta, sections) {
   saveBlob(
-    await createMatrixPdf(matrix, meta),
+    await createMatrixPdf(matrix, meta, sections),
     tagged(duesFileName(meta.asOf, "pdf").replace("all-dues", "filing-status"), meta),
   );
 }

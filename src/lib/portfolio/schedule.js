@@ -226,10 +226,9 @@ export function resolveClientYear(client, directors, fyEndingYear, opts = {}) {
   });
   return sortByDue(
     applyDueOverrides(
-      [
-        ...applyFilings([...resolved, ...dir12ItemsFor(client, directors, fyEndingYear, companyType)], client),
-        ...kycItemsFor(client, directors, fyEndingYear, companyType),
-      ],
+      // DIR-3 KYC is not tracked per company (the owner's choice); each
+      // director's KYC status stays in the Director Master.
+      applyFilings([...resolved, ...dir12ItemsFor(client, directors, fyEndingYear, companyType)], client),
       client,
     ),
   );

@@ -117,23 +117,6 @@ test("a filed deadline is no longer overdue, and the report counts it completed 
 
 /* ---------------- DIR-3 KYC ---------------- */
 
-test("KYC rows carry the director's SRN, and are identified as director rows", () => {
-  const director = {
-    id: "d1",
-    name: "Ananya",
-    din: "07712345",
-    dinAllottedOn: "2023-07-15",
-    lastKycFiledOn: "2026-05-20",
-    lastKycSrn: "AB9999999",
-    directorships: [{ clientId: "c1", role: "Director", appointedOn: "2023-07-15" }],
-    createdAt: "",
-    updatedAt: "",
-  };
-  const kyc = resolveClientYear(client(), [director], 2026).find((r) => r.source.id === "dir-3-kyc:d1");
-  assert.equal(kyc.srn, "AB9999999");
-  assert.equal(kycDirectorId(kyc), "d1");
-});
-
 test("editing a director keeps the KYC SRN; clearing the KYC date clears the SRN", () => {
   const director = {
     id: "d1",

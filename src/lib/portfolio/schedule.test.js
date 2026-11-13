@@ -89,53 +89,11 @@ test("recording a later AGM keeps the earlier one; a same-year correction replac
 
 /* ---------------- DIR-3 KYC per director ---------------- */
 
-test("DIR-3 KYC is shown per director, on their own three-year cycle", () => {
-  // DIN allotted 15 Jul 2023 (FY 2023-24): due 30 Jun 2026, then 30 Jun 2029.
-  const dirs = [director()];
-  const kyc2026 = resolveClientYear(client(), dirs, 2026).filter((r) => r.source.id.startsWith("dir-3-kyc"));
-  assert.equal(kyc2026.length, 1);
-  assert.equal(kyc2026[0].source.title, "Director KYC — Ananya Raghavan");
-  assert.equal(iso(kyc2026[0].due), "2026-06-30");
-
-  for (const fy of [2027, 2028]) {
-    const none = resolveClientYear(client(), dirs, fy).filter((r) => r.source.id.startsWith("dir-3-kyc"));
-    assert.equal(none.length, 0, `nothing in FY ending ${fy}`);
-  }
-  assert.equal(iso(find(resolveClientYear(client(), dirs, 2029), "dir-3-kyc:d1").due), "2029-06-30");
-});
-
-test("two directors with different DIN years fall due in different years", () => {
-  const dirs = [director(), director({ id: "d2", name: "Nita Bhaskar", din: "03445901", dinAllottedOn: "2024-05-10" })];
-  // d2: FY 2024-25 -> first due 30 Jun 2027.
-  assert.ok(find(resolveClientYear(client(), dirs, 2026), "dir-3-kyc:d1"));
-  assert.ok(!find(resolveClientYear(client(), dirs, 2026), "dir-3-kyc:d2"));
-  assert.ok(find(resolveClientYear(client(), dirs, 2027), "dir-3-kyc:d2"));
-});
-
-test("a KYC filing for the cycle marks it filed, and health does not count it overdue", () => {
-  const dirs = [director({ lastKycFiledOn: "2026-05-20" })];
-  const row = find(resolveClientYear(client(), dirs, 2026), "dir-3-kyc:d1");
-  assert.equal(iso(row.filedOn ?? null), "2026-05-20");
-  const h = computeClientHealth(client(), d("2026-07-15"), dirs);
-  assert.ok(!h.overdue.some((r) => r.source.id === "dir-3-kyc:d1"));
-
-  const unfiled = computeClientHealth(client(), d("2026-07-15"), [director()]);
-  assert.ok(unfiled.overdue.some((r) => r.source.id === "dir-3-kyc:d1"));
-});
-
 test("a director who left before the due date is not listed for this company", () => {
   const gone = director({
     directorships: [{ clientId: "c1", role: "Director", appointedOn: "2023-07-15", cessationOn: "2025-12-31" }],
   });
   assert.ok(!find(resolveClientYear(client(), [gone], 2026), "dir-3-kyc:d1"));
-});
-
-test("with no directors on record, KYC asks for them instead of showing a fixed 30 June", () => {
-  const items = resolveClientYear(client(), [], 2026);
-  const kyc = items.filter((r) => r.source.id.startsWith("dir-3-kyc"));
-  assert.equal(kyc.length, 1);
-  assert.equal(kyc[0].due, null);
-  assert.match(kyc[0].qualifier ?? "", /Director Master/);
 });
 
 test("the generic calendar (no company) still shows the one company-wide KYC row", () => {
@@ -193,4 +151,9 @@ test("an old 'auditor appointed this year' tick becomes the year of the AGM on r
 
   const unticked = normalise({ clients: [client({ auditorAppointedThisYear: false })], directors: [] }).clients[0];
   assert.equal(unticked.auditorAppointedAtAgmFy, undefined, "unticked: left to the automatic cycle");
+});
+
+test("DIR-3 KYC is not tracked in a company's schedule", () => {
+  const items = resolveClientYear(client(), [], 2027);
+  assert.ok(!items.some((i) => i.source.id.startsWith("dir-3-kyc")));
 });

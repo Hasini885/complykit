@@ -71,8 +71,9 @@ export function ConsultantMasterView() {
   }
   /**
    * The filings report for every company under one consultant: the same
-   * filing-status sheet as the dashboard (post incorporation forms first, then
-   * the year's annual forms), for those companies only.
+   * filing-status sheets as the dashboard, for those companies only: post
+   * incorporation compliance in one part and annual compliance in the other
+   * (separate sheets in Excel, separate pages in the PDF).
    */
   async function downloadReport(c, kind) {
     const companies = clientsForConsultant(c.id, clients);
@@ -84,18 +85,20 @@ export function ConsultantMasterView() {
     try {
       const { downloadDuesXlsx, downloadMatrixPdf } = await import("@/lib/portfolio/dues-export");
       const asOf = today();
-      const rows = [
-        ...postIncorporationRows(companies, asOf),
-        ...buildAnnualDuesRows(companies, directors, asOf, { fyEndingYear: fy }),
+      // Post incorporation forms in one part, the year's annual compliance in the other.
+      const postRows = postIncorporationRows(companies, asOf);
+      const annualRows = buildAnnualDuesRows(companies, directors, asOf, { fyEndingYear: fy });
+      const sections = [
+        { title: "Post incorporation compliance", matrix: buildFilingMatrix(postRows, companies) },
+        { title: "Annual compliance", matrix: buildFilingMatrix(annualRows, companies) },
       ];
-      const matrix = buildFilingMatrix(rows, companies);
       const meta = {
         asOf,
         scope: `Consultant: ${c.name} (${formatMobile(c.mobile)}) · ${companies.length} ${companies.length === 1 ? "company" : "companies"} · ${fy === null ? "Current" : financialYearLabel(fy)}`,
         fileTag: c.name,
       };
-      if (kind === "pdf") await downloadMatrixPdf(matrix, meta);
-      else await downloadDuesXlsx(rows, meta, matrix);
+      if (kind === "pdf") await downloadMatrixPdf(sections[1].matrix, meta, sections);
+      else await downloadDuesXlsx([...postRows, ...annualRows], meta, sections);
       toast.success(
         `Filings report for ${c.name} (${fy === null ? "current" : financialYearLabel(fy)}) downloaded as ${kind === "pdf" ? "PDF" : "Excel"}`,
       );

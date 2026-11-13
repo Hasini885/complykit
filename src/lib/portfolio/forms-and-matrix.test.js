@@ -6,7 +6,7 @@ import { formatDate } from "@/lib/dates";
 
 import { parseIsoDate } from "@/lib/dates";
 import { resolveClientYear } from "@/lib/portfolio/schedule";
-import { buildAnnualDuesRows, buildDuesRows } from "@/lib/portfolio/dues-table";
+import { buildAnnualDuesRows, buildDuesRows, postIncorporationRows } from "@/lib/portfolio/dues-table";
 import { buildFilingMatrix, cellText, columnKey } from "@/lib/portfolio/filing-matrix";
 import { createDuesXlsx } from "@/lib/portfolio/dues-export";
 import { SEED_CLIENTS, SEED_DIRECTORS } from "@/lib/portfolio/sample-portfolio.fixture";
@@ -140,16 +140,6 @@ test("MGT-7 and MGT-7A share one MGT-7/7A column; the ITR forms share one ITR co
   assert.ok(matrix.rows.every((r) => Object.values(r.cells).every((c) => !/files MGT-7/.test(c.notRequired ?? ""))));
 });
 
-test("director KYC folds into one cell per company with filed / total", () => {
-  const kyc = matrix.columns.find((c) => c.key.startsWith("dir-3-kyc|"));
-  assert.ok(kyc);
-  const cells = matrix.rows.map((r) => r.cells[kyc.key]).filter(Boolean);
-  assert.ok(
-    cells.some((c) => c.parts > 1),
-    "a company with two directors due shows one cell",
-  );
-});
-
 test("a filed due turns its cell to filed, with the SRN", () => {
   const meridian = matrix.rows.find((r) => r.clientId === "cl-meridian");
   const dpt = matrix.columns.find((c) => c.key === "dpt-3|2027|");
@@ -165,6 +155,23 @@ test("the Excel file's first sheet is the filing-status matrix", async () => {
   const workbook = strFromU8(files["xl/workbook.xml"]);
   const names = [...workbook.matchAll(/<sheet [^>]*name="([^"]+)"/g)].map((m) => m[1]);
   assert.deepEqual(names, ["Filing status", "All dues", "About"]);
+});
+
+test("a sectioned report: post incorporation and annual compliance on separate sheets", async () => {
+  const post = buildFilingMatrix(postIncorporationRows(clients, asOf), clients);
+  const annual = buildFilingMatrix(buildAnnualDuesRows(clients, SEED_DIRECTORS, asOf), clients);
+  assert.ok(post.columns.length > 0 && annual.columns.length > 0);
+  assert.ok(post.columns.every((c) => c.key.includes("|once|")), "only post incorporation forms");
+  assert.ok(!annual.columns.some((c) => c.key.includes("|once|")), "no post incorporation forms");
+  const sections = [
+    { title: "Post incorporation compliance", matrix: post },
+    { title: "Annual compliance", matrix: annual },
+  ];
+  const blob = await createDuesXlsx(rows, { asOf, scope: "All" }, sections);
+  const { unzipSync, strFromU8 } = await import("fflate");
+  const files = unzipSync(new Uint8Array(await blob.arrayBuffer()));
+  const names = [...strFromU8(files["xl/workbook.xml"]).matchAll(/<sheet [^>]*name="([^"]+)"/g)].map((m) => m[1]);
+  assert.deepEqual(names, ["Post incorporation compliance", "Annual compliance", "All dues", "About"]);
 });
 
 /* ---------------- ADT-1 in the matrix ---------------- */

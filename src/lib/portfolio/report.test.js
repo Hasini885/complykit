@@ -55,13 +55,6 @@ test("in October the previous year's AOC-4 is in the report at its extended date
   assert.equal(soon.bucket, "due-soon", "within 30 days of 31 Dec");
 });
 
-test("a recorded KYC filing shows as completed", () => {
-  const r = buildPortfolioReport(SEED_CLIENTS, SEED_DIRECTORS, { asOf });
-  const completed = r.sections.flatMap((s) => s.items).filter((i) => i.bucket === "completed");
-  assert.ok(completed.length > 0);
-  assert.ok(completed.every((i) => i.item.filedOn && i.item.source.id.startsWith("dir-3-kyc")));
-});
-
 test("each company section lists its current directors with their KYC status", () => {
   const r = buildPortfolioReport(SEED_CLIENTS, SEED_DIRECTORS, { asOf });
   const meridian = r.sections.find((s) => s.client.id === "cl-meridian");
