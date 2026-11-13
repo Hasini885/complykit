@@ -2,7 +2,6 @@ import Link from "next/link";
 import {
   ArrowRight,
   BellRing,
-  BookOpen,
   Building2,
   CalendarCheck2,
   CalendarDays,
@@ -16,7 +15,6 @@ import {
 
 import { site, legal, MCA_URL } from "@/config/site";
 import { allNavItems, LAW_UPDATED } from "@/config/navigation";
-import { forms } from "@/data/forms";
 import { sections } from "@/data/sections";
 import { checklists } from "@/data/checklists";
 import { Button } from "@/components/ui/button";
@@ -94,17 +92,12 @@ export default function LandingPage() {
             </h1>
             <p className="mt-6 max-w-[52ch] text-lg leading-relaxed text-muted-foreground">
               {site.name} is a friendly compliance workspace for CA, CS and finance teams. It tracks every client&apos;s
-              ROC filings, explains each form and section in plain language, and drafts the paperwork for you.
+              ROC filings, reads your MCA challans and master data, and drafts the paperwork for you.
             </p>
             <div className="mt-9 flex flex-wrap gap-3">
               <Button asChild size="lg">
                 <Link href="/dashboard">
                   Open your dashboard <ArrowRight className="size-4" aria-hidden />
-                </Link>
-              </Button>
-              <Button asChild size="lg" variant="outline">
-                <Link href="/forms">
-                  <BookOpen className="size-4" aria-hidden /> Browse the forms library
                 </Link>
               </Button>
             </div>
@@ -120,7 +113,7 @@ export default function LandingPage() {
         {/* ----------------------------------------------------------- stats */}
         <section aria-label={`${site.name} at a glance`} className="mx-auto max-w-6xl px-4 sm:px-6">
           <dl className="grid grid-cols-2 gap-3 rounded-[2rem] border bg-card/80 p-3 shadow-card backdrop-blur sm:gap-4 lg:grid-cols-4">
-            <Stat value={forms.length} label="MCA e-forms explained" />
+            <Stat value={7} label="MCA and income tax filings tracked for every company" />
             <Stat value={sections.length} label="Companies Act sections in plain language" />
             <Stat value={checklists.length} label="ready-made compliance checklists" />
             <Stat value="₹0" label="to use, forever" />

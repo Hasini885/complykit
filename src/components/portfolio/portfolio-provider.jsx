@@ -114,6 +114,16 @@ export function PortfolioProvider({ children, repository }) {
         await refresh();
       },
 
+      /** Saves the user's own order of companies: `orderedIds` top to bottom. */
+      async reorderClients(orderedIds) {
+        const byId = new Map(snapshot.clients.map((c) => [c.id, c]));
+        for (const [i, id] of orderedIds.entries()) {
+          const client = byId.get(id);
+          if (client && client.sortOrder !== i) await repo.upsertClient({ ...client, sortOrder: i });
+        }
+        await refresh();
+      },
+
       async removeClient(id) {
         await repo.deleteClient(id);
         await refresh();

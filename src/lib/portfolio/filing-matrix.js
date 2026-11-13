@@ -8,10 +8,15 @@ const STATUS_RANK = { overdue: 0, "due-soon": 1, upcoming: 2, completed: 3 };
 export function columnKey(r) {
   // One-time forms: one column, though each company's falls in its own year.
   if (POST_INCORPORATION_FORMS.includes(r.sourceId)) return `${r.sourceId}|once|`;
-  // MGT-7 and MGT-7A are separate forms with separate columns.
-  const id = r.sourceId === "mgt-7" && r.form === "MGT-7A" ? "mgt-7a" : r.sourceId;
-  return `${id}|${r.fyEndingYear}|${r.period}`;
+  // MGT-7 and MGT-7A share one column (same due date), as do the ITR forms.
+  return `${r.sourceId}|${r.fyEndingYear}|${r.period}`;
 }
+
+/**
+ * One heading for forms that share a column: "MGT-7/7A" for the annual return
+ * (a company files one or the other) and "ITR" for the income tax return.
+ */
+const SHARED_HEADING = { "mgt-7": "MGT-7/7A", itr: "ITR" };
 
 /** The column heading for a post incorporation form, in the words of the company form. */
 const POST_INCORPORATION_HEADING = {
@@ -35,7 +40,7 @@ export function buildFilingMatrix(
     const key = columnKey(r);
     const col = columns.get(key);
     // "ITR-7 / ITR-6" counts as two forms, so the header lists each once.
-    const forms = r.form.split(" / ");
+    const forms = SHARED_HEADING[r.sourceId] ? [SHARED_HEADING[r.sourceId]] : r.form.split(" / ");
     if (col) {
       forms.forEach((f) => col.forms.add(f));
       if (r.due.getTime() < col.firstDue.getTime()) col.firstDue = r.due;
@@ -50,9 +55,7 @@ export function buildFilingMatrix(
             ? "Director KYC"
             : r.sourceId === "dir-12-cessation"
               ? "Director cessation"
-              : r.form === "MGT-7A"
-                ? "Annual return (small company / OPC)"
-                : r.obligation),
+              : r.obligation),
         fy: r.fy,
         period: r.period,
         firstDue: r.due,
@@ -65,7 +68,6 @@ export function buildFilingMatrix(
 
   addAdtStatus(rows, clients, columns, cells);
   if (opts.adtTermFromFy !== undefined) addAdtTermYears(rows, clients, columns, cells, opts.adtTermFromFy);
-  addAnnualReturnStatus(rows, columns, cells);
 
   const named = [...columns.values()].map(({ forms, ...c }) => ({ ...c, form: [...forms].sort().join(" / ") }));
   const yearsPerForm = new Map();
@@ -75,12 +77,13 @@ export function buildFilingMatrix(
   }
   // ADT-1 is neither yearly nor one-time, so it has its own place: after every
   // other form (by date among themselves), no more prominent than the rest.
-  const isAdt = (c) => c.key.startsWith(`${ADT_ID}|`);
+  // Post incorporation forms (one-time) come first, where a report mixes both.
+  const rank = (c) => (c.key.includes("|once|") ? 0 : c.key.startsWith(`${ADT_ID}|`) ? 2 : 1);
   const orderedColumns = named
     .map((c) => ({ ...c, showFy: yearsPerForm.get(`${c.form}|${c.period}`).size > 1 }))
     .sort(
       (a, b) =>
-        Number(isAdt(a)) - Number(isAdt(b)) ||
+        rank(a) - rank(b) ||
         a.firstDue.getTime() - b.firstDue.getTime() ||
         a.form.localeCompare(b.form),
     );
@@ -201,30 +204,6 @@ function addAdtTermYears(rows, clients, columns, cells, fromFy) {
         );
       }
     }
-  }
-}
-
-/**
- * MGT-7 and MGT-7A get a column each. MGT-7A's is always shown beside the
- * year's annual return; a company filing the other form gets a "not
- * required" cell there saying which one it files and why.
- */
-function addAnnualReturnStatus(rows, columns, cells) {
-  for (const r of rows.filter((x) => x.sourceId === "mgt-7")) {
-    const small = r.form === "MGT-7A";
-    const keyA = `mgt-7a|${r.fyEndingYear}|${r.period}`;
-    const keyFull = `mgt-7|${r.fyEndingYear}|${r.period}`;
-    ensureColumn(columns, keyA, r, "MGT-7A", "Annual return (small company / OPC)", 0);
-    const other = small ? keyFull : keyA;
-    if (!columns.has(other)) continue;
-    notRequiredCell(
-      cells,
-      other,
-      { ...r, obligation: small ? "Annual return" : "Annual return (small company / OPC)" },
-      small ? "MGT-7" : "MGT-7A",
-      small ? "mgt-7" : "mgt-7a",
-      small ? "files MGT-7A (small company / OPC)" : "files MGT-7 (not a small company or OPC)",
-    );
   }
 }
 

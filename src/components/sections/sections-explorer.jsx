@@ -181,14 +181,13 @@ function SectionDetail({ entry, onClose }) {
                   <Label>Forms this drives</Label>
                   <div className="flex flex-wrap gap-1.5">
                     {entry.relatedForms.map((f) => (
-                      <Link
+                      <span
                         key={f.id}
-                        href={`/forms?form=${f.id}`}
-                        className="inline-flex items-center rounded border px-2 py-1 font-mono text-xs transition-colors hover:border-primary hover:text-primary"
+                        className="inline-flex items-center rounded border px-2 py-1 font-mono text-xs"
                         title={f.name}
                       >
                         {f.code}
-                      </Link>
+                      </span>
                     ))}
                   </div>
                 </div>

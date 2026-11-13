@@ -2,7 +2,6 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { readdirSync } from "node:fs";
 
-import { forms } from "@/data/forms";
 import { sections } from "@/data/sections";
 import { dueDates } from "@/data/due-dates";
 import { allNavItems } from "@/config/navigation";
@@ -14,7 +13,7 @@ const ids = (q) => searchAll(q).map((i) => i.id);
 test("index covers every dataset exactly once", () => {
   const toolCount = searchIndex.filter((i) => i.group === "Tools").length;
   assert.equal(toolCount, 6, "the six calculators on /tools");
-  assert.equal(searchIndex.length, forms.length + sections.length + dueDates.length + toolCount + allNavItems.length);
+  assert.equal(searchIndex.length, sections.length + dueDates.length + toolCount + allNavItems.length);
   assert.equal(new Set(searchIndex.map((i) => i.id)).size, searchIndex.length, "ids unique");
   for (const g of SEARCH_GROUPS) {
     assert.ok(
@@ -33,20 +32,15 @@ test("every entry has a title, href and haystack", () => {
 });
 
 test("hrefs land on something specific, not just a list page", () => {
-  for (const i of searchIndex.filter((x) => x.group === "Forms")) {
-    assert.match(i.href, /^\/forms\?form=[a-z0-9-]+$/, `${i.id}: ${i.href}`);
-  }
+  assert.ok(!searchIndex.some((x) => x.href.startsWith("/forms")), "the forms library is gone");
   for (const i of searchIndex.filter((x) => x.group === "Sections")) {
     assert.match(i.href, /^\/sections\?section=[a-z0-9-]+$/, `${i.id}: ${i.href}`);
   }
 });
 
-test("form and section deep links resolve to real records", () => {
-  const formIds = new Set(forms.map((f) => f.id));
+test("section deep links resolve to real records", () => {
   const sectionIds = new Set(sections.map((s) => s.id));
   for (const i of searchIndex) {
-    const form = /^\/forms\?form=(.+)$/.exec(i.href);
-    if (form) assert.ok(formIds.has(form[1]), `dead form link: ${i.href}`);
     const sec = /^\/sections\?section=(.+)$/.exec(i.href);
     if (sec) assert.ok(sectionIds.has(sec[1]), `dead section link: ${i.href}`);
   }
@@ -64,9 +58,8 @@ test("empty query keeps everything, in index order", () => {
   assert.equal(searchAll("   ").length, searchIndex.length);
 });
 
-test("searches across all three datasets at once", () => {
+test("searches across sections and due dates at once", () => {
   const results = searchAll("annual return");
-  assert.ok(results.some((r) => r.group === "Forms"));
   assert.ok(results.some((r) => r.group === "Sections"));
   assert.ok(results.some((r) => r.group === "Due dates"));
 });
@@ -75,7 +68,7 @@ test("ranking: an exact code match comes first", () => {
   assert.equal(codes("AOC-4")[0], "AOC-4");
   assert.equal(codes("aoc4")[0], "AOC-4", "hyphen-insensitive");
   assert.equal(codes("aoc 4")[0], "AOC-4");
-  assert.equal(codes("MGT-7")[0], "MGT-7");
+  assert.equal(codes("MGT-7")[0], "MGT-7 / MGT-7A");
 });
 
 test("ranking: a section number finds the section", () => {
@@ -86,9 +79,9 @@ test("ranking: a section number finds the section", () => {
 
 test("ranking: exact beats prefix beats title beats body", () => {
   const aoc4 = searchIndex.find((i) => i.badge === "AOC-4");
-  const aoc4cfs = searchIndex.find((i) => i.badge === "AOC-4 CFS");
+  const mgt = searchIndex.find((i) => i.badge === "MGT-7 / MGT-7A");
   assert.ok(
-    scoreItem(aoc4, "aoc-4") > scoreItem(aoc4cfs, "aoc-4"),
+    scoreItem(mgt, "mgt-7") < scoreItem(aoc4, "aoc-4"),
     "the exact code must outrank the longer one that merely starts with it",
   );
 
@@ -127,8 +120,8 @@ test("every nav item points at a route that exists", () => {
 });
 
 test("multiple terms narrow the result set", () => {
-  const broad = searchAll("charge").length;
-  const narrow = searchAll("charge satisfaction").length;
+  const broad = searchAll("annual").length;
+  const narrow = searchAll("annual return").length;
   assert.ok(narrow > 0 && narrow < broad);
 });
 

@@ -1,9 +1,8 @@
-import { forms } from "@/data/forms";
 import { sections } from "@/data/sections";
 import { dueDates } from "@/data/due-dates";
 import { allNavItems } from "@/config/navigation";
 import { COMPANY_TYPES } from "@/lib/dates";
-import { formHaystack, matchesTerms, normalise, sectionHaystack, terms } from "@/lib/search";
+import { matchesTerms, normalise, sectionHaystack, terms } from "@/lib/search";
 
 /** Calculators on /tools, kept here so the palette can jump straight to one. */
 const TOOLS = [
@@ -51,7 +50,7 @@ const TOOLS = [
   },
 ];
 
-export const SEARCH_GROUPS = ["Forms", "Sections", "Due dates", "Tools", "Pages"];
+export const SEARCH_GROUPS = ["Sections", "Due dates", "Tools", "Pages"];
 /**
  * One flat, pre-built index over every dataset.
  *
@@ -61,16 +60,6 @@ export const SEARCH_GROUPS = ["Forms", "Sections", "Due dates", "Tools", "Pages"
  * user on a list page to search again.
  */
 export const searchIndex = [
-  ...forms.map((f) => ({
-    id: `form:${f.id}`,
-    group: "Forms",
-    badge: f.code,
-    title: f.name,
-    subtitle: `${f.section} · ${f.deadline}`,
-    href: `/forms?form=${f.id}`,
-    haystack: formHaystack(f),
-  })),
-
   ...sections.map((s) => ({
     id: `section:${s.id}`,
     group: "Sections",

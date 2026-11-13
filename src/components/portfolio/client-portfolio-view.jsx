@@ -2,9 +2,10 @@
 
 import * as React from "react";
 import { toast } from "sonner";
-import { LayoutGrid, Loader2, Plus } from "lucide-react";
+import { GripVertical, LayoutGrid, Loader2, Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { Tip } from "@/components/shared/tip";
 import { ExcelIcon, PdfIcon } from "@/components/shared/file-type-icon";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -13,9 +14,10 @@ import { usePortfolio, useScopedClients } from "@/components/portfolio/portfolio
 import { ScopeNote } from "@/components/portfolio/scope-note";
 import { ClientFormDialog } from "@/components/portfolio/client-form-dialog";
 import { today } from "@/lib/dates";
+import { moveClientId } from "@/lib/portfolio/clients";
 import { directorColumnCount, masterDataRows } from "@/lib/portfolio/master-data";
 export function ClientPortfolioView() {
-  const { ready, directors, consultants, activeClientId } = usePortfolio();
+  const { ready, directors, consultants, activeClientId, reorderClients } = usePortfolio();
   // Only the active company when one is selected; every company otherwise.
   const { clients } = useScopedClients();
   const [formOpen, setFormOpen] = React.useState(false);
@@ -119,7 +121,14 @@ export function ClientPortfolioView() {
           </div>
         </div>
 
-        <ClientTable rows={rows} clients={clients} activeClientId={activeClientId} onEdit={openEdit} onAdd={openAdd} />
+        <ClientTable
+          rows={rows}
+          clients={clients}
+          activeClientId={activeClientId}
+          onEdit={openEdit}
+          onAdd={openAdd}
+          onReorder={reorderClients}
+        />
       </div>
 
       <ClientFormDialog open={formOpen} onOpenChange={setFormOpen} client={editing} />
@@ -127,7 +136,15 @@ export function ClientPortfolioView() {
   );
 }
 
-function ClientTable({ rows, clients, activeClientId, onEdit, onAdd }) {
+/**
+ * One row per company, numbered. Drag a row by its handle and drop it between
+ * any two others to set your own order; the dashboard and downloads follow it.
+ */
+function ClientTable({ rows, clients, activeClientId, onEdit, onAdd, onReorder }) {
+  // The company being dragged, and the gap it would drop into (0 = above the first row).
+  const [dragId, setDragId] = React.useState(null);
+  const [dropAt, setDropAt] = React.useState(null);
+
   if (rows.length === 0) {
     return (
       <div className="rounded-lg border border-dashed py-16 text-center">
@@ -147,12 +164,41 @@ function ClientTable({ rows, clients, activeClientId, onEdit, onAdd }) {
   // Director 1, Director 2 (and more columns if any company has more directors).
   const directorSlots = Array.from({ length: directorColumnCount(rows) }, (_, i) => i);
   const none = <span className="text-muted-foreground">—</span>;
+  const canDrag = rows.length > 1;
+
+  function overRow(e, index) {
+    if (dragId === null) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    // Upper half of a row: drop above it; lower half: below it.
+    const box = e.currentTarget.getBoundingClientRect();
+    setDropAt(e.clientY < box.top + box.height / 2 ? index : index + 1);
+  }
+  function endDrag() {
+    setDragId(null);
+    setDropAt(null);
+  }
+  function drop(e) {
+    e.preventDefault();
+    if (dragId !== null && dropAt !== null) {
+      const ids = rows.map((r) => r.clientId);
+      const next = moveClientId(ids, dragId, dropAt);
+      if (next.some((id, i) => id !== ids[i])) {
+        void onReorder(next).then(
+          () => toast.success("Company order saved"),
+          () => toast.error("The new order could not be saved. Try again."),
+        );
+      }
+    }
+    endDrag();
+  }
 
   return (
     <div className="overflow-x-auto rounded-lg border">
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead className="w-14 pr-0">S.No.</TableHead>
             <TableHead>Company name</TableHead>
             <TableHead>CIN</TableHead>
             <TableHead>Mobile</TableHead>
@@ -164,12 +210,41 @@ function ClientTable({ rows, clients, activeClientId, onEdit, onAdd }) {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {rows.map((r) => {
+          {rows.map((r, index) => {
             const c = byId.get(r.clientId);
             if (!c) return null;
             const active = c.id === activeClientId;
+            const line =
+              dragId !== null && dropAt === index
+                ? "shadow-[inset_0_2px_0_0_var(--primary)]"
+                : dragId !== null && dropAt === index + 1 && index === rows.length - 1
+                  ? "shadow-[inset_0_-2px_0_0_var(--primary)]"
+                  : "";
             return (
-              <TableRow key={r.clientId} className={active ? "bg-primary/5" : undefined}>
+              <TableRow
+                key={r.clientId}
+                draggable={canDrag}
+                onDragStart={(e) => {
+                  e.dataTransfer.effectAllowed = "move";
+                  e.dataTransfer.setData("text/plain", r.name);
+                  setDragId(r.clientId);
+                }}
+                onDragOver={(e) => overRow(e, index)}
+                onDrop={drop}
+                onDragEnd={endDrag}
+                className={cn(active && "bg-primary/5", dragId === r.clientId && "opacity-40", line)}
+              >
+                <TableCell className="pr-0 align-top">
+                  <span className="flex items-center gap-1 text-sm text-muted-foreground">
+                    {canDrag ? (
+                      <GripVertical
+                        className="size-4 shrink-0 cursor-grab opacity-50 active:cursor-grabbing"
+                        aria-label="Drag to reorder"
+                      />
+                    ) : null}
+                    <span className="tabular">{index + 1}</span>
+                  </span>
+                </TableCell>
                 <TableCell className="align-top">
                   {/* Tapping the name opens the company's details to view or edit. */}
                   <button

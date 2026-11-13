@@ -130,28 +130,14 @@ test("a due that does not apply to a company has no cell (shown as —)", () => 
   assert.equal(cellText(undefined, iso), "—");
 });
 
-test("MGT-7A has its own column; a company filing the other form shows which one it files", () => {
-  const a = matrix.columns.find((c) => c.key === "mgt-7a|2026|");
-  assert.ok(a, "MGT-7A column");
-  assert.equal(a.form, "MGT-7A");
-  for (const row of matrix.rows) {
-    const full = row.cells["mgt-7|2026|"];
-    const small = row.cells["mgt-7a|2026|"];
-    if (!full && !small) continue;
-    // Exactly one of the two is a real due; the other, if shown, says why not.
-    assert.equal([full, small].filter((c) => c && !c.notRequired).length, 1, row.company);
-    if (small?.notRequired) assert.match(small.notRequired, /files MGT-7 \(not a small company/);
-    if (full?.notRequired) assert.match(full.notRequired, /files MGT-7A/);
-  }
-});
-
-test("MGT-7A shows even when no company in view files it", () => {
-  const big = client({ id: "big", turnover: 5_000_000_000, paidUpCapital: 2_000_000_000 });
-  const m = buildFilingMatrix(buildDuesRows([big], [], asOf, { filingsOnly: true }), [big]);
-  const cell = m.rows[0].cells["mgt-7a|2026|"];
-  assert.ok(cell?.notRequired);
-  assert.match(cellText(cell, iso), /^NA — files MGT-7 /);
-  assert.ok(m.rows[0].cells["mgt-7|2026|"] && !m.rows[0].cells["mgt-7|2026|"].notRequired);
+test("MGT-7 and MGT-7A share one MGT-7/7A column; the ITR forms share one ITR column", () => {
+  const annual = matrix.columns.filter((c) => c.key.startsWith("mgt-7"));
+  assert.ok(annual.length > 0);
+  assert.ok(annual.every((c) => c.form === "MGT-7/7A" && c.key.startsWith("mgt-7|")));
+  assert.ok(!matrix.columns.some((c) => c.key.startsWith("mgt-7a|")), "no separate MGT-7A column");
+  const itr = matrix.columns.filter((c) => c.key.startsWith("itr|"));
+  assert.ok(itr.length > 0 && itr.every((c) => c.form === "ITR"));
+  assert.ok(matrix.rows.every((r) => Object.values(r.cells).every((c) => !/files MGT-7/.test(c.notRequired ?? ""))));
 });
 
 test("director KYC folds into one cell per company with filed / total", () => {
@@ -179,13 +165,6 @@ test("the Excel file's first sheet is the filing-status matrix", async () => {
   const workbook = strFromU8(files["xl/workbook.xml"]);
   const names = [...workbook.matchAll(/<sheet [^>]*name="([^"]+)"/g)].map((m) => m[1]);
   assert.deepEqual(names, ["Filing status", "All dues", "About"]);
-});
-
-test("a column header names each form once", () => {
-  const itr = matrix.columns.find((c) => c.key.startsWith("itr|"));
-  const parts = itr.form.split(" / ");
-  assert.equal(new Set(parts).size, parts.length, itr.form);
-  assert.ok(parts.includes("ITR-6") && parts.includes("ITR-5"));
 });
 
 /* ---------------- ADT-1 in the matrix ---------------- */

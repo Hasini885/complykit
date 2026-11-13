@@ -50,14 +50,6 @@ test("a one-off date works over a circular-extended date too, and keeps it as th
   assert.equal(isoDate(row(c, 2026, "aoc-4").originalDue), "2026-12-31");
 });
 
-test("each half of a half-yearly return can be moved on its own", () => {
-  const base = client();
-  const first = row(base, 2027, "msme-1", "April to September");
-  const c = withDueOverride(base, filingKey(first), { date: "2026-10-25" });
-  assert.equal(isoDate(row(c, 2027, "msme-1", "April to September").due), "2026-10-25");
-  assert.equal(isoDate(row(c, 2027, "msme-1", "October to March").due), "2027-04-30");
-});
-
 test("back to the usual date removes the one-off", () => {
   const base = client();
   const key = filingKey(row(base, 2027, "aoc-4"));

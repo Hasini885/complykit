@@ -25,7 +25,7 @@ import { ConsultantFormDialog } from "@/components/portfolio/consultant-form-dia
 import { StatusPill } from "@/components/portfolio/status-pill";
 import { initials, typeLabel } from "@/lib/portfolio/clients";
 import { clientsForConsultant } from "@/lib/portfolio/consultants";
-import { buildDuesRows } from "@/lib/portfolio/dues-table";
+import { buildAnnualDuesRows, postIncorporationRows } from "@/lib/portfolio/dues-table";
 import { buildFilingMatrix } from "@/lib/portfolio/filing-matrix";
 import { financialYearLabel, today } from "@/lib/dates";
 import { selectableYears } from "@/lib/portfolio/schedule";
@@ -71,7 +71,8 @@ export function ConsultantMasterView() {
   }
   /**
    * The filings report for every company under one consultant: the same
-   * filing-status sheet as the dashboard, for those companies only.
+   * filing-status sheet as the dashboard (post incorporation forms first, then
+   * the year's annual forms), for those companies only.
    */
   async function downloadReport(c, kind) {
     const companies = clientsForConsultant(c.id, clients);
@@ -83,7 +84,10 @@ export function ConsultantMasterView() {
     try {
       const { downloadDuesXlsx, downloadMatrixPdf } = await import("@/lib/portfolio/dues-export");
       const asOf = today();
-      const rows = buildDuesRows(companies, directors, asOf, { filingsOnly: true, fyEndingYear: fy });
+      const rows = [
+        ...postIncorporationRows(companies, asOf),
+        ...buildAnnualDuesRows(companies, directors, asOf, { fyEndingYear: fy }),
+      ];
       const matrix = buildFilingMatrix(rows, companies);
       const meta = {
         asOf,

@@ -1,15 +1,11 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
 import { AlertTriangle } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { daysBetween, formatDate, hasLongFirstFinancialYear, incorporationTimeline, parseIsoDate } from "@/lib/dates";
-import { forms } from "@/data/forms";
-
-const formIdByCode = new Map(forms.map((f) => [f.code, f.id]));
 
 export function IncorporationCalculator() {
   const [value, setValue] = React.useState("");
@@ -58,7 +54,6 @@ export function IncorporationCalculator() {
 
           <ol className="relative space-y-0 border-l pl-6">
             {timeline.map((item) => {
-              const formId = item.formCode ? formIdByCode.get(item.formCode) : undefined;
               const dayCount = daysBetween(incorporation, item.due);
               return (
                 <li key={item.id} className="relative pb-5 last:pb-0">
@@ -79,18 +74,9 @@ export function IncorporationCalculator() {
                   <div className="mt-1 flex flex-wrap items-center gap-2">
                     <span className="font-mono text-[11px] text-primary">{item.section}</span>
                     {item.formCode ? (
-                      formId ? (
-                        <Link
-                          href={`/forms?form=${formId}`}
-                          className="rounded border px-1.5 py-0.5 font-mono text-[11px] transition-colors hover:border-primary hover:text-primary"
-                        >
-                          {item.formCode}
-                        </Link>
-                      ) : (
-                        <Badge variant="outline" className="font-mono text-[11px]">
-                          {item.formCode}
-                        </Badge>
-                      )
+                      <Badge variant="outline" className="font-mono text-[11px]">
+                        {item.formCode}
+                      </Badge>
                     ) : null}
                   </div>
                   <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{item.detail}</p>

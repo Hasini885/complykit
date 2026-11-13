@@ -13,6 +13,10 @@ const nextConfig = {
   experimental: {
     staleTimes: { dynamic: 60, static: 300 },
   },
+  // The forms library was removed; old links land on the dashboard.
+  async redirects() {
+    return [{ source: "/forms", destination: "/dashboard", permanent: false }];
+  },
 };
 
 export default nextConfig;

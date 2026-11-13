@@ -145,15 +145,9 @@ test("the generic calendar (no company) still shows the one company-wide KYC row
 
 /* ---------------- profile decides what applies ---------------- */
 
-test("MSME-1 only when the company has MSME dues over 45 days", () => {
-  assert.ok(!find(resolveClientYear(client(), [], 2027), "msme-1"));
-  assert.ok(find(resolveClientYear(client({ msmeDuesOver45Days: true }), [], 2027), "msme-1"));
-});
-
-test("PAS-6 applies to an unlisted public company, not a listed one", () => {
-  const pub = client({ type: "public", cin: "U00000KA2019PLC000000" });
-  assert.ok(find(resolveClientYear(pub, [], 2027), "pas-6"));
-  assert.ok(!find(resolveClientYear({ ...pub, listed: true }, [], 2027), "pas-6"));
+test("MSME-1 and PAS-6 are not tracked for any company", () => {
+  assert.ok(!find(resolveClientYear(client({ msmeDuesOver45Days: true }), [], 2027), "msme-1"));
+  assert.ok(!find(resolveClientYear(client({ type: "public", cin: "U00000KA2019PLC000000" }), [], 2027), "pas-6"));
 });
 
 /* ---------------- the rolling window ---------------- */

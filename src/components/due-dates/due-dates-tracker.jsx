@@ -317,18 +317,9 @@ function DueRow({ item, reference, showFy = false, onMark, onChangeDate }) {
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-medium">{item.source.title}</span>
             {item.source.formCode ? (
-              item.source.formId ? (
-                <Link
-                  href={`/forms?form=${item.source.formId}`}
-                  className="rounded border px-1.5 py-0.5 font-mono text-[11px] transition-colors hover:border-primary hover:text-primary"
-                >
-                  {item.source.formCode}
-                </Link>
-              ) : (
-                <Badge variant="outline" className="font-mono text-[11px]">
-                  {item.source.formCode}
-                </Badge>
-              )
+              <Badge variant="outline" className="font-mono text-[11px]">
+                {item.source.formCode}
+              </Badge>
             ) : null}
             <span className="font-mono text-[11px] text-primary">{item.source.section}</span>
             {item.qualifier && item.due ? (

@@ -47,10 +47,10 @@ function appliesOnFacts(source, opts) {
   if (!facts) return true;
   switch (source.id) {
     case "msme-1":
-      return facts.msmeDuesOver45Days;
     case "pas-6":
-      // Listed companies reconcile capital under SEBI rules instead.
-      return !facts.listed;
+      // Not tracked for companies: the dashboard covers ADT-1, AOC-4, MGT-7/7A,
+      // INC-20A, DPT-3, DIR-3 KYC and ITR (and the LLP forms) only.
+      return false;
     case "adt-1": {
       if (facts.filesAdt1 === false) return false;
       // Section 139(1): the first AGM appoints the subsequent auditor, so its ADT-1 is always due.

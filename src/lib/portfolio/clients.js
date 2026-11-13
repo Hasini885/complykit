@@ -354,8 +354,31 @@ export function initials(name) {
     .join("");
 }
 
+/**
+ * Companies in the user's own order (set by dragging rows in Company Master
+ * Data), else alphabetically. A company never placed by hand, such as one just
+ * added, goes after the placed ones, alphabetically among themselves.
+ */
 export function sortClients(clients) {
-  return [...clients].sort((a, b) => a.name.localeCompare(b.name, "en-IN"));
+  const placed = (c) => typeof c.sortOrder === "number";
+  return [...clients].sort(
+    (a, b) =>
+      Number(!placed(a)) - Number(!placed(b)) ||
+      (placed(a) && placed(b) ? a.sortOrder - b.sortOrder : 0) ||
+      a.name.localeCompare(b.name, "en-IN"),
+  );
+}
+
+/**
+ * The ids in their new order after moving one company so it lands at
+ * position `toIndex` of the list (0 = top), as when a row is dropped there.
+ */
+export function moveClientId(orderedIds, id, toIndex) {
+  const from = orderedIds.indexOf(id);
+  if (from === -1) return orderedIds;
+  const rest = orderedIds.filter((x) => x !== id);
+  const at = Math.max(0, Math.min(rest.length, toIndex > from ? toIndex - 1 : toIndex));
+  return [...rest.slice(0, at), id, ...rest.slice(at)];
 }
 
 export function newId() {

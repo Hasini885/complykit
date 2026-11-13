@@ -89,14 +89,6 @@ test("the filing stays with its row when the AGM date moves the due date", () =>
   assert.equal(aoc.srn, "AB1234567", "filing still attached");
 });
 
-test("each half of a half-yearly return is filed separately", () => {
-  const c = client();
-  const first = row(c, 2027, "msme-1", "April to September");
-  const marked = withFiling(c, filingKey(first), { filedOn: "2026-10-25", srn: "AB1111111" });
-  assert.equal(row(marked, 2027, "msme-1", "April to September").srn, "AB1111111");
-  assert.equal(row(marked, 2027, "msme-1", "October to March").filedOn ?? null, null);
-});
-
 test("marking again replaces the record; un-marking removes it", () => {
   const key = filingKey(row(client(), 2026, "aoc-4"));
   const once = withFiling(client(), key, { filedOn: "2026-10-20", srn: "AB1234567" });
