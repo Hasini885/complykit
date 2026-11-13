@@ -1,6 +1,8 @@
 /**
  * The GST client register and monthly return status (brought over from the
- * GST Register browser extension). Portal passwords are never kept here.
+ * GST Register browser extension). Each client's portal password is kept
+ * with the rest of the account's data, at the owner's choice; it is hidden
+ * on screen until "Show passwords" is ticked and never put in downloads.
  */
 
 export const GST_KEY = "complykit.gst.v1";
@@ -13,10 +15,10 @@ export const GSTIN_RE = /^\d{2}[A-Z]{5}\d{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
 /** Monthly due days: GSTR-1 by the 11th, GSTR-3B by the 20th. */
 export const GST_DUE_DAYS = { g1: 11, g3b: 20 };
 
-export const CLIENT_FIELDS = ["name", "signatory", "email", "mobile", "gstin", "user", "reg", "deact", "folder"];
+export const CLIENT_FIELDS = ["name", "signatory", "email", "mobile", "gstin", "user", "pass", "reg", "deact", "folder"];
 
 export function newGstClient(id) {
-  return { id, name: "", signatory: "", email: "", mobile: "", gstin: "", user: "", reg: "", deact: "", folder: "" };
+  return { id, name: "", signatory: "", email: "", mobile: "", gstin: "", user: "", pass: "", reg: "", deact: "", folder: "" };
 }
 
 export function normaliseGstin(v) {
@@ -61,10 +63,7 @@ export function monthSummary(data, month) {
   return { total: list.length, filed, notFiled: list.length - filed };
 }
 
-/**
- * Reads a backup from the GST Register extension ({ clients, status }).
- * Passwords in it are dropped: the site never stores portal passwords.
- */
+/** Reads a backup from the GST Register extension ({ clients, status }), passwords included. */
 export function fromBackup(json, makeId) {
   const clients = (Array.isArray(json?.clients) ? json.clients : []).map((c) => {
     const out = newGstClient(typeof c?.id === "string" && c.id ? c.id : makeId());

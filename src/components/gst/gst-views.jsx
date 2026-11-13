@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { toast } from "sonner";
-import { Download, ExternalLink, FolderOpen, Play, Plus, Search, Trash2, Upload, X } from "lucide-react";
+import { Copy, Download, ExternalLink, FolderOpen, Play, Plus, Search, Trash2, Upload, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Tip } from "@/components/shared/tip";
@@ -154,6 +154,8 @@ const REGISTER_COLS = [
   { key: "mobile", label: "Mobile Number", width: "min-w-32" },
   { key: "gstin", label: "GSTIN", width: "min-w-44", req: true },
   { key: "user", label: "User name", width: "min-w-36" },
+  // Hidden until "Show passwords" is ticked; left out of search, filters and downloads.
+  { key: "pass", label: "Password", width: "min-w-40", secret: true },
   { key: "reg", label: "Registration date", width: "min-w-36", date: true },
   { key: "deact", label: "Deactivate date", width: "min-w-36", date: true },
   { key: "folder", label: "Folder path", width: "min-w-56" },
@@ -171,12 +173,30 @@ export function GstRegisterView() {
   }, []);
   const table = useColumnFilters(valueOf);
   const fileRef = React.useRef(null);
+  const [showPw, setShowPw] = React.useState(false);
+  const plainCols = REGISTER_COLS.filter((col) => !col.secret);
 
   const words = query.toLowerCase().split(/\s+/).filter(Boolean);
   const numbered = data.clients.map((c, i) => ({ ...c, sno: i + 1 }));
   const rows = table.apply(
-    numbered.filter((c) => matches(words, REGISTER_COLS.map((col) => valueOf(c, col.key)).join(" "))),
+    numbered.filter((c) => matches(words, plainCols.map((col) => valueOf(c, col.key)).join(" "))),
   );
+
+  async function copyPassword(c) {
+    if (!c.pass) return false;
+    try {
+      await navigator.clipboard.writeText(c.pass);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+  /** Opens the GST login page, with the client's password copied ready to paste. */
+  async function openPortalFor(c) {
+    const copied = await copyPassword(c);
+    openPortal();
+    if (copied) toast.success(`Password for ${c.name || c.user || "this client"} copied. Paste it on the login page.`);
+  }
 
   function setField(id, field, value) {
     setData((d) => ({
@@ -216,7 +236,7 @@ export function GstRegisterView() {
               status: { ...incoming.status, ...d.status },
             },
       );
-      toast.success(`Imported ${incoming.clients.length} GST clients (passwords are not imported)`);
+      toast.success(`Imported ${incoming.clients.length} GST clients`);
     } catch {
       toast.error("That file could not be read. Choose a GST Register backup (.json).");
     }
@@ -224,8 +244,9 @@ export function GstRegisterView() {
   async function exportExcel() {
     const { downloadTableXlsx } = await import("@/lib/simple-xlsx");
     await downloadTableXlsx({
-      header: ["S.No", ...REGISTER_COLS.map((c) => c.label)],
-      rows: rows.map((c) => [c.sno, ...REGISTER_COLS.map((col) => valueOf(c, col.key))]),
+      // Passwords are never written to the download.
+      header: ["S.No", ...plainCols.map((c) => c.label)],
+      rows: rows.map((c) => [c.sno, ...plainCols.map((col) => valueOf(c, col.key))]),
       sheet: "GST client register",
       fileName: `cacompliancetool-gst-clients-${isoToday()}.xlsx`,
       widths: [6, 30, 24, 28, 14, 18, 18, 14, 14, 30],
@@ -269,6 +290,9 @@ export function GstRegisterView() {
             <Download className="size-4" aria-hidden />
           </Button>
         </Tip>
+        <label className="ml-1 flex items-center gap-2 text-sm text-muted-foreground">
+          <input type="checkbox" checked={showPw} onChange={(e) => setShowPw(e.target.checked)} /> Show passwords
+        </label>
         <span className="flex-1" />
         {table.any || query ? (
           <Button
@@ -295,7 +319,7 @@ export function GstRegisterView() {
                   key={col.key}
                   req={col.req}
                   className={col.width}
-                  filter={table.propsFor(col.key, col.label, numbered)}
+                  filter={col.secret ? undefined : table.propsFor(col.key, col.label, numbered)}
                 >
                   {col.label}
                 </Head>
@@ -337,6 +361,30 @@ export function GstRegisterView() {
                               </Button>
                             </Tip>
                           </span>
+                        ) : col.secret ? (
+                          <span className="flex items-center gap-1">
+                            <input
+                              type={showPw ? "text" : "password"}
+                              autoComplete="new-password"
+                              value={c.pass ?? ""}
+                              onChange={(e) => setField(c.id, "pass", e.target.value)}
+                              className={cn(CELL_INPUT, "font-mono")}
+                              aria-label={`Password for ${c.name || "client"}`}
+                            />
+                            <Tip label="Copy password">
+                              <Button
+                                size="icon-sm"
+                                variant="ghost"
+                                disabled={!c.pass}
+                                onClick={async () => {
+                                  if (await copyPassword(c)) toast.success("Password copied");
+                                }}
+                                aria-label="Copy password"
+                              >
+                                <Copy className="size-3.5" aria-hidden />
+                              </Button>
+                            </Tip>
+                          </span>
                         ) : (
                           <input
                             type={col.date ? "date" : col.key === "mobile" ? "tel" : "text"}
@@ -355,7 +403,7 @@ export function GstRegisterView() {
                       </TableCell>
                     ))}
                     <TableCell className="p-1 whitespace-nowrap">
-                      <Button size="sm" variant="outline" onClick={openPortal}>
+                      <Button size="sm" variant="outline" onClick={() => void openPortalFor(c)}>
                         <ExternalLink className="size-3.5" aria-hidden /> Open Portal
                       </Button>
                       <Button
@@ -376,9 +424,9 @@ export function GstRegisterView() {
         </Table>
       </div>
       <p className="text-xs text-muted-foreground">
-        Open Portal opens the GST login page; sign in with the client&apos;s user name and password there. Portal
-        passwords are not saved in {site.name}. After a client&apos;s deactivate date, later months no longer
-        list it.
+        Open Portal opens the GST login page and copies the client&apos;s password, ready to paste. Passwords are saved
+        privately with your {site.name} account, stay hidden until you tick Show passwords, and are never included
+        in downloads. After a client&apos;s deactivate date, later months no longer list it.
       </p>
     </div>
   );

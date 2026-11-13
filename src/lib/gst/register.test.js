@@ -50,7 +50,7 @@ test("older single-value status counts for both returns", () => {
   });
 });
 
-test("an extension backup imports without passwords", () => {
+test("an extension backup imports, passwords included", () => {
   const backup = {
     clients: [{ id: "x1", name: "ABC Traders", gstin: "36abcde1234f1z5 ", user: "abc", pass: "secret" }],
     status: { "2026-10": { x1: { g1: "filed", g3b: "notfiled", remarks: "ok" }, gone: "filed" }, bad: {} },
@@ -58,8 +58,8 @@ test("an extension backup imports without passwords", () => {
   const out = fromBackup(backup, () => "new");
   assert.equal(out.clients.length, 1);
   assert.equal(out.clients[0].gstin, "36ABCDE1234F1Z5");
-  assert.equal("pass" in out.clients[0], false, "password dropped");
-  assert.ok(!JSON.stringify(out).includes("secret"));
+  assert.equal(out.clients[0].pass, "secret");
+  assert.equal(out.clients[0].user, "abc");
   assert.deepEqual(Object.keys(out.status), ["2026-10"]);
   assert.deepEqual(Object.keys(out.status["2026-10"]), ["x1"], "status for unknown clients dropped");
 });
