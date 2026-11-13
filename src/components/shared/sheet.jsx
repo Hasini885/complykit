@@ -2,7 +2,7 @@
 
 import * as React from "react";
 
-import { Trash2 } from "lucide-react";
+import { GripVertical, Trash2 } from "lucide-react";
 
 import { ColumnFilter } from "@/components/shared/column-filter";
 import { cn } from "@/lib/utils";
@@ -138,10 +138,25 @@ export function SheetCell({ children, sno, className, ...props }) {
  * at (the row needs className "group/row"). It stays in view however far the
  * sheet is scrolled sideways.
  */
-export function SnoCell({ n, onDelete, label }) {
+/**
+ * The S.No cell: the number, and on hover a delete button. With `dragProps`
+ * (from useRowDrag) it also shows a grip to drag the row to another place.
+ */
+export function SnoCell({ n, onDelete, label, dragProps }) {
   return (
     <td className="sheet-sno px-1">
       <span className="group-hover/row:hidden group-focus-within/row:hidden">{n}</span>
+      {dragProps ? (
+        <span
+          {...dragProps}
+          role="button"
+          aria-label={`Drag row ${n} to move it`}
+          title="Drag to move this row"
+          className="mr-0.5 hidden size-8 cursor-grab items-center justify-center rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground active:cursor-grabbing group-hover/row:inline-flex group-focus-within/row:inline-flex"
+        >
+          <GripVertical className="size-4" aria-hidden />
+        </span>
+      ) : null}
       <button
         type="button"
         onClick={onDelete}
@@ -153,6 +168,48 @@ export function SnoCell({ n, onDelete, label }) {
       </button>
     </td>
   );
+}
+
+/**
+ * Drag-to-reorder for sheet rows. `onMove(fromId, toId)` is called when a row
+ * is dropped on another. Returns the props for the grip (`grip(id)`) and for
+ * each row (`row(id)`), which highlights the row being dropped on.
+ */
+export function useRowDrag(onMove) {
+  const [dragId, setDragId] = React.useState(null);
+  const [overId, setOverId] = React.useState(null);
+  const end = () => {
+    setDragId(null);
+    setOverId(null);
+  };
+  return {
+    grip: (id) => ({
+      draggable: true,
+      onDragStart: (e) => {
+        e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData("text/plain", id);
+        const tr = e.currentTarget.closest("tr");
+        if (tr) e.dataTransfer.setDragImage(tr, 24, 20);
+        setDragId(id);
+      },
+      onDragEnd: end,
+    }),
+    row: (id) => ({
+      onDragOver: (e) => {
+        if (!dragId) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+        if (overId !== id) setOverId(id);
+      },
+      onDrop: (e) => {
+        if (!dragId) return;
+        e.preventDefault();
+        if (dragId !== id) onMove(dragId, id);
+        end();
+      },
+      className: cn(dragId === id && "opacity-40", overId === id && dragId !== id && "[&>td]:bg-primary/20!"),
+    }),
+  };
 }
 
 export { pastedDate, pastedFiled } from "@/lib/sheet-paste";

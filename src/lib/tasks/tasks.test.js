@@ -1,7 +1,16 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { cellValue, deadlinesByDay, feeValue, isOverdue, newTask, taskSummary, withField } from "@/lib/tasks/tasks";
+import {
+  cellValue,
+  deadlinesByDay,
+  feeValue,
+  isOverdue,
+  moveRow,
+  newTask,
+  taskSummary,
+  withField,
+} from "@/lib/tasks/tasks";
 
 const T = "2026-11-13";
 
@@ -42,4 +51,13 @@ test("summary, fees and the calendar", () => {
     "2026-11-30": { pending: 1, finished: 0 },
   });
   assert.equal(cellValue(rows[0], "deadline"), "01-11-2026", "dates read DD-MM-YYYY");
+});
+
+test("moveRow drops a row onto another row's place", () => {
+  const rows = ["a", "b", "c", "d"].map((id) => ({ id }));
+  const ids = (r) => r.map((x) => x.id).join("");
+  assert.equal(ids(moveRow(rows, "a", "c")), "bcad", "down: lands after the target");
+  assert.equal(ids(moveRow(rows, "d", "b")), "adbc", "up: lands before the target");
+  assert.equal(ids(moveRow(rows, "b", "b")), "abcd");
+  assert.equal(ids(moveRow(rows, "x", "b")), "abcd");
 });

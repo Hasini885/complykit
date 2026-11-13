@@ -65,6 +65,22 @@ export function withField(task, field, value, today) {
   return next;
 }
 
+/**
+ * The rows with the one whose id is `fromId` moved to where `toId` is: just
+ * before it when moving up, just after it when moving down (so the dragged
+ * row lands on the row it was dropped on, as in Excel). Unknown ids, or a row
+ * dropped on itself, leave the order as it was.
+ */
+export function moveRow(rows, fromId, toId) {
+  const from = rows.findIndex((r) => r.id === fromId);
+  const to = rows.findIndex((r) => r.id === toId);
+  if (from < 0 || to < 0 || from === to) return rows;
+  const next = [...rows];
+  const [moved] = next.splice(from, 1);
+  next.splice(to, 0, moved);
+  return next;
+}
+
 export function feeValue(fee) {
   const n = parseFloat(String(fee ?? "").replace(/,/g, ""));
   return Number.isFinite(n) ? n : 0;

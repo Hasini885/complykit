@@ -195,5 +195,5 @@ export function useColumnFilters(valueOf) {
   }, []);
   const any = Object.keys(filters).length > 0 || sort !== null;
 
-  return { apply, propsFor, clear, any, filters, setFilters };
+  return { apply, propsFor, clear, any, filters, setFilters, sorted: sort !== null };
 }

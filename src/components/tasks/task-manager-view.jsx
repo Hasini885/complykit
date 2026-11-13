@@ -7,7 +7,7 @@ import { Download, Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tip } from "@/components/shared/tip";
 import { useColumnFilters } from "@/components/shared/column-filter";
-import { SHEET_INPUT, Sheet, SheetCell, SheetHead, SnoCell, pastedDate } from "@/components/shared/sheet";
+import { SHEET_INPUT, Sheet, SheetCell, SheetHead, SnoCell, pastedDate, useRowDrag } from "@/components/shared/sheet";
 import { LegendDot, MiniCalendar } from "@/components/shared/mini-calendar";
 import { usePortfolio } from "@/components/portfolio/portfolio-provider";
 import { useStoredJson } from "@/lib/stored-json";
@@ -26,6 +26,7 @@ import {
   isOverdue,
   isoToday,
   newTask,
+  moveRow,
   taskSummary,
   withField,
 } from "@/lib/tasks/tasks";
@@ -46,6 +47,8 @@ export function TaskManagerView() {
   const lastAdded = React.useRef(null);
 
   const numbered = data.rows.map((t, i) => ({ ...t, sno: i + 1 }));
+  // Drag a row by its grip to put the tasks in your own order (saved; S.No follows).
+  const drag = useRowDrag((fromId, toId) => setData((d) => ({ ...d, rows: moveRow(d.rows, fromId, toId) })));
   const rows = table.apply(numbered);
   const sum = taskSummary(data.rows, today);
   const shownFee = rows.reduce((n, t) => n + feeValue(t.fee), 0);
@@ -241,10 +244,10 @@ export function TaskManagerView() {
       <Sheet
         onPasteGrid={pasteGrid}
         onEnterPastEnd={addTask}
-        minWidth={64 + TASK_COLUMNS.reduce((n, c) => n + c.width, 0)}
+        minWidth={80 + TASK_COLUMNS.reduce((n, c) => n + c.width, 0)}
       >
         <colgroup>
-          <col style={{ width: 64 }} />
+          <col style={{ width: 80 }} />
           {TASK_COLUMNS.map((c) => (
             <col key={c.key} style={{ width: c.width }} />
           ))}
@@ -274,8 +277,13 @@ export function TaskManagerView() {
             </tr>
           ) : (
             rows.map((t, r) => (
-              <tr key={t.id} data-task={t.id} className="group/row">
-                <SnoCell n={t.sno} onDelete={() => remove(t)} label={`Delete task ${t.sno}`} />
+              <tr key={t.id} data-task={t.id} {...drag.row(t.id)} className={cn("group/row", drag.row(t.id).className)}>
+                <SnoCell
+                  n={t.sno}
+                  onDelete={() => remove(t)}
+                  label={`Delete task ${t.sno}`}
+                  dragProps={table.sorted ? undefined : drag.grip(t.id)}
+                />
                 {TASK_COLUMNS.map((c, ci) => (
                   <SheetCell key={c.key} className={cn(c.auto && "px-3 text-muted-foreground")}>
                     {c.auto ? (
