@@ -311,6 +311,21 @@ export function AllDuesGrid({
             ))}
           </select>
         )}
+        {singleCompany ? null : (
+          <select
+            value={filter.clientId}
+            onChange={(e) => setFilter((f) => ({ ...f, clientId: e.target.value }))}
+            className="h-8 max-w-[16rem] rounded-md border bg-background px-2 text-sm"
+            aria-label="Company"
+          >
+            <option value="all">All companies ({clients.length})</option>
+            {clients.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        )}
         {singleCompany || consultants.length === 0 ? null : (
           <select
             value={consultantId}
@@ -329,21 +344,6 @@ export function AllDuesGrid({
               </option>
             ))}
             <option value="none">No consultant ({allClients.filter((x) => !x.consultantId).length})</option>
-          </select>
-        )}
-        {singleCompany ? null : (
-          <select
-            value={filter.clientId}
-            onChange={(e) => setFilter((f) => ({ ...f, clientId: e.target.value }))}
-            className="h-8 max-w-[16rem] rounded-md border bg-background px-2 text-sm"
-            aria-label="Company"
-          >
-            <option value="all">All companies ({clients.length})</option>
-            {clients.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
           </select>
         )}
         {view === "list" ? (
