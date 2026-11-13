@@ -45,6 +45,8 @@ import {
 import { financialYearEndYear } from "@/lib/portfolio/directors";
 import { financialYearLabel, formatDate } from "@/lib/dates";
 import { cn } from "@/lib/utils";
+import { usePortfolio } from "@/components/portfolio/portfolio-provider";
+import { formatMobile } from "@/lib/portfolio/mobile";
 
 const STATUS_CELL = {
   overdue: "bg-destructive/10 font-semibold text-destructive",
@@ -77,7 +79,7 @@ const SORT_VALUE = {
  */
 export function AllDuesGrid({
   section,
-  clients,
+  clients: allClients,
   directors,
   reference,
   onOpenClient,
@@ -86,6 +88,18 @@ export function AllDuesGrid({
   yearControl,
   aside,
 }) {
+  // Consultant filter: "all", "none" (companies with no consultant) or a consultant's id.
+  // The table and both downloads then cover only that consultant's companies.
+  const { consultants } = usePortfolio();
+  const [consultantId, setConsultantId] = React.useState("all");
+  const consultant = consultants.find((c) => c.id === consultantId) ?? null;
+  const clients = React.useMemo(
+    () =>
+      consultantId === "all"
+        ? allClients
+        : allClients.filter((c) => (consultantId === "none" ? !c.consultantId : c.consultantId === consultantId)),
+    [allClients, consultantId],
+  );
   // Null is the rolling window (90 days back to 12 months ahead); a number is
   // one financial year, by the calendar year its 31 March falls in.
   const [ownFy, setFy] = React.useState(null);
@@ -158,8 +172,15 @@ export function AllDuesGrid({
         ? "All companies"
         : (clients.find((c) => c.id === filter.clientId)?.name ?? "One company");
     const status = STATUS_TABS.find((t) => t.value === filter.status).label;
+    const by =
+      consultantId === "all"
+        ? ""
+        : consultant
+          ? `Consultant: ${consultant.name} (${formatMobile(consultant.mobile)})`
+          : "No consultant";
     return [
       title,
+      by,
       company,
       oneTime ? "" : fy === null ? "Current window" : financialYearLabel(fy),
       status === "All" ? "All statuses" : status,
@@ -174,7 +195,7 @@ export function AllDuesGrid({
     setBusy(kind);
     try {
       const { downloadDuesPdf, downloadDuesXlsx, downloadMatrixPdf } = await import("@/lib/portfolio/dues-export");
-      const meta = { asOf: reference, scope: scopeText() };
+      const meta = { asOf: reference, scope: scopeText(), fileTag: consultant?.name };
       // Excel always carries both: the filing-status sheet first, then the list.
       const listRows = view === "list" ? visible : filterDuesRows(rows, { ...ALL_DUES, clientId: filter.clientId });
       if (kind === "xlsx") await downloadDuesXlsx(listRows, meta, matrix);
@@ -288,6 +309,26 @@ export function AllDuesGrid({
                 {financialYearLabel(y)}
               </option>
             ))}
+          </select>
+        )}
+        {singleCompany || consultants.length === 0 ? null : (
+          <select
+            value={consultantId}
+            onChange={(e) => {
+              setConsultantId(e.target.value);
+              // A company from another consultant would leave the table empty.
+              setFilter((f) => ({ ...f, clientId: "all" }));
+            }}
+            className="h-8 max-w-[16rem] rounded-md border bg-background px-2 text-sm"
+            aria-label="Consultant"
+          >
+            <option value="all">All consultants</option>
+            {consultants.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name} ({allClients.filter((x) => x.consultantId === c.id).length})
+              </option>
+            ))}
+            <option value="none">No consultant ({allClients.filter((x) => !x.consultantId).length})</option>
           </select>
         )}
         {singleCompany ? null : (
