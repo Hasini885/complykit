@@ -150,7 +150,6 @@ export const DUES_COLUMNS = [
   { key: "obligation", header: "Obligation", width: 38, text: (r) => r.obligation },
   { key: "form", header: "Form", width: 14, text: (r) => r.form },
   { key: "fy", header: "FY", width: 12, text: (r) => r.fy },
-  { key: "period", header: "Period", width: 18, text: (r) => r.period },
   { key: "filedOn", header: "Filed on", width: 13, text: (r) => (r.filedOn ? formatDate(r.filedOn) : "") },
   { key: "srn", header: "SRN / Ack. no.", width: 17, text: (r) => r.srn },
   { key: "cin", header: "CIN / LLPIN", width: 24, text: (r) => r.cin },

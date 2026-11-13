@@ -188,7 +188,7 @@ export async function downloadDuesXlsx(rows, meta, matrix) {
 /* ------------------------------------------------------------------ */
 
 /** Columns that fit an A4 landscape page; the Excel file carries the rest. */
-const PDF_COLUMNS = ["company", "obligation", "form", "fy", "period", "due", "status", "days", "filedOn", "srn"];
+const PDF_COLUMNS = ["company", "obligation", "form", "fy", "due", "status", "days", "filedOn", "srn"];
 
 const hex = (h) => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
 
