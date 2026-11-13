@@ -168,10 +168,11 @@ export function TaskManagerView() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="space-y-3">
-          <h1 className="font-heading text-3xl font-bold tracking-tight">Task Manager</h1>
-          <div className="flex flex-wrap items-center gap-2">
+      <h1 className="font-heading text-3xl font-bold tracking-tight">Task Manager</h1>
+      <div className="grid gap-4 md:grid-cols-[1fr_auto]">
+        <div className="flex flex-col items-center justify-center rounded-3xl border-2 border-dashed border-primary/25 p-4 text-center">
+          <h2 className="font-heading text-base font-semibold">Task summary</h2>
+          <div className="mt-3 flex flex-wrap justify-center gap-8">
             <Num value={sum.total} label="Total" />
             <Num value={sum.pending} label="Pending" className="text-destructive" />
             <Num value={sum.finished} label="Finished" className="text-emerald-500" />
@@ -344,12 +345,11 @@ export function TaskManagerView() {
   );
 }
 
-/** A small count: "5 Pending". */
 function Num({ value, label, className }) {
   return (
-    <span className="inline-flex items-baseline gap-1.5 rounded-full border-2 border-dashed border-primary/25 px-3 py-1">
-      <b className={cn("font-heading text-lg", className)}>{value}</b>
-      <small className="text-[11px] font-semibold tracking-[0.1em] text-muted-foreground uppercase">{label}</small>
-    </span>
+    <div>
+      <b className={cn("block font-heading text-2xl", className)}>{value}</b>
+      <small className="text-[10px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">{label}</small>
+    </div>
   );
 }
