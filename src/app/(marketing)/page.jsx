@@ -2,21 +2,25 @@ import Link from "next/link";
 import {
   ArrowRight,
   BellRing,
-  Building2,
   CalendarCheck2,
   CalendarDays,
+  ClipboardPaste,
+  Download,
   FileCheck2,
   HardDrive,
+  KeyRound,
   Lock,
+  MonitorDown,
+  Puzzle,
   ShieldCheck,
   Sparkles,
+  Table2,
   UserX,
+  Users,
 } from "lucide-react";
 
 import { site, legal, MCA_URL } from "@/config/site";
-import { allNavItems, LAW_UPDATED } from "@/config/navigation";
-import { sections } from "@/data/sections";
-import { checklists } from "@/data/checklists";
+import { allNavItems, hubTools, LAW_UPDATED } from "@/config/navigation";
 import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { IconTile, tintFor } from "@/components/shared/icon-tile";
@@ -24,49 +28,104 @@ import { AlertsSignup } from "@/components/alerts-signup";
 import { SiteFooter } from "@/components/site-footer";
 import { LandingHeader } from "@/components/landing/landing-header";
 import { ProductPreview } from "@/components/landing/product-preview";
-import { cn } from "@/lib/utils";
 
 export const metadata = {
-  title: { absolute: `${site.name}: never miss an MCA deadline` },
+  title: { absolute: `${site.name}: GST, MCA and practice tools for CAs` },
   description: site.description,
 };
 
-/** Everything except the dashboard, which the hero CTA already opens. */
-const FEATURES = allNavItems.filter((item) => item.href !== "/dashboard");
+/**
+ * Every tool and its pages, straight from the navigation, in dashboard order:
+ * a tool or page added to TOOLS shows up here without touching this file.
+ */
+const TOOLS_ON_PAGE = hubTools();
+const PAGE_COUNT = allNavItems.filter((i) => i.href !== "/dashboard").length;
+
+/** What works the same across the tools. Add to this list when a cross-cutting feature ships. */
+const HIGHLIGHTS = [
+  {
+    icon: Table2,
+    tint: "violet",
+    title: "Works like Excel",
+    body: "Big, full-width sheets with gridlines, a frozen header and S.No, arrow-key and Enter navigation, and a filter on every column.",
+  },
+  {
+    icon: ClipboardPaste,
+    tint: "sky",
+    title: "Paste straight from Excel",
+    body: "Copy a block of rows from your existing sheet and paste it in; new rows are added for you. Delete a stray row from its S.No.",
+  },
+  {
+    icon: Puzzle,
+    tint: "pink",
+    title: "Free GST Helper for Chrome",
+    body: "Opens the GST portal with the client's login filled in (you type the captcha) and checks every client's GSTR-1 and 3B status for the month.",
+  },
+  {
+    icon: CalendarCheck2,
+    tint: "amber",
+    title: "Deadlines on a calendar",
+    body: "Post incorporation and annual MCA dues worked out from each company's own dates, plus GST return dates and task deadlines on a month view.",
+  },
+  {
+    icon: Download,
+    tint: "emerald",
+    title: "Download to Excel and PDF",
+    body: "Registers, filing status, task lists and consultant-wise reports (post incorporation and annual, separately) in one click.",
+  },
+  {
+    icon: MonitorDown,
+    tint: "indigo",
+    title: "Install it as an app",
+    body: "Add it to your laptop or phone home screen from the browser. It opens in its own window and updates itself.",
+  },
+];
 
 const STEPS = [
   {
-    icon: Building2,
+    icon: Users,
     tint: "violet",
-    title: "Add your companies",
-    body: "Enter each client's CIN, type, incorporation date and last AGM. Directors and DINs go in the Director Master.",
+    title: "Add your clients once",
+    body: "Companies with their CIN and dates, GST clients with GSTIN and portal login, consultants and directors. Or paste them straight from Excel.",
   },
   {
     icon: CalendarCheck2,
     tint: "sky",
-    title: "See every due date",
-    body: "Statutory dues are worked out from each company's own dates, ranked by urgency, and gathered in one dashboard.",
+    title: "See what's due",
+    body: "MCA dues ranked by urgency, GSTR-1 and 3B filed or not for the month, and every open task with its deadline and assignee.",
   },
   {
     icon: FileCheck2,
     tint: "pink",
-    title: "File on time",
-    body: "Generate the notices and resolutions, tick off the checklist, estimate any late fee, and record the SRN when it's filed.",
+    title: "Get it done",
+    body: "Generate the notices and resolutions, work out the late fee, convert the bank statement, mark returns filed and tick tasks finished.",
   },
 ];
 
 const FAQ = [
   {
     q: "How much does it cost?",
-    a: "Nothing at the moment: it is free to use. Create an account and start adding companies.",
+    a: "Nothing at the moment: it is free to use, including the GST Helper. Create an account and start adding clients.",
+  },
+  {
+    q: "Can I bring my existing Excel sheets?",
+    a: "Yes. Copy the rows in Excel and paste them into the GST register, return status or task sheet; the columns fill in order. Everything downloads back to Excel too.",
+  },
+  {
+    q: "Do I need to install anything?",
+    a: "No, it runs in your browser. Two optional extras: the free GST Helper Chrome extension (portal autofill and bulk return status), and installing the site as an app on your laptop or phone.",
   },
   {
     q: "Where is my client data stored?",
-    a: "Under your own login, in private encrypted storage, so the same account shows the same companies on any computer. Other users cannot see it. MCA master data, challans and ITR acknowledgements you upload are read in your browser.",
+    a: "Under your own login, in private encrypted storage, so the same account shows the same clients on any computer. Other users cannot see it. Files you upload (MCA master data, challans, bank statements) are read in your browser.",
+  },
+  {
+    q: "Are GST portal passwords safe?",
+    a: "They are saved only if you enter them, shown masked, never included in Excel downloads, and passed to the GST Helper only for the login you open (held in the extension's memory for at most 3 minutes).",
   },
   {
     q: "How current is the law?",
-    a: `The reference was last updated in ${LAW_UPDATED}. Thresholds, fees and due dates change by notification and circular, so always check the latest position on the MCA portal before you file.`,
+    a: `The MCA reference was last updated in ${LAW_UPDATED}. Thresholds, fees and due dates change by notification and circular, so always check the latest position on the MCA and GST portals before you file.`,
   },
   {
     q: "Is this legal advice?",
@@ -85,20 +144,25 @@ export default function LandingPage() {
           <div>
             <p className="mb-6 inline-flex items-center gap-2 rounded-full border bg-card/70 px-3.5 py-1.5 text-xs font-semibold text-muted-foreground shadow-card backdrop-blur">
               <Sparkles className="size-3.5 text-pink-500" aria-hidden />
-              Free to use · Companies Act, 2013
+              Free to use · Built for CA practices
             </p>
             <h1 className="font-heading text-5xl leading-[1.02] font-extrabold tracking-tight sm:text-6xl lg:text-7xl">
-              Never miss an <span className="brand-satin-text bg-clip-text text-transparent">MCA deadline</span> again.
+              Your whole practice,{" "}
+              <span className="brand-satin-text bg-clip-text text-transparent">one workspace.</span>
             </h1>
             <p className="mt-6 max-w-[52ch] text-lg leading-relaxed text-muted-foreground">
-              {site.name} is a friendly compliance workspace for CA, CS and finance teams. It tracks every client&apos;s
-              ROC filings, reads your MCA challans and master data, and drafts the paperwork for you.
+              GST return status for every client, MCA compliance for every company, late fees, bank statements,
+              documents and your team&apos;s tasks. {site.name} keeps it all in one place, in sheets that work like
+              Excel.
             </p>
             <div className="mt-9 flex flex-wrap gap-3">
               <Button asChild size="lg">
                 <Link href="/dashboard">
                   Open your dashboard <ArrowRight className="size-4" aria-hidden />
                 </Link>
+              </Button>
+              <Button asChild size="lg" variant="outline">
+                <a href="#tools">See the tools</a>
               </Button>
             </div>
             <p className="mt-6 flex items-center gap-2 text-sm text-muted-foreground">
@@ -113,46 +177,77 @@ export default function LandingPage() {
         {/* ----------------------------------------------------------- stats */}
         <section aria-label={`${site.name} at a glance`} className="mx-auto max-w-6xl px-4 sm:px-6">
           <dl className="grid grid-cols-2 gap-3 rounded-[2rem] border bg-card/80 p-3 shadow-card backdrop-blur sm:gap-4 lg:grid-cols-4">
-            <Stat value={7} label="MCA and income tax filings tracked for every company" />
-            <Stat value={sections.length} label="Companies Act sections in plain language" />
-            <Stat value={checklists.length} label="ready-made compliance checklists" />
+            <Stat value={TOOLS_ON_PAGE.length} label="tools in one workspace" />
+            <Stat value={PAGE_COUNT} label="registers, trackers and generators" />
+            <Stat value={1} label="login, the same data on every device" />
             <Stat value="₹0" label="to use, forever" />
           </dl>
         </section>
 
-        {/* -------------------------------------------------------- features */}
-        <section id="features" className="mx-auto max-w-6xl scroll-mt-24 px-4 py-24 sm:px-6">
+        {/* ----------------------------------------------------------- tools */}
+        <section id="tools" className="mx-auto max-w-6xl scroll-mt-24 px-4 py-24 sm:px-6">
           <SectionHeading
-            eyebrow="Everything in one place"
-            title="All the tools your compliance desk reaches for"
-            lede="From the first SPICe+ to the annual return, every tool works off the same list of companies."
+            eyebrow="The tools"
+            title="Everything your practice reaches for"
+            lede="Each tool opens with its own pages. Your clients, companies and tasks are shared between them."
           />
-          {/* Bento: the first two tools get double-width tiles, so the rest fill whole rows of four. */}
-          <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {FEATURES.map((item, i) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  "group rounded-3xl border bg-card p-6 shadow-card transition-all duration-200 hover:-translate-y-1 hover:border-primary/30 hover:shadow-lift",
-                  i < 2 && "lg:col-span-2 lg:p-8",
-                )}
+          <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {TOOLS_ON_PAGE.map((tool) => (
+              <div
+                key={tool.id}
+                className="group flex flex-col rounded-3xl border bg-card p-6 shadow-card transition-all duration-200 hover:-translate-y-1 hover:border-primary/30 hover:shadow-lift"
               >
-                <IconTile
-                  icon={item.icon}
-                  tint={tintFor(item.href)}
-                  size="lg"
-                  className="transition-transform duration-200 group-hover:scale-105 group-hover:-rotate-3"
-                />
-                <h3 className="mt-5 flex items-center gap-2 text-lg font-bold">
-                  {item.title}
-                  <ArrowRight
-                    className="size-4 -translate-x-1 text-primary opacity-0 transition-all group-hover:translate-x-0 group-hover:opacity-100"
-                    aria-hidden
+                <Link href={tool.href} className="block">
+                  <IconTile
+                    icon={tool.icon}
+                    tint={tintFor(tool.href)}
+                    size="lg"
+                    className="transition-transform duration-200 group-hover:scale-105 group-hover:-rotate-3"
                   />
-                </h3>
-                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{item.description}</p>
-              </Link>
+                  <h3 className="mt-5 flex items-center gap-2 text-lg font-bold">
+                    {tool.title}
+                    <ArrowRight
+                      className="size-4 -translate-x-1 text-primary opacity-0 transition-all group-hover:translate-x-0 group-hover:opacity-100"
+                      aria-hidden
+                    />
+                  </h3>
+                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{tool.description}</p>
+                </Link>
+                {tool.items.length > 1 ? (
+                  <ul className="mt-4 space-y-1.5 border-t border-dashed pt-4">
+                    {tool.items.map((item) => (
+                      <li key={item.href}>
+                        <Link
+                          href={item.href}
+                          title={item.description}
+                          className="flex items-start gap-2 text-sm hover:text-primary"
+                        >
+                          <item.icon className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
+                          {item.title}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* ------------------------------------------------------ highlights */}
+        <section id="features" className="mx-auto max-w-6xl scroll-mt-24 px-4 pb-24 sm:px-6">
+          <SectionHeading
+            eyebrow="Built for daily work"
+            title="Made for how a CA office actually works"
+            lede="The small things that save an hour every day, in every tool."
+          />
+          <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {HIGHLIGHTS.map((h) => (
+              <div key={h.title} className="rounded-3xl border-2 border-dashed border-primary/25 p-6">
+                <IconTile icon={h.icon} tint={h.tint} size="lg" />
+                <h3 className="mt-5 text-lg font-bold">{h.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{h.body}</p>
+              </div>
             ))}
           </div>
         </section>
@@ -188,8 +283,8 @@ export default function LandingPage() {
               </p>
               <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">Your clients&apos; data stays private.</h2>
               <p className="mt-4 max-w-[52ch] leading-relaxed text-muted-foreground">
-                It&apos;s saved under your own login in encrypted storage, so you see the same companies on any
-                computer, and no other user can see who your clients are.
+                It&apos;s saved under your own login in encrypted storage, so you see the same clients on any computer,
+                and no other user can see who your clients are.
               </p>
             </div>
             <ul className="grid gap-3">
@@ -197,13 +292,19 @@ export default function LandingPage() {
                 icon={HardDrive}
                 tint="sky"
                 title="Saved to your account"
-                body="Companies, directors and checklists are saved under your login and kept in step on every device."
+                body="Companies, GST clients, tasks and checklists are saved under your login and kept in step on every device."
+              />
+              <PrivacyPoint
+                icon={KeyRound}
+                tint="amber"
+                title="Portal passwords stay masked"
+                body="Optional, shown masked, never in downloads, and handed to the GST Helper only for the login you open."
               />
               <PrivacyPoint
                 icon={UserX}
                 tint="violet"
                 title="Only you can open it"
-                body="Your account's data is yours alone; other users never see your companies."
+                body="Your account's data is yours alone; other users never see your clients."
               />
               <PrivacyPoint
                 icon={BellRing}
@@ -235,12 +336,12 @@ export default function LandingPage() {
               Make this filing season the calm one.
             </h2>
             <p className="relative mx-auto mt-4 max-w-[50ch] text-muted-foreground sm:text-lg">
-              Add your first company in under a minute. Free to use.
+              Paste in your client list and see what&apos;s due in under a minute. Free to use.
             </p>
             <div className="relative mt-8 flex flex-wrap justify-center gap-3">
               <Button asChild size="lg">
-                <Link href="/portfolio">
-                  Add your first company <ArrowRight className="size-4" aria-hidden />
+                <Link href="/dashboard">
+                  Open your dashboard <ArrowRight className="size-4" aria-hidden />
                 </Link>
               </Button>
               <Button asChild size="lg" variant="outline">
@@ -255,7 +356,7 @@ export default function LandingPage() {
         <section className="mx-auto max-w-6xl px-4 pt-16 sm:px-6">
           <AlertsSignup />
           <p className="mt-6 text-center text-xs text-muted-foreground">
-            Compiled from the{" "}
+            MCA reference compiled from the{" "}
             <a
               href={MCA_URL}
               target="_blank"

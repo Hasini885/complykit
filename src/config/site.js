@@ -20,9 +20,9 @@ export const features = {
 export const site = {
   name: "CA Compliance Tool",
   edition: "Professional Edition",
-  tagline: "Companies Act, 2013 compliance reference for CA, CS and finance teams in India",
+  tagline: "One workspace for CA practices in India: GST, MCA, late fees, bank statements, documents and tasks",
   description:
-    "A free reference desk for Indian corporate compliance: MCA e-forms, key Companies Act sections, statutory due dates and calculators. Searchable, fast, and built for practitioners.",
+    "A free workspace for CA practices: GST client register and GSTR-1 / 3B status, MCA compliance for every company, late fee calculator, bank statement to Excel, document generator and task manager.",
   url: "https://cacompliancetool.com",
   /** Shown on the Privacy Policy and Terms pages (Google requires a contact). */
   contactEmail: "hasinisaimaram@gmail.com",

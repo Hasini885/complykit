@@ -8,6 +8,7 @@ import { ModeToggle } from "@/components/mode-toggle";
 import { AccountButton } from "@/components/account-button";
 
 const LINKS = [
+  { href: "#tools", label: "Tools" },
   { href: "#features", label: "Features" },
   { href: "#how-it-works", label: "How it works" },
   { href: "#privacy", label: "Privacy" },

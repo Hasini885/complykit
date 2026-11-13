@@ -4,16 +4,13 @@ import * as React from "react";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
-import { TOOLS } from "@/config/navigation";
+import { hubTools } from "@/config/navigation";
 import { usePortfolio } from "@/components/portfolio/portfolio-provider";
 import { useStoredJson } from "@/lib/stored-json";
 import { buildPortfolioReport } from "@/lib/portfolio/report";
 import { today } from "@/lib/dates";
 import { EMPTY_GST, GST_KEY, currentMonth, monthSummary } from "@/lib/gst/register";
 import { EMPTY_TASKS, TASKS_KEY, isoToday, taskSummary } from "@/lib/tasks/tasks";
-
-/** The order of the boxes on the main dashboard. */
-const ORDER = ["gst", "mca", "late-fee", "bank", "documents", "tasks"];
 
 /**
  * The main dashboard: one box per tool. Opening a box shows that tool, with
@@ -53,7 +50,7 @@ export function ToolHub() {
       : null,
   };
 
-  const tools = ORDER.map((id) => TOOLS.find((t) => t.id === id));
+  const tools = hubTools();
 
   return (
     <div className="space-y-6">

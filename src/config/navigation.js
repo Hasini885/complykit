@@ -143,6 +143,19 @@ export const TOOLS = [
   },
 ];
 
+/**
+ * The order of the tools on the main dashboard and the home page. The home
+ * page lists every tool and its items from TOOLS, so a new tool or page added
+ * here appears there too.
+ */
+export const HUB_ORDER = ["gst", "mca", "late-fee", "bank", "documents", "tasks"];
+
+/** TOOLS in dashboard order (any tool missing from HUB_ORDER goes last). */
+export const hubTools = () => [
+  ...HUB_ORDER.map((id) => TOOLS.find((t) => t.id === id)).filter(Boolean),
+  ...TOOLS.filter((t) => !HUB_ORDER.includes(t.id)),
+];
+
 /** The tool a page belongs to, or null (the main dashboard and reference pages). */
 export function toolFor(pathname) {
   const within = (href) => pathname === href || pathname.startsWith(`${href}/`);
