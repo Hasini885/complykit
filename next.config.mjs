@@ -13,6 +13,20 @@ const nextConfig = {
   experimental: {
     staleTimes: { dynamic: 60, static: 300 },
   },
+  // The installed-app service worker must never be cached, so updates reach
+  // everyone on their next visit.
+  async headers() {
+    return [
+      {
+        source: "/sw.js",
+        headers: [
+          { key: "Content-Type", value: "application/javascript; charset=utf-8" },
+          { key: "Cache-Control", value: "no-cache, no-store, must-revalidate" },
+          { key: "Service-Worker-Allowed", value: "/" },
+        ],
+      },
+    ];
+  },
   // The forms library was removed; old links land on the dashboard.
   async redirects() {
     return [{ source: "/forms", destination: "/dashboard", permanent: false }];

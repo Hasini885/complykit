@@ -3,6 +3,7 @@ import { Plus_Jakarta_Sans } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 
 import { site } from "@/config/site";
+import { ServiceWorker } from "@/components/service-worker";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
@@ -16,6 +17,17 @@ export const metadata = {
     template: `%s · ${site.name}`,
   },
   description: site.description,
+  applicationName: site.name,
+  // Installed on an iPhone home screen: full screen, app name under the icon.
+  appleWebApp: { capable: true, title: "CA Compliance", statusBarStyle: "black-translucent" },
+};
+
+/** Colours the installed app's title bar and the phone's status bar. */
+export const viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: dark)", color: "#12131f" },
+    { media: "(prefers-color-scheme: light)", color: "#f7f7fb" },
+  ],
 };
 
 export default function RootLayout({ children }) {
@@ -35,6 +47,7 @@ export default function RootLayout({ children }) {
           <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
             {children}
             <Toaster position="bottom-right" />
+            <ServiceWorker />
           </ThemeProvider>
         </ClerkProvider>
       </body>
