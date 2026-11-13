@@ -4,7 +4,6 @@ import * as React from "react";
 import { CloudAlert, CloudCheck, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle } from "@/components/ui/dialog";
 import { Tip } from "@/components/shared/tip";
 import { formatDate } from "@/lib/dates";
 import { syncPlan } from "@/lib/sync-plan";
@@ -15,7 +14,8 @@ import { emptySnapshot } from "@/lib/portfolio/types";
  * Saves the signed-in user's data on the server under their account (via
  * /api/data), so the same login shows the same companies on any computer. Fully automatic:
  * when the app opens the newest copy is brought in, and every change here is
- * saved within a few seconds. Nothing to connect or click.
+ * saved within a few seconds. Nothing to connect or click. Whatever is saved
+ * to the account always wins: this computer's copy never replaces it.
  */
 
 const PORTFOLIO_KEY = USER_DATA_KEYS[0];
@@ -42,8 +42,6 @@ function readLocal() {
     signature: `${raw ?? ""}|${EXTRA_KEYS.map((k) => extras[k] ?? "").join("|")}`,
   };
 }
-
-const companies = (n) => `${n} ${n === 1 ? "company" : "companies"}`;
 
 function hasData(p) {
   return !!p && (p.clients?.length > 0 || p.directors?.length > 0 || (p.consultants?.length ?? 0) > 0);
@@ -121,7 +119,6 @@ export function AccountSyncProvider({ userId, children }) {
   const META_KEY = `complykit.sync@${userId}`;
   const [status, setStatus] = React.useState("loading");
   const [lastSyncedAt, setLastSyncedAt] = React.useState(() => loadMeta(META_KEY).lastSyncedAt);
-  const [choice, setChoice] = React.useState(null);
   const [problem, setProblem] = React.useState(null);
   const fail = React.useCallback((error) => {
     console.error("Account sync failed", error);
@@ -175,11 +172,6 @@ export function AccountSyncProvider({ userId, children }) {
         online ? { updatedAt: online.updatedAt } : null,
       );
       if (plan === "pull" && online) return pull(online);
-      if (plan === "ask" && online) {
-        setChoice(online);
-        setStatus("saved");
-        return;
-      }
       if (plan === "push") {
         setStatus("saving");
         await push();
@@ -198,76 +190,24 @@ export function AccountSyncProvider({ userId, children }) {
     void Promise.resolve().then(check);
   }, [check]);
 
-  // Every few seconds: anything changed here since the last save is saved online.
+  // Every few seconds: anything changed here is saved online. `check` looks at
+  // the account first, so if it was updated elsewhere in the meantime the
+  // account's copy is loaded instead of being overwritten (the account wins).
   React.useEffect(() => {
     const timer = window.setInterval(() => {
-      if (!ready.current || busy.current || choice) return;
+      if (!ready.current || busy.current) return;
       if (readLocal().signature === loadMeta(META_KEY).signature) return;
-      busy.current = true;
-      setStatus("saving");
-      push()
-        .then(() => {
-          setProblem(null);
-          setStatus("saved");
-        })
-        .catch(fail)
-        .finally(() => {
-          busy.current = false;
-        });
+      void check();
     }, CHECK_EVERY_MS);
     return () => window.clearInterval(timer);
-  }, [META_KEY, push, choice, fail]);
+  }, [META_KEY, check]);
 
   const value = React.useMemo(
     () => ({ status, lastSyncedAt, problem, retry: () => void check() }),
     [status, lastSyncedAt, problem, check],
   );
 
-  return (
-    <AccountSyncContext.Provider value={value}>
-      {children}
-      {/*
-        This computer and the online copy both have different data: the user decides.
-        It cannot be closed without a choice: closing used to leave saving paused and
-        bring the same question back on every reload.
-      */}
-      <Dialog open={choice !== null}>
-        <DialogContent
-          className="sm:max-w-md"
-          showCloseButton={false}
-          onEscapeKeyDown={(e) => e.preventDefault()}
-          onInteractOutside={(e) => e.preventDefault()}
-        >
-          <DialogTitle className="font-heading text-lg">Which data do you want to keep?</DialogTitle>
-          <DialogDescription>
-            Saved online on {choice ? formatDate(new Date(choice.updatedAt)) : ""}:{" "}
-            <strong>{companies(choice?.portfolio.clients.length ?? 0)}</strong>. On this computer:{" "}
-            <strong>{companies(choice ? (readLocal().portfolio?.clients?.length ?? 0) : 0)}</strong>. The two copies
-            differ (changes were made on another computer or browser, and on this one). The copy you don&apos;t keep is
-            replaced.
-          </DialogDescription>
-          <DialogFooter className="gap-2 sm:justify-between">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setChoice(null);
-                setStatus("saving");
-                push()
-                  .then(() => {
-                    ready.current = true;
-                    setStatus("saved");
-                  })
-                  .catch(() => setStatus("error"));
-              }}
-            >
-              Keep this computer&apos;s data
-            </Button>
-            <Button onClick={() => choice && pull(choice)}>Use my saved online data</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </AccountSyncContext.Provider>
-  );
+  return <AccountSyncContext.Provider value={value}>{children}</AccountSyncContext.Provider>;
 }
 
 /** The save status in the top bar. */

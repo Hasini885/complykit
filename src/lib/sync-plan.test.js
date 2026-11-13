@@ -9,12 +9,16 @@ test("which copy wins", () => {
   assert.equal(syncPlan(fresh, { updatedAt: 5 }), "pull", "another computer, after login: takes the saved data");
   assert.equal(syncPlan({ ...fresh, hasData: true }, null), "push", "the first save of this account");
   assert.equal(syncPlan(fresh, null), "none", "nothing anywhere yet");
-  assert.equal(syncPlan({ ...fresh, hasData: true }, { updatedAt: 5 }), "ask", "both have data: the user chooses");
+  assert.equal(syncPlan({ ...fresh, hasData: true }, { updatedAt: 5 }), "pull", "both have data: the account wins");
   const synced = { lastSyncedAt: 5, changedSinceSync: false, hasData: true };
   assert.equal(syncPlan(synced, { updatedAt: 5 }), "none");
   assert.equal(syncPlan(synced, { updatedAt: 8 }), "pull", "changed on another computer");
   assert.equal(syncPlan({ ...synced, changedSinceSync: true }, { updatedAt: 5 }), "push", "changed here");
-  assert.equal(syncPlan({ ...synced, changedSinceSync: true }, { updatedAt: 8 }), "ask", "changed on both");
+  assert.equal(
+    syncPlan({ ...synced, changedSinceSync: true }, { updatedAt: 8 }),
+    "pull",
+    "changed on both: the account wins",
+  );
 });
 
 test("the server accepts only CA Compliance Tool data", () => {

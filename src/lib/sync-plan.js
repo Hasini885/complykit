@@ -21,15 +21,15 @@ export function isAccountData(x) {
  * What to do when the app opens (or after a change):
  *  - "push": nothing is saved online yet, or only this computer has changes since the last sync.
  *  - "pull": the online copy is newer and this computer has nothing unsynced.
- *  - "ask": both sides have data and this computer has never synced (or both changed):
- *           the user chooses which copy to keep, so nothing is lost silently.
  *  - "none": already in step.
+ *
+ * The account's saved copy always wins (owner's rule, 2026-11-13): when this
+ * computer has never synced, or both sides changed, the saved copy replaces
+ * this computer's data. There is no "which copy?" question any more.
  */
 export function syncPlan(local, remote) {
   if (!remote) return local.hasData ? "push" : "none";
-  const remoteNewer = remote.updatedAt > (local.lastSyncedAt ?? 0);
-  if (local.lastSyncedAt === null) return local.hasData ? "ask" : "pull";
-  if (remoteNewer && local.changedSinceSync) return "ask";
-  if (remoteNewer) return "pull";
+  if (local.lastSyncedAt === null) return "pull";
+  if (remote.updatedAt > local.lastSyncedAt) return "pull";
   return local.changedSinceSync ? "push" : "none";
 }
