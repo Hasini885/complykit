@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { House } from "lucide-react";
 
 import { LAW_UPDATED, TOOLS, toolFor } from "@/config/navigation";
 import { site } from "@/config/site";
@@ -48,17 +49,17 @@ function activeItem(tool, pathname) {
   return fits.sort((a, b) => b.href.length - a.href.length)[0]?.href ?? null;
 }
 
-/** The slide-over on small screens: the open tool's items, then every tool. */
+/** The side bar behind the menu button (top left): every tool, then the open tool's own items. */
 export function MobileNav({ onNavigate }) {
   const pathname = usePathname();
   const tool = toolFor(pathname);
   const groups = [
-    ...(tool && tool.items.length > 1 ? [{ label: tool.title, items: tool.items, current: activeItem(tool, pathname) }] : []),
     {
       label: "Tools",
-      items: [{ title: "Dashboard", href: "/dashboard", icon: TOOLS[0].icon }, ...TOOLS],
+      items: [{ title: "Dashboard", href: "/dashboard", icon: House }, ...TOOLS],
       current: tool ? tool.href : pathname === "/dashboard" ? "/dashboard" : null,
     },
+    ...(tool && tool.items.length > 1 ? [{ label: tool.title, items: tool.items, current: activeItem(tool, pathname) }] : []),
   ];
 
   return (

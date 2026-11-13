@@ -35,7 +35,6 @@ export function SiteHeader() {
             <Button
               variant="ghost"
               size="icon"
-              className="lg:hidden"
               aria-label="Open navigation"
               onClick={() => setMobileOpen(true)}
             >
