@@ -112,7 +112,9 @@ export function TaskManagerView() {
             col.key === "status"
               ? /^fin|^done|^comp/i.test(v)
                 ? "Finished"
-                : "Pending"
+                : /^client/i.test(v)
+                  ? "Client Pending"
+                  : "Pending"
               : col.date
                 ? pastedDate(v)
                 : v;
@@ -178,8 +180,9 @@ export function TaskManagerView() {
           <div className="mt-3 flex flex-wrap justify-center gap-8">
             <Num value={sum.total} label="Total" />
             <Num value={sum.pending} label="Pending" className="text-destructive" />
+            <Num value={sum.clientPending} label="Client pending" className="text-amber-500" />
             <Num value={sum.finished} label="Finished" className="text-emerald-500" />
-            <Num value={sum.overdue} label="Overdue" className="text-amber-500" />
+            <Num value={sum.overdue} label="Overdue" className="text-orange-600" />
           </div>
         </div>
         <MiniCalendar
@@ -285,7 +288,9 @@ export function TaskManagerView() {
                           "cursor-pointer font-semibold",
                           t.status === "Finished"
                             ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
-                            : "bg-destructive/15 text-destructive",
+                            : t.status === "Client Pending"
+                              ? "bg-amber-500/15 text-amber-600 dark:text-amber-400"
+                              : "bg-destructive/15 text-destructive",
                         )}
                       >
                         {TASK_STATUSES.map((s) => (

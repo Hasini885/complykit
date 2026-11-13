@@ -32,8 +32,11 @@ test("summary, fees and the calendar", () => {
     { ...newTask("2"), deadline: "2026-11-01", status: "Finished", fee: "2000" },
     { ...newTask("3"), deadline: "2026-11-30", fee: "abc" },
   ];
-  assert.deepEqual(taskSummary(rows, T), { total: 3, pending: 2, finished: 1, overdue: 1 });
-  assert.equal(rows.reduce((n, r) => n + feeValue(r.fee), 0), 3500);
+  assert.deepEqual(taskSummary(rows, T), { total: 3, pending: 2, clientPending: 0, finished: 1, overdue: 1 });
+  assert.equal(
+    rows.reduce((n, r) => n + feeValue(r.fee), 0),
+    3500,
+  );
   assert.deepEqual(deadlinesByDay(rows), {
     "2026-11-01": { pending: 1, finished: 1 },
     "2026-11-30": { pending: 1, finished: 0 },

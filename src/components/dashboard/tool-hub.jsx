@@ -46,7 +46,9 @@ export function ToolHub() {
     tasks: tasksReady
       ? (() => {
           const s = taskSummary(tasks.rows, isoToday());
-          return tasks.rows.length === 0 ? "No tasks yet" : `${s.pending} pending · ${s.overdue} overdue`;
+          return tasks.rows.length === 0
+            ? "No tasks yet"
+            : `${s.pending} pending · ${s.clientPending} client pending · ${s.overdue} overdue`;
         })()
       : null,
   };

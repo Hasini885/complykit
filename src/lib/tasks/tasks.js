@@ -2,7 +2,8 @@
 
 export const TASKS_KEY = "complykit.tasks.v1";
 export const EMPTY_TASKS = Object.freeze({ rows: [] });
-export const TASK_STATUSES = ["Pending", "Finished"];
+/** "Client Pending": waiting on the client (documents, approval, payment). */
+export const TASK_STATUSES = ["Pending", "Client Pending", "Finished"];
 
 /** Every column, in order; `req` marks the mandatory ones. */
 export const TASK_COLUMNS = [
@@ -49,7 +50,7 @@ export function dmy(iso) {
 }
 
 export function isOverdue(task, today) {
-  return task.status === "Pending" && !!task.deadline && task.deadline < today;
+  return task.status !== "Finished" && !!task.deadline && task.deadline < today;
 }
 
 /**
@@ -72,7 +73,8 @@ export function feeValue(fee) {
 export function taskSummary(rows, today) {
   return {
     total: rows.length,
-    pending: rows.filter((r) => r.status !== "Finished").length,
+    pending: rows.filter((r) => r.status === "Pending").length,
+    clientPending: rows.filter((r) => r.status === "Client Pending").length,
     finished: rows.filter((r) => r.status === "Finished").length,
     overdue: rows.filter((r) => isOverdue(r, today)).length,
   };
