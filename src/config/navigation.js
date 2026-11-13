@@ -1,5 +1,6 @@
 import {
   BookOpen,
+  Calculator,
   ClipboardList,
   Contact,
   FilePen,
@@ -49,6 +50,12 @@ export const TOOLS = [
         href: "/consultants",
         icon: Contact,
         description: "Consultants with their mobile numbers, and the companies under each one.",
+      },
+      {
+        title: "Late Fee Calculator",
+        href: "/mca/late-fee",
+        icon: Calculator,
+        description: "Late fee for AOC-4, MGT-7/7A, ADT-1, DPT-3, DIR-12, PAS-3, CHG-1 and every other ROC form, plus ITR.",
       },
     ],
   },
