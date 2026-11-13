@@ -199,8 +199,10 @@ export function GstRegisterView() {
    * ready to paste.
    */
   async function openPortalFor(c) {
+    // The page opens the tab itself (in the click), so the portal opens with or without the extension.
     if (helper.present && c.user) {
       helper.login(c.user, c.pass ?? "");
+      openPortal();
       toast.success(`Opening the GST login for ${c.name || c.user}. Type the captcha there.`);
       return;
     }
@@ -655,10 +657,8 @@ export function GstReturnsView() {
                         size="sm"
                         variant="outline"
                         onClick={() => {
-                          if (helper.present && c.user) {
-                            helper.login(c.user, c.pass ?? "");
-                            toast.success(`Opening the GST login for ${c.name || c.user}. Type the captcha there.`);
-                          } else openPortal();
+                          if (helper.present && c.user) helper.login(c.user, c.pass ?? "");
+                          openPortal();
                         }}
                       >
                         <ExternalLink className="size-3.5" aria-hidden /> Login

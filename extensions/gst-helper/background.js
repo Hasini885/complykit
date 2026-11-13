@@ -1,9 +1,9 @@
 // Starts work when CA Compliance Tool asks for it:
 //  - "start": saves the list of clients to check and opens Search Taxpayer;
 //  - "login": keeps one client's user name and password for a moment (in
-//    memory only) and opens the GST login page, where login.js fills them in.
+//    memory only) for login.js to fill in. The site opens the login tab itself,
+//    so the portal opens even without this extension.
 const SEARCH_URL = "https://services.gst.gov.in/services/searchtp";
-const LOGIN_URL = "https://services.gst.gov.in/services/login";
 const SITES = ["https://cacompliancetool.com", "https://www.cacompliancetool.com", "http://localhost:3000"];
 const PORTAL = "https://services.gst.gov.in";
 const LOGIN_TTL_MS = 3 * 60 * 1000;
@@ -26,10 +26,7 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
     const pass = String(msg.pass ?? "").slice(0, 100);
     if (!user) return reply({ ok: false });
     // Session storage lives in memory only and is cleared when Chrome closes.
-    chrome.storage.session.set({ login: { user, pass, at: Date.now() } }, () => {
-      chrome.tabs.create({ url: LOGIN_URL });
-      reply({ ok: true });
-    });
+    chrome.storage.session.set({ login: { user, pass, at: Date.now() } }, () => reply({ ok: true }));
     return true;
   }
 

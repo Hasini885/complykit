@@ -8,8 +8,15 @@ function setValue(el, value) {
   el.dispatchEvent(new Event("change", { bubbles: true }));
 }
 
-chrome.runtime.sendMessage({ type: "take-login" }, (login) => {
-  if (!login) return;
+// The site sends the details as it opens this tab; ask a few times in case they arrive a moment later.
+function ask(attempt) {
+  chrome.runtime.sendMessage({ type: "take-login" }, (login) => {
+    if (login) fill(login);
+    else if (attempt < 5) setTimeout(() => ask(attempt + 1), 600);
+  });
+}
+
+function fill(login) {
   let tries = 0;
   const timer = setInterval(() => {
     const user = document.querySelector("#username") ?? document.querySelector("input[name='username']");
@@ -22,4 +29,6 @@ chrome.runtime.sendMessage({ type: "take-login" }, (login) => {
       if (captcha) captcha.focus();
     } else if (++tries > 40) clearInterval(timer);
   }, 500);
-});
+}
+
+ask(0);
