@@ -6,18 +6,18 @@ export const TASK_STATUSES = ["Pending", "Finished"];
 
 /** Every column, in order; `req` marks the mandatory ones. */
 export const TASK_COLUMNS = [
-  { key: "client", label: "Client Name", req: true, width: 220 },
-  { key: "work", label: "Work", req: true, width: 280 },
-  { key: "assigned", label: "Assigned To", req: true, width: 160 },
-  { key: "status", label: "Status", req: true, width: 130 },
-  { key: "deadline", label: "Deadline", date: true, width: 150 },
-  { key: "mobile", label: "Mobile Number", width: 150 },
-  { key: "ref", label: "Reference", width: 170 },
-  { key: "fee", label: "Fee", number: true, width: 120 },
-  { key: "remark1", label: "Remarks 1", width: 190 },
-  { key: "remark2", label: "Remarks 2", width: 190 },
-  { key: "created", label: "Date Created", date: true, auto: true, width: 130 },
-  { key: "completed", label: "Date Completed", date: true, auto: true, width: 140 },
+  { key: "client", label: "Client Name", req: true, width: 260 },
+  { key: "work", label: "Work", req: true, width: 340 },
+  { key: "assigned", label: "Assigned To", req: true, width: 190 },
+  { key: "status", label: "Status", req: true, width: 150 },
+  { key: "deadline", label: "Deadline", date: true, width: 175 },
+  { key: "mobile", label: "Mobile Number", width: 170 },
+  { key: "ref", label: "Reference", width: 200 },
+  { key: "fee", label: "Fee", number: true, width: 140 },
+  { key: "remark1", label: "Remarks 1", width: 230 },
+  { key: "remark2", label: "Remarks 2", width: 230 },
+  { key: "created", label: "Date Created", date: true, auto: true, width: 150 },
+  { key: "completed", label: "Date Completed", date: true, auto: true, width: 165 },
 ];
 
 export function newTask(id) {

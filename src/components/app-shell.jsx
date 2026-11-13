@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 
 import { SiteHeader } from "@/components/site-header";
@@ -11,6 +11,7 @@ import { AccountSyncProvider } from "@/components/sync/account-sync";
 import { SubscriptionBanner } from "@/components/billing/subscription-banner";
 import { activateUserStorage } from "@/lib/user-storage";
 import { features } from "@/config/site";
+import { cn } from "@/lib/utils";
 /**
  * The subscription, checked once when the app opens (the shell stays mounted
  * while moving between pages). An account whose free month or paid year has
@@ -37,8 +38,13 @@ function useSubscription(userId) {
   return { checked: state.for === userId, billing: state.billing };
 }
 
+/** Spreadsheet pages use the whole screen width. */
+const FULL_WIDTH = /^\/(gst|gst\/returns|tasks)$/;
+
 export function AppShell({ children }) {
   const { isLoaded, user } = useUser();
+  const pathname = usePathname();
+  const fullWidth = FULL_WIDTH.test(pathname);
   const userId = user?.id ?? null;
   // With subscriptions off there is nothing to check: the app opens straight away.
   const subscription = useSubscription(features.subscriptions ? userId : null);
@@ -70,7 +76,12 @@ export function AppShell({ children }) {
               (reports, "Save as PDF") shows the page content only. */}
           <SiteHeader />
           {billing ? <SubscriptionBanner access={billing.access} price={billing.yearlyPrice} /> : null}
-          <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6 lg:px-8 lg:py-10 print:max-w-none print:p-0">
+          <main
+            className={cn(
+              "mx-auto w-full flex-1 px-4 py-8 sm:px-6 lg:py-10 print:max-w-none print:p-0",
+              fullWidth ? "max-w-none lg:px-6" : "max-w-7xl lg:px-8",
+            )}
+          >
             {children}
           </main>
           <SiteFooter />

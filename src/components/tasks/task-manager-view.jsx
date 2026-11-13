@@ -1,12 +1,13 @@
 "use client";
 
 import * as React from "react";
+import { toast } from "sonner";
 import { Download, Plus, Trash2, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Tip } from "@/components/shared/tip";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ColumnFilter, useColumnFilters } from "@/components/shared/column-filter";
+import { useColumnFilters } from "@/components/shared/column-filter";
+import { SHEET_INPUT, Sheet, SheetCell, SheetHead, pastedDate } from "@/components/shared/sheet";
 import { LegendDot, MiniCalendar } from "@/components/shared/mini-calendar";
 import { usePortfolio } from "@/components/portfolio/portfolio-provider";
 import { useStoredJson } from "@/lib/stored-json";
@@ -29,8 +30,6 @@ import {
   withField,
 } from "@/lib/tasks/tasks";
 
-const CELL_INPUT =
-  "h-8 w-full min-w-0 rounded-md bg-transparent px-2 text-sm outline-none focus:bg-background focus:ring-2 focus:ring-ring/40";
 /** Text columns that offer values already typed in that column (and, for clients, your MCA and GST clients). */
 const SUGGESTED = ["client", "work", "assigned", "mobile", "ref", "remark1", "remark2"];
 const inr = (n) => `₹${n.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
@@ -83,11 +82,40 @@ export function TaskManagerView() {
   function setField(id, field, value) {
     setData((d) => ({ ...d, rows: d.rows.map((t) => (t.id === id ? withField(t, field, value, isoToday()) : t)) }));
   }
-  function addTask() {
+  /** Adds a blank task and puts the cursor in it (in column `col`, when Enter added it). */
+  function addTask(col = 0) {
     table.clear();
     const t = newTask(newId());
-    lastAdded.current = t.id;
+    lastAdded.current = { id: t.id, col: typeof col === "number" ? col : 0 };
     setData((d) => ({ ...d, rows: [...d.rows, t] }));
+  }
+  /** A block pasted from Excel fills the cells from where it lands, adding tasks as needed. */
+  function pasteGrid(block, r, c) {
+    const targetIds = rows.map((x) => x.id);
+    const day = isoToday();
+    setData((d) => {
+      const list = [...d.rows];
+      block.forEach((cells, i) => {
+        let id = targetIds[r + i];
+        if (!id) {
+          const fresh = newTask(newId());
+          list.push(fresh);
+          id = fresh.id;
+        }
+        const at = list.findIndex((x) => x.id === id);
+        let next = list[at];
+        cells.forEach((v, j) => {
+          const col = TASK_COLUMNS[c + j];
+          if (!col || col.auto) return;
+          const value =
+            col.key === "status" ? (/^fin|^done|^comp/i.test(v) ? "Finished" : "Pending") : col.date ? pastedDate(v) : v;
+          next = withField(next, col.key, value, day);
+        });
+        list[at] = next;
+      });
+      return { ...d, rows: list };
+    });
+    toast.success(`Pasted ${block.length} row${block.length === 1 ? "" : "s"}`);
   }
   function remove(t) {
     if (!window.confirm(`Delete task ${t.sno} (${t.client || "blank"})? Later tasks are renumbered.`)) return;
@@ -113,25 +141,18 @@ export function TaskManagerView() {
     });
   }
 
-  // Focus the first cell of a task just added.
+  // Put the cursor in a task just added.
   React.useEffect(() => {
     if (!lastAdded.current) return;
-    const el = document.querySelector(`[data-task="${lastAdded.current}"] input`);
+    const { id, col } = lastAdded.current;
+    const row = document.querySelector(`[data-task="${id}"]`);
+    const el = row?.querySelector(`[data-c="${col}"]`) ?? row?.querySelector("[data-c]");
     if (el) {
       el.focus();
       el.scrollIntoView({ block: "nearest" });
       lastAdded.current = null;
     }
   });
-
-  /** Enter moves down a column, like a spreadsheet; on the last row it adds a task. */
-  function onKeyDown(e, index, key) {
-    if (e.key !== "Enter" || e.target.tagName !== "INPUT") return;
-    e.preventDefault();
-    const next = rows[index + 1];
-    if (next) document.querySelector(`[data-task="${next.id}"] [data-f="${key}"]`)?.focus();
-    else addTask();
-  }
 
   if (!ready) return <div className="h-64 animate-pulse rounded-3xl border bg-muted/30" aria-hidden />;
 
@@ -177,7 +198,7 @@ export function TaskManagerView() {
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <Button onClick={addTask}>
+        <Button onClick={() => addTask()}>
           <Plus className="size-4" aria-hidden /> Add task
         </Button>
         <Tip label="Download as Excel">
@@ -203,104 +224,107 @@ export function TaskManagerView() {
         ) : null}
       </div>
 
-      <div className="overflow-x-auto rounded-3xl border-2 border-dashed border-primary/25">
-        <Table className="table-fixed" style={{ minWidth: 56 + 44 + TASK_COLUMNS.reduce((n, c) => n + c.width, 0) }}>
-          <colgroup>
-            <col style={{ width: 56 }} />
+      <Sheet
+        onPasteGrid={pasteGrid}
+        onEnterPastEnd={addTask}
+        minWidth={64 + 52 + TASK_COLUMNS.reduce((n, c) => n + c.width, 0)}
+      >
+        <colgroup>
+          <col style={{ width: 64 }} />
+          {TASK_COLUMNS.map((c) => (
+            <col key={c.key} style={{ width: c.width }} />
+          ))}
+          <col style={{ width: 52 }} />
+        </colgroup>
+        <thead>
+          <tr>
+            <SheetHead sno>S.No</SheetHead>
             {TASK_COLUMNS.map((c) => (
-              <col key={c.key} style={{ width: c.width }} />
+              <SheetHead key={c.key} req={c.req} filter={table.propsFor(c.key, c.label, numbered)}>
+                {c.label}
+              </SheetHead>
             ))}
-            <col style={{ width: 44 }} />
-          </colgroup>
-          <TableHeader>
-            <TableRow>
-              <TableHead>S.No</TableHead>
-              {TASK_COLUMNS.map((c) => (
-                <TableHead key={c.key}>
-                  <span className="flex items-center justify-between gap-1">
-                    <span className="truncate">
-                      {c.label}
-                      {c.req ? <span className="text-destructive"> *</span> : null}
-                    </span>
-                    <ColumnFilter {...table.propsFor(c.key, c.label, numbered)} />
-                  </span>
-                </TableHead>
-              ))}
-              <TableHead />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {rows.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={TASK_COLUMNS.length + 2} className="py-10 text-center text-muted-foreground">
-                  {data.rows.length === 0 ? "No tasks yet. Click Add task." : "No tasks match the current filters."}
-                </TableCell>
-              </TableRow>
-            ) : (
-              rows.map((t, index) => (
-                <TableRow key={t.id} data-task={t.id} className="group">
-                  <TableCell className="tabular text-muted-foreground">{t.sno}</TableCell>
-                  {TASK_COLUMNS.map((c) => (
-                    <TableCell key={c.key} className={cn("p-1", c.auto && "px-3 text-sm text-muted-foreground")}>
-                      {c.auto ? (
-                        dmy(t[c.key])
-                      ) : c.key === "status" ? (
-                        <select
-                          data-f="status"
-                          value={t.status}
-                          onChange={(e) => setField(t.id, "status", e.target.value)}
-                          aria-label="Status"
-                          className={cn(
-                            "h-8 w-full rounded-md px-2 text-sm font-semibold",
-                            t.status === "Finished"
-                              ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
-                              : "bg-destructive/15 text-destructive",
-                          )}
-                        >
-                          {TASK_STATUSES.map((s) => (
-                            <option key={s}>{s}</option>
-                          ))}
-                        </select>
-                      ) : (
-                        <input
-                          data-f={c.key}
-                          type={c.date ? "date" : "text"}
-                          inputMode={c.number ? "decimal" : c.key === "mobile" ? "tel" : undefined}
-                          list={SUGGESTED.includes(c.key) ? `task-sug-${c.key}` : undefined}
-                          value={t[c.key] ?? ""}
-                          onChange={(e) => setField(t.id, c.key, e.target.value)}
-                          onKeyDown={(e) => onKeyDown(e, index, c.key)}
-                          aria-label={c.label}
-                          className={cn(
-                            CELL_INPUT,
-                            c.number && "text-right tabular",
-                            c.key === "deadline" && isOverdue(t, today) && "font-semibold text-destructive",
-                          )}
-                        />
-                      )}
-                    </TableCell>
-                  ))}
-                  <TableCell className="p-1 text-center">
-                    <Button
-                      size="icon-sm"
-                      variant="ghost"
-                      className="text-destructive opacity-0 group-hover:opacity-100 hover:text-destructive focus-visible:opacity-100"
-                      onClick={() => remove(t)}
-                      aria-label={`Delete task ${t.sno}`}
-                    >
-                      <Trash2 className="size-3.5" aria-hidden />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-            <TableRow className="cursor-pointer text-muted-foreground" onClick={addTask}>
-              <TableCell className="text-center">+</TableCell>
-              <TableCell colSpan={TASK_COLUMNS.length + 1}>Click to add a new task…</TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
-      </div>
+            <SheetHead />
+          </tr>
+        </thead>
+        <tbody>
+          {rows.length === 0 ? (
+            <tr>
+              <SheetCell colSpan={TASK_COLUMNS.length + 2} className="py-10 text-center text-muted-foreground">
+                {data.rows.length === 0
+                  ? "No tasks yet. Click Add task, or paste rows copied from Excel into a cell."
+                  : "No tasks match the current filters."}
+              </SheetCell>
+            </tr>
+          ) : (
+            rows.map((t, r) => (
+              <tr key={t.id} data-task={t.id} className="group">
+                <SheetCell sno>{t.sno}</SheetCell>
+                {TASK_COLUMNS.map((c, ci) => (
+                  <SheetCell key={c.key} className={cn(c.auto && "px-3 text-muted-foreground")}>
+                    {c.auto ? (
+                      dmy(t[c.key])
+                    ) : c.key === "status" ? (
+                      <select
+                        data-r={r}
+                        data-c={ci}
+                        value={t.status}
+                        onChange={(e) => setField(t.id, "status", e.target.value)}
+                        aria-label="Status"
+                        className={cn(
+                          SHEET_INPUT,
+                          "cursor-pointer font-semibold",
+                          t.status === "Finished"
+                            ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+                            : "bg-destructive/15 text-destructive",
+                        )}
+                      >
+                        {TASK_STATUSES.map((s) => (
+                          <option key={s}>{s}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input
+                        data-r={r}
+                        data-c={ci}
+                        type={c.date ? "date" : "text"}
+                        inputMode={c.number ? "decimal" : c.key === "mobile" ? "tel" : undefined}
+                        list={SUGGESTED.includes(c.key) ? `task-sug-${c.key}` : undefined}
+                        value={t[c.key] ?? ""}
+                        onChange={(e) => setField(t.id, c.key, e.target.value)}
+                        aria-label={c.label}
+                        className={cn(
+                          SHEET_INPUT,
+                          c.key === "client" && "font-medium",
+                          c.number && "text-right tabular",
+                          c.key === "deadline" && isOverdue(t, today) && "font-semibold text-destructive",
+                        )}
+                      />
+                    )}
+                  </SheetCell>
+                ))}
+                <SheetCell className="text-center">
+                  <Button
+                    size="icon-sm"
+                    variant="ghost"
+                    className="text-destructive opacity-0 group-hover:opacity-100 hover:text-destructive focus-visible:opacity-100"
+                    onClick={() => remove(t)}
+                    aria-label={`Delete task ${t.sno}`}
+                  >
+                    <Trash2 className="size-4" aria-hidden />
+                  </Button>
+                </SheetCell>
+              </tr>
+            ))
+          )}
+          <tr className="cursor-pointer text-muted-foreground" onClick={() => addTask()}>
+            <SheetCell sno>+</SheetCell>
+            <SheetCell colSpan={TASK_COLUMNS.length + 1} className="px-3">
+              Click to add a new task… (or press Enter on the last row)
+            </SheetCell>
+          </tr>
+        </tbody>
+      </Sheet>
 
       {SUGGESTED.map((key) => (
         <datalist key={key} id={`task-sug-${key}`}>

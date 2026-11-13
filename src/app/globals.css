@@ -267,3 +267,54 @@
 .dark .brand-satin-text {
   background-image: linear-gradient(98deg, #94a3ce 0%, #dfe7ff 16%, #6c7fb1 30%, #becaec 46%, #4e6194 62%, #b0bde6 80%, #55689c 100%);
 }
+
+/* Spreadsheet tables (GST and Task Manager): gridlines, a header row and S.No
+   column that stay put while scrolling, and the focused cell outlined like Excel. */
+@layer components {
+  .sheet {
+    --sheet-line: color-mix(in oklab, var(--foreground) 16%, transparent);
+    --sheet-head: color-mix(in oklab, var(--primary) 14%, var(--card));
+  }
+  .sheet table {
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+  .sheet th,
+  .sheet td {
+    border-right: 1px solid var(--sheet-line);
+    border-bottom: 1px solid var(--sheet-line);
+    padding: 0;
+    height: 2.75rem;
+  }
+  .sheet thead th {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: var(--sheet-head);
+    font-weight: 600;
+    text-align: left;
+    white-space: nowrap;
+  }
+  .sheet .sheet-sno {
+    position: sticky;
+    left: 0;
+    z-index: 10;
+    background: var(--sheet-head);
+    text-align: center;
+    color: var(--muted-foreground);
+    font-variant-numeric: tabular-nums;
+  }
+  .sheet thead th.sheet-sno {
+    z-index: 30;
+  }
+  .sheet tbody td {
+    background: var(--card);
+  }
+  .sheet tbody tr:hover td:not(.sheet-sno) {
+    background: color-mix(in oklab, var(--primary) 7%, var(--card));
+  }
+  .sheet tbody td:focus-within {
+    outline: 2px solid var(--primary);
+    outline-offset: -2px;
+  }
+}

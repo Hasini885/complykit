@@ -7,8 +7,8 @@ import { Copy, Download, ExternalLink, FolderOpen, Play, Plus, Search, Trash2, U
 import { Button } from "@/components/ui/button";
 import { Tip } from "@/components/shared/tip";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ColumnFilter, useColumnFilters } from "@/components/shared/column-filter";
+import { useColumnFilters } from "@/components/shared/column-filter";
+import { SHEET_INPUT, Sheet, SheetCell, SheetHead, pastedDate, pastedFiled } from "@/components/shared/sheet";
 import { LegendDot, MiniCalendar } from "@/components/shared/mini-calendar";
 import { useStoredJson } from "@/lib/stored-json";
 import { newId } from "@/lib/portfolio/clients";
@@ -32,8 +32,6 @@ import {
   withStatus,
 } from "@/lib/gst/register";
 
-const CELL_INPUT =
-  "h-8 w-full min-w-0 rounded-md bg-transparent px-2 text-sm outline-none focus:bg-background focus:ring-2 focus:ring-ring/40";
 const isoToday = () => new Date().toISOString().slice(0, 10);
 
 /**
@@ -127,7 +125,7 @@ function SearchBox({ value, onChange }) {
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={(e) => e.key === "Escape" && onChange("")}
         placeholder="Search anything…"
-        className="h-9 w-64 rounded-full border bg-background pr-3 pl-8 text-sm outline-none focus:ring-2 focus:ring-ring/40"
+        className="h-10 w-72 rounded-full border bg-background pr-3 pl-8 text-[15px] outline-none focus:ring-2 focus:ring-ring/40"
         aria-label="Search"
       />
     </div>
@@ -140,36 +138,23 @@ function matches(words, text) {
   return words.every((w) => hay.includes(w));
 }
 
-function Head({ children, filter, req, className }) {
-  return (
-    <TableHead className={cn("whitespace-nowrap", className)}>
-      <span className="flex items-center justify-between gap-1">
-        <span>
-          {children}
-          {req ? <span className="text-destructive"> *</span> : null}
-        </span>
-        {filter ? <ColumnFilter {...filter} /> : null}
-      </span>
-    </TableHead>
-  );
-}
 
 /* ------------------------------------------------------------------ */
 /* Client register                                                     */
 /* ------------------------------------------------------------------ */
 
 const REGISTER_COLS = [
-  { key: "name", label: "Business name", width: "min-w-48" },
-  { key: "signatory", label: "Signatory / Proprietor", width: "min-w-44" },
-  { key: "email", label: "Email ID", width: "min-w-48" },
-  { key: "mobile", label: "Mobile Number", width: "min-w-32" },
-  { key: "gstin", label: "GSTIN", width: "min-w-44", req: true },
-  { key: "user", label: "User name", width: "min-w-36" },
+  { key: "name", label: "Business name", width: 280 },
+  { key: "signatory", label: "Signatory / Proprietor", width: 230 },
+  { key: "email", label: "Email ID", width: 260 },
+  { key: "mobile", label: "Mobile Number", width: 160 },
+  { key: "gstin", label: "GSTIN", width: 200, req: true },
+  { key: "user", label: "User name", width: 190 },
   // Hidden until "Show passwords" is ticked; left out of search, filters and downloads.
-  { key: "pass", label: "Password", width: "min-w-40", secret: true },
-  { key: "reg", label: "Registration date", width: "min-w-36", date: true },
-  { key: "deact", label: "Deactivate date", width: "min-w-36", date: true },
-  { key: "folder", label: "Folder path", width: "min-w-56" },
+  { key: "pass", label: "Password", width: 200, secret: true },
+  { key: "reg", label: "Registration date", width: 175, date: true },
+  { key: "deact", label: "Deactivate date", width: 175, date: true },
+  { key: "folder", label: "Folder path", width: 260 },
 ];
 
 const dmy = (iso) => (iso ? iso.split("-").reverse().join("-") : "");
@@ -223,6 +208,31 @@ export function GstRegisterView() {
     table.clear();
     setQuery("");
     setData((d) => ({ ...d, clients: [...d.clients, newGstClient(newId())] }));
+  }
+  /** A block pasted from Excel fills the cells from where it lands, adding clients as needed. */
+  function pasteGrid(block, r, c) {
+    const targetIds = rows.map((x) => x.id);
+    setData((d) => {
+      const clients = [...d.clients];
+      block.forEach((cells, i) => {
+        let id = targetIds[r + i];
+        if (!id) {
+          const fresh = newGstClient(newId());
+          clients.push(fresh);
+          id = fresh.id;
+        }
+        const at = clients.findIndex((x) => x.id === id);
+        const next = { ...clients[at] };
+        cells.forEach((v, j) => {
+          const col = REGISTER_COLS[c + j];
+          if (!col) return;
+          next[col.key] = col.key === "gstin" ? normaliseGstin(v) : col.date ? pastedDate(v) : v;
+        });
+        clients[at] = next;
+      });
+      return { ...d, clients };
+    });
+    toast.success(`Pasted ${block.length} row${block.length === 1 ? "" : "s"}`);
   }
   function remove(c) {
     if (!window.confirm(`Delete ${c.name || "this client"}?`)) return;
@@ -325,118 +335,137 @@ export function GstRegisterView() {
         <SearchBox value={query} onChange={setQuery} />
       </div>
 
-      <div className="overflow-x-auto rounded-3xl border-2 border-dashed border-primary/25">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <Head className="w-14">S.No</Head>
-              {REGISTER_COLS.map((col) => (
-                <Head
-                  key={col.key}
-                  req={col.req}
-                  className={col.width}
-                  filter={col.secret ? undefined : table.propsFor(col.key, col.label, numbered)}
-                >
-                  {col.label}
-                </Head>
-              ))}
-              <TableHead />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {rows.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={REGISTER_COLS.length + 2} className="py-10 text-center text-muted-foreground">
-                  {data.clients.length === 0 ? "No clients yet. Click Add client." : "No clients match these filters."}
-                </TableCell>
-              </TableRow>
-            ) : (
-              rows.map((c) => {
-                const dead = c.deact && c.deact <= isoToday();
-                return (
-                  <TableRow key={c.id} className={dead ? "opacity-50" : undefined}>
-                    <TableCell className="tabular text-muted-foreground">{c.sno}</TableCell>
-                    {REGISTER_COLS.map((col) => (
-                      <TableCell key={col.key} className="p-1">
-                        {col.key === "folder" ? (
-                          <span className="flex items-center gap-1">
-                            <input
-                              value={c.folder}
-                              onChange={(e) => setField(c.id, "folder", e.target.value)}
-                              placeholder="e.g. D:\Clients\ABC"
-                              className={CELL_INPUT}
-                            />
-                            <Tip label="Open in File Explorer (needs the folder opener on this computer)">
-                              <Button
-                                size="icon-sm"
-                                variant="ghost"
-                                onClick={() => openFolder(c)}
-                                aria-label="Open folder"
-                              >
-                                <FolderOpen className="size-3.5" aria-hidden />
-                              </Button>
-                            </Tip>
-                          </span>
-                        ) : col.secret ? (
-                          <span className="flex items-center gap-1">
-                            <input
-                              type={showPw ? "text" : "password"}
-                              autoComplete="new-password"
-                              value={c.pass ?? ""}
-                              onChange={(e) => setField(c.id, "pass", e.target.value)}
-                              className={cn(CELL_INPUT, "font-mono")}
-                              aria-label={`Password for ${c.name || "client"}`}
-                            />
-                            <Tip label="Copy password">
-                              <Button
-                                size="icon-sm"
-                                variant="ghost"
-                                disabled={!c.pass}
-                                onClick={async () => {
-                                  if (await copyPassword(c)) toast.success("Password copied");
-                                }}
-                                aria-label="Copy password"
-                              >
-                                <Copy className="size-3.5" aria-hidden />
-                              </Button>
-                            </Tip>
-                          </span>
-                        ) : (
+      <Sheet
+        onPasteGrid={pasteGrid}
+        onEnterPastEnd={addClient}
+        minWidth={64 + 210 + REGISTER_COLS.reduce((n, c) => n + c.width, 0)}
+      >
+        <colgroup>
+          <col style={{ width: 64 }} />
+          {REGISTER_COLS.map((col) => (
+            <col key={col.key} style={{ width: col.width }} />
+          ))}
+          <col style={{ width: 210 }} />
+        </colgroup>
+        <thead>
+          <tr>
+            <SheetHead sno>S.No</SheetHead>
+            {REGISTER_COLS.map((col) => (
+              <SheetHead
+                key={col.key}
+                req={col.req}
+                filter={col.secret ? undefined : table.propsFor(col.key, col.label, numbered)}
+              >
+                {col.label}
+              </SheetHead>
+            ))}
+            <SheetHead />
+          </tr>
+        </thead>
+        <tbody>
+          {rows.length === 0 ? (
+            <tr>
+              <SheetCell colSpan={REGISTER_COLS.length + 2} className="py-10 text-center text-muted-foreground">
+                {data.clients.length === 0
+                  ? "No clients yet. Click Add client, or paste rows copied from Excel into a cell."
+                  : "No clients match these filters."}
+              </SheetCell>
+            </tr>
+          ) : (
+            rows.map((c, r) => {
+              const dead = c.deact && c.deact <= isoToday();
+              return (
+                <tr key={c.id} className={dead ? "opacity-50" : undefined}>
+                  <SheetCell sno>{c.sno}</SheetCell>
+                  {REGISTER_COLS.map((col, ci) => (
+                    <SheetCell key={col.key}>
+                      {col.key === "folder" ? (
+                        <span className="flex items-center pr-1">
                           <input
-                            type={col.date ? "date" : col.key === "mobile" ? "tel" : "text"}
-                            inputMode={col.key === "email" ? "email" : undefined}
-                            maxLength={col.key === "gstin" || col.key === "mobile" ? 15 : undefined}
-                            value={c[col.key] ?? ""}
-                            onChange={(e) => setField(c.id, col.key, e.target.value)}
-                            className={cn(
-                              CELL_INPUT,
-                              col.key === "gstin" && "font-mono uppercase",
-                              col.key === "gstin" && c.gstin && !GSTIN_RE.test(c.gstin) && "text-destructive",
-                            )}
-                            aria-label={col.label}
+                            data-r={r}
+                            data-c={ci}
+                            value={c.folder}
+                            onChange={(e) => setField(c.id, "folder", e.target.value)}
+                            placeholder="e.g. D:\Clients\ABC"
+                            className={SHEET_INPUT}
+                            aria-label="Folder path"
                           />
-                        )}
-                      </TableCell>
-                    ))}
-                    <TableCell className="p-1 whitespace-nowrap">
-                      <PortalLink onOpen={() => onPortalOpen(c)}>Open Portal</PortalLink>
-                      <Button
-                        size="icon-sm"
-                        variant="ghost"
-                        className="ml-1 text-destructive hover:text-destructive"
-                        onClick={() => remove(c)}
-                        aria-label={`Delete ${c.name || "client"}`}
-                      >
-                        <Trash2 className="size-3.5" aria-hidden />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                );
-              })
-            )}
-          </TableBody>
-        </Table>
-      </div>
+                          <Tip label="Open in File Explorer (needs the folder opener on this computer)">
+                            <Button size="icon-sm" variant="ghost" onClick={() => openFolder(c)} aria-label="Open folder">
+                              <FolderOpen className="size-4" aria-hidden />
+                            </Button>
+                          </Tip>
+                        </span>
+                      ) : col.secret ? (
+                        <span className="flex items-center pr-1">
+                          <input
+                            data-r={r}
+                            data-c={ci}
+                            type={showPw ? "text" : "password"}
+                            autoComplete="new-password"
+                            value={c.pass ?? ""}
+                            onChange={(e) => setField(c.id, "pass", e.target.value)}
+                            className={cn(SHEET_INPUT, "font-mono")}
+                            aria-label={`Password for ${c.name || "client"}`}
+                          />
+                          <Tip label="Copy password">
+                            <Button
+                              size="icon-sm"
+                              variant="ghost"
+                              disabled={!c.pass}
+                              onClick={async () => {
+                                if (await copyPassword(c)) toast.success("Password copied");
+                              }}
+                              aria-label="Copy password"
+                            >
+                              <Copy className="size-4" aria-hidden />
+                            </Button>
+                          </Tip>
+                        </span>
+                      ) : (
+                        <input
+                          data-r={r}
+                          data-c={ci}
+                          type={col.date ? "date" : col.key === "mobile" ? "tel" : "text"}
+                          inputMode={col.key === "email" ? "email" : undefined}
+                          maxLength={col.key === "gstin" || col.key === "mobile" ? 15 : undefined}
+                          value={c[col.key] ?? ""}
+                          onChange={(e) => setField(c.id, col.key, e.target.value)}
+                          className={cn(
+                            SHEET_INPUT,
+                            col.key === "name" && "font-medium",
+                            col.key === "gstin" && "font-mono uppercase",
+                            col.key === "gstin" && c.gstin && !GSTIN_RE.test(c.gstin) && "text-destructive",
+                          )}
+                          aria-label={col.label}
+                        />
+                      )}
+                    </SheetCell>
+                  ))}
+                  <SheetCell className="px-2 whitespace-nowrap">
+                    <PortalLink onOpen={() => onPortalOpen(c)}>Open Portal</PortalLink>
+                    <Button
+                      size="icon-sm"
+                      variant="ghost"
+                      className="ml-1 text-destructive hover:text-destructive"
+                      onClick={() => remove(c)}
+                      aria-label={`Delete ${c.name || "client"}`}
+                    >
+                      <Trash2 className="size-4" aria-hidden />
+                    </Button>
+                  </SheetCell>
+                </tr>
+              );
+            })
+          )}
+          <tr className="cursor-pointer text-muted-foreground" onClick={addClient}>
+            <SheetCell sno>+</SheetCell>
+            <SheetCell colSpan={REGISTER_COLS.length + 1} className="px-3">
+              Click to add a client… (or press Enter on the last row)
+            </SheetCell>
+          </tr>
+        </tbody>
+      </Sheet>
       <p className="text-xs text-muted-foreground">
         Open Portal opens the GST login page with the client&apos;s user name and password filled in (with the GST
         Helper added to Chrome; without it, the password is copied ready to paste). Passwords are saved
@@ -452,15 +481,16 @@ export function GstRegisterView() {
 /* Return filing status                                                */
 /* ------------------------------------------------------------------ */
 
+/** `client`: kept on the client (shared with the register); otherwise kept per month. */
 const RETURN_COLS = [
-  { key: "name", label: "Business name" },
-  { key: "signatory", label: "Signatory / Proprietor" },
-  { key: "assigned", label: "Assigned To" },
-  { key: "gstin", label: "GSTIN" },
-  { key: "user", label: "User name" },
-  { key: "g1", label: "GSTR-1" },
-  { key: "g3b", label: "GSTR-3B" },
-  { key: "remarks", label: "Remarks" },
+  { key: "name", label: "Business name", width: 290, client: true },
+  { key: "signatory", label: "Signatory / Proprietor", width: 230, client: true },
+  { key: "assigned", label: "Assigned To", width: 190 },
+  { key: "gstin", label: "GSTIN", width: 200, client: true },
+  { key: "user", label: "User name", width: 190, client: true },
+  { key: "g1", label: "GSTR-1", width: 160, status: true },
+  { key: "g3b", label: "GSTR-3B", width: 160, status: true },
+  { key: "remarks", label: "Remarks", width: 300 },
 ];
 const filedLabel = (v) => (v === "filed" ? "Filed" : "Not Filed");
 
@@ -500,6 +530,39 @@ export function GstReturnsView() {
   const rows = table.apply(listed.filter((c) => matches(words, RETURN_COLS.map((col) => valueOf(c, col.key)).join(" "))));
 
   const set = (id, field, value) => setData((d) => withStatus(d, month, id, field, value));
+  /** A client detail typed here changes it in the Client Register too. */
+  const setClient = (id, field, value) =>
+    setData((d) => ({
+      ...d,
+      clients: d.clients.map((x) => (x.id === id ? { ...x, [field]: field === "gstin" ? normaliseGstin(value) : value } : x)),
+    }));
+  /** A block pasted from Excel fills the cells from where it lands (rows already listed only). */
+  function pasteGrid(block, r, c) {
+    const targetIds = rows.map((x) => x.id);
+    let filled = 0;
+    setData((d) => {
+      let next = d;
+      block.forEach((cells, i) => {
+        const id = targetIds[r + i];
+        if (!id) return;
+        filled++;
+        cells.forEach((v, j) => {
+          const col = RETURN_COLS[c + j];
+          if (!col) return;
+          if (col.client) {
+            next = {
+              ...next,
+              clients: next.clients.map((x) =>
+                x.id === id ? { ...x, [col.key]: col.key === "gstin" ? normaliseGstin(v) : v } : x,
+              ),
+            };
+          } else next = withStatus(next, month, id, col.key, col.status ? pastedFiled(v) : v);
+        });
+      });
+      return next;
+    });
+    toast.success(`Pasted into ${Math.min(block.length, targetIds.length - r)} row(s)`);
+  }
 
   function clearMonth() {
     if (!window.confirm(`Set every client back to Not Filed for ${monthLabel(month)}?`)) return;
@@ -584,53 +647,51 @@ export function GstReturnsView() {
         <SearchBox value={query} onChange={setQuery} />
       </div>
 
-      <div className="overflow-x-auto rounded-3xl border-2 border-dashed border-primary/25">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <Head className="w-14">S.No</Head>
-              {RETURN_COLS.map((col) => (
-                <Head key={col.key} filter={table.propsFor(col.key, col.label, listed)}>
-                  {col.label}
-                </Head>
-              ))}
-              <TableHead />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {rows.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={RETURN_COLS.length + 2} className="py-10 text-center text-muted-foreground">
-                  {listed.length === 0 ? "No active clients for this month." : "No clients match these filters."}
-                </TableCell>
-              </TableRow>
-            ) : (
-              rows.map((c) => {
-                const s = statusOf(data.status, month, c.id);
-                return (
-                  <TableRow key={c.id}>
-                    <TableCell className="tabular text-muted-foreground">{c.sno}</TableCell>
-                    <TableCell className="font-medium">{c.name}</TableCell>
-                    <TableCell>{c.signatory}</TableCell>
-                    <TableCell className="min-w-36 p-1">
-                      <input
-                        value={s.assigned}
-                        onChange={(e) => set(c.id, "assigned", e.target.value)}
-                        className={CELL_INPUT}
-                        aria-label="Assigned to"
-                      />
-                    </TableCell>
-                    <TableCell className="font-mono text-xs">{c.gstin}</TableCell>
-                    <TableCell>{c.user}</TableCell>
-                    {["g1", "g3b"].map((r) => (
-                      <TableCell key={r} className="p-1">
+      <Sheet onPasteGrid={pasteGrid} minWidth={64 + 150 + RETURN_COLS.reduce((n, c) => n + c.width, 0)}>
+        <colgroup>
+          <col style={{ width: 64 }} />
+          {RETURN_COLS.map((col) => (
+            <col key={col.key} style={{ width: col.width }} />
+          ))}
+          <col style={{ width: 150 }} />
+        </colgroup>
+        <thead>
+          <tr>
+            <SheetHead sno>S.No</SheetHead>
+            {RETURN_COLS.map((col) => (
+              <SheetHead key={col.key} filter={table.propsFor(col.key, col.label, listed)}>
+                {col.label}
+              </SheetHead>
+            ))}
+            <SheetHead />
+          </tr>
+        </thead>
+        <tbody>
+          {rows.length === 0 ? (
+            <tr>
+              <SheetCell colSpan={RETURN_COLS.length + 2} className="py-10 text-center text-muted-foreground">
+                {listed.length === 0 ? "No active clients for this month." : "No clients match these filters."}
+              </SheetCell>
+            </tr>
+          ) : (
+            rows.map((c, r) => {
+              const s = statusOf(data.status, month, c.id);
+              return (
+                <tr key={c.id}>
+                  <SheetCell sno>{c.sno}</SheetCell>
+                  {RETURN_COLS.map((col, ci) => (
+                    <SheetCell key={col.key}>
+                      {col.status ? (
                         <select
-                          value={s[r]}
-                          onChange={(e) => set(c.id, r, e.target.value)}
-                          aria-label={r === "g1" ? "GSTR-1" : "GSTR-3B"}
+                          data-r={r}
+                          data-c={ci}
+                          value={s[col.key]}
+                          onChange={(e) => set(c.id, col.key, e.target.value)}
+                          aria-label={col.label}
                           className={cn(
-                            "h-8 rounded-md px-2 text-sm font-semibold",
-                            s[r] === "filed"
+                            SHEET_INPUT,
+                            "cursor-pointer font-semibold",
+                            s[col.key] === "filed"
                               ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
                               : "bg-destructive/15 text-destructive",
                           )}
@@ -638,26 +699,33 @@ export function GstReturnsView() {
                           <option value="filed">Filed</option>
                           <option value="notfiled">Not Filed</option>
                         </select>
-                      </TableCell>
-                    ))}
-                    <TableCell className="min-w-48 p-1">
-                      <input
-                        value={s.remarks}
-                        onChange={(e) => set(c.id, "remarks", e.target.value)}
-                        className={CELL_INPUT}
-                        aria-label="Remarks"
-                      />
-                    </TableCell>
-                    <TableCell className="p-1">
-                      <PortalLink onOpen={() => portalOpen(helper, c)}>Login</PortalLink>
-                    </TableCell>
-                  </TableRow>
-                );
-              })
-            )}
-          </TableBody>
-        </Table>
-      </div>
+                      ) : (
+                        <input
+                          data-r={r}
+                          data-c={ci}
+                          value={col.client ? (c[col.key] ?? "") : s[col.key]}
+                          onChange={(e) =>
+                            col.client ? setClient(c.id, col.key, e.target.value) : set(c.id, col.key, e.target.value)
+                          }
+                          className={cn(
+                            SHEET_INPUT,
+                            col.key === "name" && "font-medium",
+                            col.key === "gstin" && "font-mono uppercase",
+                          )}
+                          aria-label={col.label}
+                        />
+                      )}
+                    </SheetCell>
+                  ))}
+                  <SheetCell className="px-2">
+                    <PortalLink onOpen={() => portalOpen(helper, c)}>Login</PortalLink>
+                  </SheetCell>
+                </tr>
+              );
+            })
+          )}
+        </tbody>
+      </Sheet>
       <InstallHelperDialog open={installOpen} onOpenChange={setInstallOpen} />
     </div>
   );
