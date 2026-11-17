@@ -1,15 +1,16 @@
 /*
  * CA Compliance Tool service worker (installed app and offline use).
  *
- * - Pages: always fetched fresh when online. A copy of each page is kept on
- *   this device, so with no internet the app still opens (your data is
+ * - Pages: online, the browser loads them itself (untouched, so Clerk can
+ *   refresh the sign-in). A copy of each tool page is kept on this device
+ *   (see "warm"), so with no internet the app still opens (your data is
  *   already in this browser). A page never opened shows the dashboard, or the
  *   offline page if even that was never opened.
  * - Next's build files, fonts, icons and templates are kept too.
  * - Never stored: API calls (/api), sign-in, anything from another site.
  * - Signing out clears the kept pages.
  */
-const VERSION = "v2";
+const VERSION = "v3";
 const STATIC = `cact-static-${VERSION}`;
 const PAGES = `cact-pages-${VERSION}`;
 const OFFLINE = "/offline.html";
@@ -83,6 +84,11 @@ self.addEventListener("fetch", (event) => {
   if (url.origin !== self.location.origin || url.pathname.startsWith("/api/")) return;
 
   if (req.mode === "navigate") {
+    // Online: let the browser load the page itself. Re-fetching it here drops
+    // the "this is a page load" signal Clerk needs to refresh the short-lived
+    // sign-in token, so a signed-in user was sent to /sign-in ("You're already
+    // signed in"). Only step in when there is no connection.
+    if (self.navigator.onLine) return;
     event.respondWith(page(req));
     return;
   }

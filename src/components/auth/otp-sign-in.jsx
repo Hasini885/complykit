@@ -46,6 +46,19 @@ export function OtpSignIn() {
     return "/dashboard";
   }
 
+  /**
+   * Shows a Clerk error, except "already signed in": then the session is fine
+   * and the user just needs the app, so open it with a full page load (that
+   * lets the server pick up the fresh session).
+   */
+  function fail(err) {
+    if (err?.errors?.some?.((e) => e.code === "session_exists")) {
+      window.location.assign(destination());
+      return;
+    }
+    setError(messageOf(err));
+  }
+
   async function signInWithPassword(e) {
     e.preventDefault();
     const problem = checkEmail(email) ?? (password ? null : "Enter your password.");
@@ -61,7 +74,7 @@ export function OtpSignIn() {
         setError('Sign-in could not be completed. Try "Email me a code" below.');
       }
     } catch (err) {
-      setError(messageOf(err));
+      fail(err);
     } finally {
       setBusy(false);
     }
@@ -83,7 +96,7 @@ export function OtpSignIn() {
       await signIn.prepareFirstFactor({ strategy: "email_code", emailAddressId: factor.emailAddressId });
       setStep("code");
     } catch (err) {
-      setError(messageOf(err));
+      fail(err);
     } finally {
       setBusy(false);
     }
@@ -106,7 +119,7 @@ export function OtpSignIn() {
         setError("Sign-in could not be completed. Try again.");
       }
     } catch (err) {
-      setError(messageOf(err));
+      fail(err);
     } finally {
       setBusy(false);
     }
@@ -126,7 +139,7 @@ export function OtpSignIn() {
       setConfirm("");
       setStep("reset-code");
     } catch (err) {
-      setError(messageOf(err));
+      fail(err);
     } finally {
       setBusy(false);
     }
@@ -162,7 +175,7 @@ export function OtpSignIn() {
         setStep("password");
       }
     } catch (err) {
-      setError(messageOf(err));
+      fail(err);
     } finally {
       setBusy(false);
     }
