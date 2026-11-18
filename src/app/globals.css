@@ -307,6 +307,19 @@
   .sheet thead th.sheet-sno {
     z-index: 30;
   }
+  /* Extra frozen columns (Task Manager: Client Name and Work), on screens wide enough to keep room for the rest. */
+  @media (min-width: 768px) {
+    .sheet .sheet-frozen {
+      position: sticky;
+      z-index: 10;
+    }
+    .sheet thead th.sheet-frozen {
+      z-index: 30;
+    }
+    .sheet .sheet-frozen-last {
+      box-shadow: 6px 0 8px -6px color-mix(in oklab, var(--foreground) 35%, transparent);
+    }
+  }
   .sheet tbody td {
     background: var(--card);
   }

@@ -2,8 +2,11 @@
 
 export const TASKS_KEY = "complykit.tasks.v1";
 export const EMPTY_TASKS = Object.freeze({ rows: [] });
-/** "Client Pending": waiting on the client (documents, approval, payment). */
-export const TASK_STATUSES = ["Pending", "Client Pending", "Finished"];
+/**
+ * "Client Pending": waiting on the client (documents, approval, payment).
+ * "Officer Pending": filed and waiting on the department / officer (ROC, GST officer, bank).
+ */
+export const TASK_STATUSES = ["Pending", "Client Pending", "Officer Pending", "Finished"];
 
 /** Every column, in order; `req` marks the mandatory ones. */
 export const TASK_COLUMNS = [
@@ -91,6 +94,7 @@ export function taskSummary(rows, today) {
     total: rows.length,
     pending: rows.filter((r) => r.status === "Pending").length,
     clientPending: rows.filter((r) => r.status === "Client Pending").length,
+    officerPending: rows.filter((r) => r.status === "Officer Pending").length,
     finished: rows.filter((r) => r.status === "Finished").length,
     overdue: rows.filter((r) => isOverdue(r, today)).length,
   };

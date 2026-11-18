@@ -43,7 +43,7 @@ Converts a bank statement PDF into a spreadsheet and lets you tag each transacti
 
 ### Task Manager
 
-Every client task with assignee, deadline, fee and status (Pending, Client Pending, Finished). Sort, filter, drag rows into your own order, and see overdue counts on the dashboard.
+Every client task with assignee, deadline, fee and status (Pending, Client Pending, Officer Pending, Finished). Sort, filter, drag rows into your own order, and see overdue counts on the dashboard.
 
 ## Also included
 

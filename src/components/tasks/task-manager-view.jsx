@@ -33,6 +33,9 @@ import {
 
 /** Text columns that offer values already typed in that column (and, for clients, your MCA and GST clients). */
 const SUGGESTED = ["client", "work", "assigned", "mobile", "ref", "remark1", "remark2"];
+/** Columns that stay put (with S.No) when the sheet scrolls sideways, and where each one sits. */
+const FROZEN = { client: { left: 80 }, work: { left: 80 + TASK_COLUMNS[0].width, last: true } };
+const frozenClass = (key) => FROZEN[key] && cn("sheet-frozen", FROZEN[key].last && "sheet-frozen-last");
 const inr = (n) => `₹${n.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
 
 export function TaskManagerView() {
@@ -117,7 +120,9 @@ export function TaskManagerView() {
                 ? "Finished"
                 : /^client/i.test(v)
                   ? "Client Pending"
-                  : "Pending"
+                  : /^off/i.test(v)
+                    ? "Officer Pending"
+                    : "Pending"
               : col.date
                 ? pastedDate(v)
                 : v;
@@ -184,6 +189,7 @@ export function TaskManagerView() {
             <Num value={sum.total} label="Total" />
             <Num value={sum.pending} label="Pending" className="text-destructive" />
             <Num value={sum.clientPending} label="Client pending" className="text-amber-500" />
+            <Num value={sum.officerPending} label="Officer pending" className="text-violet-500" />
             <Num value={sum.finished} label="Finished" className="text-emerald-500" />
             <Num value={sum.overdue} label="Overdue" className="text-orange-600" />
           </div>
@@ -259,6 +265,8 @@ export function TaskManagerView() {
               <SheetHead
                 key={c.key}
                 req={c.req}
+                className={frozenClass(c.key)}
+                style={FROZEN[c.key] ? { left: FROZEN[c.key].left } : undefined}
                 filter={table.propsFor(c.key, c.label, numbered, c.key === "status" ? TASK_STATUSES : [])}
               >
                 {c.label}
@@ -285,7 +293,11 @@ export function TaskManagerView() {
                   dragProps={table.sorted ? undefined : drag.grip(t.id)}
                 />
                 {TASK_COLUMNS.map((c, ci) => (
-                  <SheetCell key={c.key} className={cn(c.auto && "px-3 text-muted-foreground")}>
+                  <SheetCell
+                    key={c.key}
+                    className={cn(c.auto && "px-3 text-muted-foreground", frozenClass(c.key))}
+                    style={FROZEN[c.key] ? { left: FROZEN[c.key].left } : undefined}
+                  >
                     {c.auto ? (
                       dmy(t[c.key])
                     ) : c.key === "status" ? (
@@ -302,7 +314,9 @@ export function TaskManagerView() {
                             ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
                             : t.status === "Client Pending"
                               ? "bg-amber-500/15 text-amber-600 dark:text-amber-400"
-                              : "bg-destructive/15 text-destructive",
+                              : t.status === "Officer Pending"
+                                ? "bg-violet-500/15 text-violet-600 dark:text-violet-400"
+                                : "bg-destructive/15 text-destructive",
                         )}
                       >
                         {TASK_STATUSES.map((s) => (
