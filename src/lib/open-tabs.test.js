@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { HOME_TAB, MAX_TABS, closeTab, normalizeTabs, openTab, tabTitle } from "@/lib/open-tabs";
+import { HOME_TAB, MAX_TABS, TAB_TITLES, closeTab, normalizeTabs, openTab, tabTitle } from "@/lib/open-tabs";
 
 test("dashboard is always the first tab", () => {
   assert.deepEqual(normalizeTabs(null), [HOME_TAB]);
@@ -40,12 +40,29 @@ test("the dashboard tab cannot be closed", () => {
   assert.deepEqual(closeTab([HOME_TAB, "/gst"], HOME_TAB, HOME_TAB), { tabs: [HOME_TAB, "/gst"], go: null });
 });
 
-test("tab titles come from the menu, then the closest parent, then the path", () => {
+test("tab titles come from the page names, the menu, then the closest parent, then the path", () => {
   const items = [
     { title: "Client Register", href: "/gst" },
     { title: "Return Filing Status", href: "/gst/returns" },
   ];
-  assert.equal(tabTitle("/gst/returns", items), "Return Filing Status");
+  assert.equal(tabTitle("/gst/returns", items), "GST Return Filing Status");
+  assert.equal(tabTitle("/mca", items), "MCA Dashboard");
   assert.equal(tabTitle("/gst/some-page", items), "Client Register · Some Page");
-  assert.equal(tabTitle("/admin/users", items), "Admin · Users");
+  assert.equal(tabTitle("/admin/other-page", items), "Admin · Other Page");
+});
+
+test("every app page has a tab name", async () => {
+  const { readdirSync } = await import("node:fs");
+  const { join, relative, sep } = await import("node:path");
+  const root = join(process.cwd(), "src", "app", "(app)");
+  const pages = [];
+  const walk = (dir) => {
+    for (const e of readdirSync(dir, { withFileTypes: true })) {
+      if (e.isDirectory()) walk(join(dir, e.name));
+      else if (e.name === "page.jsx") pages.push(`/${relative(root, dir).split(sep).join("/")}`);
+    }
+  };
+  walk(root);
+  const missing = pages.filter((p) => !TAB_TITLES[p]);
+  assert.deepEqual(missing, []);
 });

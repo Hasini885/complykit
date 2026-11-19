@@ -55,11 +55,41 @@ const words = (s) =>
     .join(" ");
 
 /**
- * The tab's label: the page's menu title when it has one (exact path first,
- * then the closest parent page), otherwise made from the path.
+ * Each page's tab name: the page's own heading, so a tab reads the same as
+ * the page it opens (menu titles like "Dashboard" or "Client Register" are
+ * ambiguous out of their tool's menu). Add new pages here.
+ */
+export const TAB_TITLES = {
+  "/dashboard": "Dashboard",
+  "/mca": "MCA Dashboard",
+  "/portfolio": "Company Master Data",
+  "/portfolio/report": "Compliance Report",
+  "/directors": "Director Master",
+  "/consultants": "Consultant Master",
+  "/late-fee": "Late Fee Calculator",
+  "/gst": "GST Client Register",
+  "/gst/returns": "GST Return Filing Status",
+  "/gst/guide": "GST Helper Guide",
+  "/documents": "Document Generator",
+  "/bank-statement": "Bank Statement to Excel",
+  "/tasks": "Task Manager",
+  "/due-dates": "Due Date Tracker",
+  "/applicability": "What Applies To Me?",
+  "/beyond-roc": "Beyond-ROC Calendar",
+  "/checklists": "Compliance Checklists",
+  "/incorporation": "Incorporation Toolkit",
+  "/sections": "Section Reference",
+  "/tools": "Fee & Penalty Calculators",
+  "/admin/users": "Users",
+};
+
+/**
+ * The tab's label: its name in TAB_TITLES, else the menu title (exact path,
+ * then the closest parent page), else made from the path.
  * `items` is a list of { title, href }.
  */
 export function tabTitle(path, items) {
+  if (TAB_TITLES[path]) return TAB_TITLES[path];
   const exact = items.find((i) => i.href === path);
   if (exact) return exact.title;
   const parent = items
