@@ -98,7 +98,7 @@ export function Sheet({ children, onPasteGrid, onEnterPastEnd, minWidth }) {
 
   return (
     <div
-      className="sheet max-h-[calc(100dvh-13rem)] overflow-auto rounded-2xl border-2 border-dashed border-primary/30"
+      className="sheet overflow-x-auto rounded-2xl border-2 border-dashed border-primary/30"
       onKeyDown={onKeyDown}
       onPaste={onPaste}
     >

@@ -7,7 +7,7 @@ import { useUser } from "@clerk/nextjs";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { PortfolioProvider } from "@/components/portfolio/portfolio-provider";
-import { AccountSyncProvider } from "@/components/sync/account-sync";
+import { AccountSyncProvider, useAccountSync } from "@/components/sync/account-sync";
 import { SubscriptionBanner } from "@/components/billing/subscription-banner";
 import { activateUserStorage } from "@/lib/user-storage";
 import { offlineUserFor } from "@/lib/offline-user";
@@ -140,13 +140,27 @@ export function AppShell({ children }) {
               fullWidth ? "max-w-none lg:px-6" : "max-w-7xl lg:px-8",
             )}
           >
-            {children}
+            <AfterFirstSync>{children}</AfterFirstSync>
           </main>
           <SiteFooter />
         </div>
       </AccountSyncProvider>
     </PortfolioProvider>
   );
+}
+
+/**
+ * Holds the page until the account's saved copy has been checked. Without this
+ * a page (e.g. the GST register) first showed this computer's older copy, then
+ * the sync brought in the newer one and reloaded, so the right list only
+ * appeared on the second visit. A very slow check still opens after 8 seconds.
+ */
+function AfterFirstSync({ children }) {
+  const { status } = useAccountSync();
+  const waiting = status === "loading";
+  const tooSlow = useSlow(waiting, 8000);
+  if (waiting && !tooSlow) return <div className="h-64 animate-pulse rounded-3xl border bg-muted/30" aria-busy="true" />;
+  return children;
 }
 
 /** Offline and nobody has signed in on this computer before: nothing to open. */

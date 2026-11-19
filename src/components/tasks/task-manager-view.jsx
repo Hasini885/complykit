@@ -27,7 +27,6 @@ import {
   isoToday,
   newTask,
   moveRow,
-  taskSummary,
   withField,
 } from "@/lib/tasks/tasks";
 
@@ -53,7 +52,6 @@ export function TaskManagerView() {
   // Drag a row by its grip to put the tasks in your own order (saved; S.No follows).
   const drag = useRowDrag((fromId, toId) => setData((d) => ({ ...d, rows: moveRow(d.rows, fromId, toId) })));
   const rows = table.apply(numbered);
-  const sum = taskSummary(data.rows, today);
   const shownFee = rows.reduce((n, t) => n + feeValue(t.fee), 0);
 
   // Suggestions for each text column.
@@ -181,19 +179,8 @@ export function TaskManagerView() {
 
   return (
     <div className="space-y-6">
-      <h1 className="font-heading text-3xl font-bold tracking-tight">Task Manager</h1>
-      <div className="grid gap-4 md:grid-cols-[1fr_auto]">
-        <div className="flex flex-col items-center justify-center rounded-3xl border-2 border-dashed border-primary/25 p-4 text-center">
-          <h2 className="font-heading text-base font-semibold">Task summary</h2>
-          <div className="mt-3 flex flex-wrap justify-center gap-8">
-            <Num value={sum.total} label="Total" />
-            <Num value={sum.pending} label="Pending" className="text-destructive" />
-            <Num value={sum.clientPending} label="Client pending" className="text-amber-500" />
-            <Num value={sum.officerPending} label="Officer pending" className="text-violet-500" />
-            <Num value={sum.finished} label="Finished" className="text-emerald-500" />
-            <Num value={sum.overdue} label="Overdue" className="text-orange-600" />
-          </div>
-        </div>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <h1 className="font-heading text-3xl font-bold tracking-tight">Task Manager</h1>
         <MiniCalendar
           compact
           heading="Deadline calendar"
@@ -362,15 +349,6 @@ export function TaskManagerView() {
           ))}
         </datalist>
       ))}
-    </div>
-  );
-}
-
-function Num({ value, label, className }) {
-  return (
-    <div>
-      <b className={cn("block font-heading text-2xl", className)}>{value}</b>
-      <small className="text-[10px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">{label}</small>
     </div>
   );
 }
