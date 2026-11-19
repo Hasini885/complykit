@@ -24,6 +24,18 @@ import { MobileNav, TopNav } from "@/components/site-nav";
 export function SiteHeader() {
   const palette = useCommandPalette();
   const [mobileOpen, setMobileOpen] = React.useState(false);
+  // Opened by pointing (left edge or the menu button): it closes again when the mouse leaves it.
+  const byHover = React.useRef(false);
+  const edgeTimer = React.useRef(0);
+  const openByHover = (e) => {
+    if (e.pointerType !== "mouse" || mobileOpen) return;
+    byHover.current = true;
+    setMobileOpen(true);
+  };
+  const setOpen = (open) => {
+    if (!open) byHover.current = false;
+    setMobileOpen(open);
+  };
 
   return (
     <>
@@ -37,6 +49,7 @@ export function SiteHeader() {
               size="icon"
               aria-label="Open navigation"
               onClick={() => setMobileOpen(true)}
+              onPointerEnter={openByHover}
             >
               <Menu className="size-5" aria-hidden />
             </Button>
@@ -71,15 +84,32 @@ export function SiteHeader() {
         <CommandPalette open={palette.open} onOpenChange={palette.setOpen} />
       </header>
 
-      <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-        <SheetContent side="left" className="w-80 rounded-r-3xl p-0">
+      {/* Moving the mouse to the left edge of the screen opens the menu (after a short pause, so passing by doesn't). */}
+      <div
+        aria-hidden
+        className="fixed inset-y-0 left-0 z-30 w-1.5 print:hidden"
+        onPointerEnter={(e) => {
+          window.clearTimeout(edgeTimer.current);
+          edgeTimer.current = window.setTimeout(() => openByHover(e), 120);
+        }}
+        onPointerLeave={() => window.clearTimeout(edgeTimer.current)}
+      />
+
+      <Sheet open={mobileOpen} onOpenChange={setOpen}>
+        <SheetContent
+          side="left"
+          className="w-80 rounded-r-3xl p-0"
+          onPointerLeave={(e) => {
+            if (byHover.current && e.pointerType === "mouse") setOpen(false);
+          }}
+        >
           <SheetTitle className="sr-only">{site.name} navigation</SheetTitle>
           <div className="flex h-full flex-col">
             <div className="flex h-16 shrink-0 items-center border-b px-4">
-              <Brand onNavigate={() => setMobileOpen(false)} />
+              <Brand onNavigate={() => setOpen(false)} />
             </div>
             <div className="min-h-0 flex-1">
-              <MobileNav onNavigate={() => setMobileOpen(false)} />
+              <MobileNav onNavigate={() => setOpen(false)} />
             </div>
           </div>
         </SheetContent>

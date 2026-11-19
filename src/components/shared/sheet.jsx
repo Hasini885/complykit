@@ -15,6 +15,47 @@ import { cn } from "@/lib/utils";
  * screen) and data-c (its column) so the keys can find its neighbours.
  */
 
+/**
+ * Keeps the heading row in view while the page scrolls down a long sheet. The
+ * frame only scrolls sideways (one scrollbar for the page, not two), so CSS
+ * sticky can't pin the row to the screen; instead it is moved down by however
+ * far the sheet's top has gone under the site's top bar, and stops just above
+ * the last row.
+ */
+function useHeadingsFollowPage(frame) {
+  React.useEffect(() => {
+    const el = frame.current;
+    if (!el) return;
+    let raf = 0;
+    const place = () => {
+      raf = 0;
+      const head = el.querySelector("thead");
+      if (!head) return;
+      const bar = document.querySelector("header.sticky");
+      const top = bar ? bar.getBoundingClientRect().bottom : 0;
+      const box = el.getBoundingClientRect();
+      const room = Math.max(0, box.height - head.offsetHeight * 2);
+      const shift = Math.min(Math.max(0, top - box.top), room);
+      head.style.transform = shift ? `translateY(${shift}px)` : "";
+      head.toggleAttribute("data-floating", shift > 0);
+    };
+    const schedule = () => {
+      if (!raf) raf = window.requestAnimationFrame(place);
+    };
+    place();
+    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", schedule);
+    const seen = new ResizeObserver(schedule);
+    seen.observe(el);
+    return () => {
+      window.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", schedule);
+      seen.disconnect();
+      if (raf) window.cancelAnimationFrame(raf);
+    };
+  }, [frame]);
+}
+
 /** Class for an input or select inside a sheet cell. */
 export const SHEET_INPUT =
   "h-11 w-full min-w-0 bg-transparent px-3 text-[15px] outline-none placeholder:text-muted-foreground/60";
@@ -25,6 +66,8 @@ export const SHEET_INPUT =
  * `onEnterPastEnd(c)` runs when Enter is pressed on the last row.
  */
 export function Sheet({ children, onPasteGrid, onEnterPastEnd, minWidth }) {
+  const frame = React.useRef(null);
+  useHeadingsFollowPage(frame);
   function onKeyDown(e) {
     const t = e.target;
     if (t.dataset?.r === undefined || e.altKey || e.ctrlKey || e.metaKey) return;
@@ -98,6 +141,7 @@ export function Sheet({ children, onPasteGrid, onEnterPastEnd, minWidth }) {
 
   return (
     <div
+      ref={frame}
       className="sheet overflow-x-auto rounded-2xl border-2 border-dashed border-primary/30"
       onKeyDown={onKeyDown}
       onPaste={onPaste}

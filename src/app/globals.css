@@ -286,6 +286,15 @@
     padding: 0;
     height: 2.75rem;
   }
+  /* Moved down by useHeadingsFollowPage while the page scrolls; above the body's frozen cells. */
+  .sheet thead {
+    position: relative;
+    z-index: 25;
+  }
+  .sheet thead[data-floating] th,
+  .sheet thead[data-floating] th.sheet-frozen-last {
+    box-shadow: 0 6px 10px -8px color-mix(in oklab, var(--foreground) 45%, transparent);
+  }
   .sheet thead th {
     position: sticky;
     top: 0;
