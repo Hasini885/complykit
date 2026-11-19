@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Tip } from "@/components/shared/tip";
 import { useColumnFilters } from "@/components/shared/column-filter";
 import { SHEET_INPUT, Sheet, SheetCell, SheetHead, SnoCell, pastedDate, useRowDrag } from "@/components/shared/sheet";
-import { LegendDot, MiniCalendar } from "@/components/shared/mini-calendar";
 import { usePortfolio } from "@/components/portfolio/portfolio-provider";
 import { useStoredJson } from "@/lib/stored-json";
 import { newId } from "@/lib/portfolio/clients";
@@ -20,7 +19,6 @@ import {
   TASK_COLUMNS,
   TASK_STATUSES,
   cellValue,
-  deadlinesByDay,
   dmy,
   feeValue,
   isOverdue,
@@ -42,8 +40,6 @@ export function TaskManagerView() {
   const [gst] = useStoredJson(GST_KEY, EMPTY_GST);
   const { clients: companies } = usePortfolio();
   const today = isoToday();
-  const now = new Date();
-  const [cal, setCal] = React.useState({ y: now.getFullYear(), m: now.getMonth() });
   const valueOf = React.useCallback((t, key) => (key === "sno" ? String(t.sno) : cellValue(t, key)), []);
   const table = useColumnFilters(valueOf);
   const lastAdded = React.useRef(null);
@@ -67,22 +63,6 @@ export function TaskManagerView() {
     }
     return out;
   }, [data.rows, companies, gst.clients]);
-
-  // The deadline calendar: red overdue, blue pending, green all finished.
-  const byDay = deadlinesByDay(data.rows);
-  const marks = {};
-  let dueThisMonth = 0;
-  const monthPrefix = `${cal.y}-${String(cal.m + 1).padStart(2, "0")}-`;
-  for (const [iso, o] of Object.entries(byDay)) {
-    if (iso.startsWith(monthPrefix)) dueThisMonth += o.pending;
-    marks[iso] = {
-      tone: o.pending ? (iso < today ? "overdue" : "due") : "done",
-      title: `${o.pending} pending, ${o.finished} finished — click to filter`,
-    };
-  }
-  const deadlineFilter = table.filters.deadline;
-  const activeDay =
-    deadlineFilter && deadlineFilter.size === 1 ? [...deadlineFilter][0].split("-").reverse().join("-") : null;
 
   function setField(id, field, value) {
     setData((d) => ({ ...d, rows: d.rows.map((t) => (t.id === id ? withField(t, field, value, isoToday()) : t)) }));
@@ -139,15 +119,6 @@ export function TaskManagerView() {
       return;
     setData((d) => ({ ...d, rows: d.rows.filter((x) => x.id !== t.id) }));
   }
-  function filterDay(iso) {
-    const label = dmy(iso);
-    table.setFilters((f) => {
-      const next = { ...f };
-      if (f.deadline?.size === 1 && f.deadline.has(label)) delete next.deadline;
-      else next.deadline = new Set([label]);
-      return next;
-    });
-  }
   async function exportExcel() {
     const { downloadTableXlsx } = await import("@/lib/simple-xlsx");
     await downloadTableXlsx({
@@ -179,33 +150,7 @@ export function TaskManagerView() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <h1 className="font-heading text-3xl font-bold tracking-tight">Task Manager</h1>
-        <MiniCalendar
-          compact
-          heading="Deadline calendar"
-          year={cal.y}
-          month={cal.m}
-          marks={marks}
-          today={today}
-          active={activeDay}
-          onDayClick={filterDay}
-          onShift={(n) =>
-            setCal((c) => {
-              const d = new Date(c.y, c.m + n, 1);
-              return { y: d.getFullYear(), m: d.getMonth() };
-            })
-          }
-          note={`${dueThisMonth} pending deadline${dueThisMonth === 1 ? "" : "s"} this month`}
-          legend={
-            <>
-              <LegendDot className="bg-destructive">Overdue</LegendDot>
-              <LegendDot className="bg-primary">Pending</LegendDot>
-              <LegendDot className="bg-emerald-600">Finished</LegendDot>
-            </>
-          }
-        />
-      </div>
+      <h1 className="font-heading text-3xl font-bold tracking-tight">Task Manager</h1>
 
       <div className="flex flex-wrap items-center gap-2">
         <Button onClick={() => addTask()}>
