@@ -13,4 +13,5 @@ test("pasted dates in Indian or ISO form", () => {
 test("pasted GST status", () => {
   for (const v of ["Filed", "filed", " YES ", "done"]) assert.equal(pastedFiled(v), "filed", v);
   for (const v of ["Not Filed", "", "no", "pending"]) assert.equal(pastedFiled(v), "notfiled", v);
+  for (const v of ["Quarterly", "q", "QRMP"]) assert.equal(pastedFiled(v), "quarterly", v);
 });

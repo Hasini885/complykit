@@ -1,8 +1,10 @@
 /** Turning text pasted from Excel into the values the sheets keep. */
 
-/** "Filed" / "filed" / "yes" → "filed"; anything else → "notfiled" (for pasted GST status). */
+/** "Filed" / "yes" → "filed"; "Quarterly" / "Q" / "QRMP" → "quarterly"; anything else → "notfiled" (pasted GST status). */
 export function pastedFiled(v) {
-  return /^(filed|yes|y|done|✓)$/i.test(String(v).trim()) ? "filed" : "notfiled";
+  const t = String(v).trim();
+  if (/^(quarterly|qtrly|qtr|q|qrmp)$/i.test(t)) return "quarterly";
+  return /^(filed|yes|y|done|✓)$/i.test(t) ? "filed" : "notfiled";
 }
 
 /** "13-11-2026", "13/11/2026" or "2026-11-13" → "2026-11-13"; anything else → "" (for pasted dates). */

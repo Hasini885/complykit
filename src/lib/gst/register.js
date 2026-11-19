@@ -15,10 +15,33 @@ export const GSTIN_RE = /^\d{2}[A-Z]{5}\d{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
 /** Monthly due days: GSTR-1 by the 11th, GSTR-3B by the 20th. */
 export const GST_DUE_DAYS = { g1: 11, g3b: 20 };
 
-export const CLIENT_FIELDS = ["name", "signatory", "email", "mobile", "gstin", "user", "pass", "reg", "deact", "folder"];
+export const CLIENT_FIELDS = [
+  "name",
+  "signatory",
+  "email",
+  "mobile",
+  "gstin",
+  "user",
+  "pass",
+  "reg",
+  "deact",
+  "folder",
+];
 
 export function newGstClient(id) {
-  return { id, name: "", signatory: "", email: "", mobile: "", gstin: "", user: "", pass: "", reg: "", deact: "", folder: "" };
+  return {
+    id,
+    name: "",
+    signatory: "",
+    email: "",
+    mobile: "",
+    gstin: "",
+    user: "",
+    pass: "",
+    reg: "",
+    deact: "",
+    folder: "",
+  };
 }
 
 export function normaliseGstin(v) {
@@ -27,13 +50,24 @@ export function normaliseGstin(v) {
     .replace(/\s+/g, "");
 }
 
+/**
+ * A return's status for the month. "quarterly": the client files this return
+ * quarterly (QRMP), so nothing is pending for it this month.
+ */
+export const RETURN_STATUSES = ["filed", "notfiled", "quarterly"];
+
+/** Nothing pending for this return this month (filed, or filed quarterly). */
+export const isDone = (v) => v === "filed" || v === "quarterly";
+
+const known = (v) => (RETURN_STATUSES.includes(v) ? v : "notfiled");
+
 /** One client's status for a month; older data kept a single value for both returns. */
 export function statusOf(status, month, id) {
   const v = status?.[month]?.[id];
-  if (typeof v === "string") return { g1: v, g3b: v, remarks: "", assigned: "" };
+  if (typeof v === "string") return { g1: known(v), g3b: known(v), remarks: "", assigned: "" };
   return {
-    g1: v?.g1 === "filed" ? "filed" : "notfiled",
-    g3b: v?.g3b === "filed" ? "filed" : "notfiled",
+    g1: known(v?.g1),
+    g3b: known(v?.g3b),
     remarks: v?.remarks ?? "",
     assigned: v?.assigned ?? "",
   };
@@ -53,12 +87,12 @@ export function activeIn(client, month) {
   return (!client.deact || client.deact.slice(0, 7) >= month) && (!client.reg || client.reg.slice(0, 7) <= month);
 }
 
-/** Clients for the month, and how many have filed both GSTR-1 and GSTR-3B. */
+/** Clients for the month, and how many have filed both GSTR-1 and GSTR-3B (a quarterly return counts as done). */
 export function monthSummary(data, month) {
   const list = data.clients.filter((c) => activeIn(c, month));
   const filed = list.filter((c) => {
     const s = statusOf(data.status, month, c.id);
-    return s.g1 === "filed" && s.g3b === "filed";
+    return isDone(s.g1) && isDone(s.g3b);
   }).length;
   return { total: list.length, filed, notFiled: list.length - filed };
 }

@@ -24,6 +24,7 @@ import {
   currentMonth,
   fromBackup,
   monthLabel,
+  isDone,
   monthSummary,
   newGstClient,
   normaliseGstin,
@@ -61,7 +62,7 @@ function GstTop({ title, data, month, onShift }) {
   for (const [key, day] of Object.entries(GST_DUE_DAYS)) {
     const iso = `${month}-${String(day).padStart(2, "0")}`;
     const list = data.clients.filter((c) => activeIn(c, month));
-    const allFiled = list.length > 0 && list.every((c) => statusOf(data.status, month, c.id)[key] === "filed");
+    const allFiled = list.length > 0 && list.every((c) => isDone(statusOf(data.status, month, c.id)[key]));
     const name = key === "g1" ? "GSTR-1" : "GSTR-3B";
     marks[iso] = {
       tone: allFiled ? "done" : iso < today ? "overdue" : "due",
@@ -81,7 +82,7 @@ function GstTop({ title, data, month, onShift }) {
             <Num value={sum.filed} label="Filed" className="text-emerald-500" />
           </div>
           <p className="mt-2 text-[11px] text-muted-foreground">
-            Filed means both GSTR-1 and GSTR-3B are filed for the month.
+            Filed means both GSTR-1 and GSTR-3B are filed for the month (Quarterly counts as filed).
           </p>
         </div>
         <MiniCalendar
@@ -503,7 +504,12 @@ const RETURN_COLS = [
   { key: "g3b", label: "GSTR-3B", width: 160, status: true },
   { key: "remarks", label: "Remarks", width: 300 },
 ];
-const filedLabel = (v) => (v === "filed" ? "Filed" : "Not Filed");
+const filedLabel = (v) => ({ filed: "Filed", quarterly: "Quarterly" })[v] ?? "Not Filed";
+const STATUS_TONE = {
+  filed: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
+  quarterly: "bg-sky-500/15 text-sky-600 dark:text-sky-400",
+  notfiled: "bg-destructive/15 text-destructive",
+};
 
 export function GstReturnsView() {
   const [data, setData, ready] = useStoredJson(GST_KEY, EMPTY_GST);
@@ -703,16 +709,11 @@ export function GstReturnsView() {
                           value={s[col.key]}
                           onChange={(e) => set(c.id, col.key, e.target.value)}
                           aria-label={col.label}
-                          className={cn(
-                            SHEET_INPUT,
-                            "cursor-pointer font-semibold",
-                            s[col.key] === "filed"
-                              ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
-                              : "bg-destructive/15 text-destructive",
-                          )}
+                          className={cn(SHEET_INPUT, "cursor-pointer font-semibold", STATUS_TONE[s[col.key]])}
                         >
                           <option value="filed">Filed</option>
                           <option value="notfiled">Not Filed</option>
+                          <option value="quarterly">Quarterly</option>
                         </select>
                       ) : (
                         <input
@@ -755,6 +756,13 @@ export function GstReturnsView() {
  * installed, starting a check, and taking in the results it reads (each one
  * acknowledged, so it is applied once).
  */
+/** One return's status read by the GST Helper; a return marked Quarterly is not turned into Not Filed. */
+function helperStatus(data, r, key) {
+  const now = statusOf(data.status, r.month, r.clientId)[key];
+  if (now === "quarterly" && r[key] === "notfiled") return data;
+  return withStatus(data, r.month, r.clientId, key, r[key]);
+}
+
 function useGstHelper(setData) {
   // The extension's version once it answers; null while it has not (not added, or this page loaded before it).
   const [version, setVersion] = React.useState(null);
@@ -777,9 +785,7 @@ function useGstHelper(setData) {
         setData((d) =>
           results.reduce(
             (acc, r) =>
-              acc.clients.some((c) => c.id === r.clientId)
-                ? withStatus(withStatus(acc, r.month, r.clientId, "g1", r.g1), r.month, r.clientId, "g3b", r.g3b)
-                : acc,
+              acc.clients.some((c) => c.id === r.clientId) ? helperStatus(helperStatus(acc, r, "g1"), r, "g3b") : acc,
             d,
           ),
         );

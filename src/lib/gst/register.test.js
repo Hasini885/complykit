@@ -68,3 +68,13 @@ test("months shift across years", () => {
   assert.equal(shiftMonth("2026-12", 1), "2027-01");
   assert.equal(shiftMonth("2026-01", -1), "2025-12");
 });
+
+test("a quarterly return is kept and counts as done for the month", () => {
+  const data = {
+    clients: [{ id: "a" }, { id: "b" }],
+    status: { "2026-11": { a: { g1: "quarterly", g3b: "filed" }, b: { g1: "quarterly", g3b: "notfiled" } } },
+  };
+  assert.equal(statusOf(data.status, "2026-11", "a").g1, "quarterly");
+  assert.equal(statusOf({ "2026-11": { a: { g1: "junk" } } }, "2026-11", "a").g1, "notfiled");
+  assert.deepEqual(monthSummary(data, "2026-11"), { total: 2, filed: 1, notFiled: 1 });
+});
