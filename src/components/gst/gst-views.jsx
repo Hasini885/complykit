@@ -145,7 +145,7 @@ function matches(words, text) {
 /* Client register                                                     */
 /* ------------------------------------------------------------------ */
 
-/** Business name stays put next to S.No (64px wide) when the register scrolls sideways (screens 768px+). */
+/** Business name stays put next to S.No (64px wide) when a GST sheet scrolls sideways (screens 768px+). */
 const frozenProps = (col) => (col.frozen ? { className: "sheet-frozen sheet-frozen-last", style: { left: 64 } } : {});
 
 const REGISTER_COLS = [
@@ -494,7 +494,7 @@ export function GstRegisterView() {
 
 /** `client`: kept on the client (shared with the register); otherwise kept per month. */
 const RETURN_COLS = [
-  { key: "name", label: "Business name", width: 290, client: true },
+  { key: "name", label: "Business name", width: 290, client: true, frozen: true },
   { key: "signatory", label: "Signatory / Proprietor", width: 230, client: true },
   { key: "assigned", label: "Assigned To", width: 190 },
   { key: "gstin", label: "GSTIN", width: 200, client: true },
@@ -674,7 +674,7 @@ export function GstReturnsView() {
           <tr>
             <SheetHead sno>S.No</SheetHead>
             {RETURN_COLS.map((col) => (
-              <SheetHead key={col.key} filter={table.propsFor(col.key, col.label, listed)}>
+              <SheetHead key={col.key} {...frozenProps(col)} filter={table.propsFor(col.key, col.label, listed)}>
                 {col.label}
               </SheetHead>
             ))}
@@ -695,7 +695,7 @@ export function GstReturnsView() {
                 <tr key={c.id}>
                   <SheetCell sno>{c.sno}</SheetCell>
                   {RETURN_COLS.map((col, ci) => (
-                    <SheetCell key={col.key}>
+                    <SheetCell key={col.key} {...frozenProps(col)}>
                       {col.status ? (
                         <select
                           data-r={r}
