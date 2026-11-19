@@ -316,7 +316,7 @@
   .sheet thead th.sheet-sno {
     z-index: 30;
   }
-  /* Extra frozen columns (Task Manager: Client Name and Work), on screens wide enough to keep room for the rest. */
+  /* Extra frozen columns (Task Manager: Client Name and Work; GST Client Register: Business name), on screens wide enough to keep room for the rest. */
   @media (min-width: 768px) {
     .sheet .sheet-frozen {
       position: sticky;
