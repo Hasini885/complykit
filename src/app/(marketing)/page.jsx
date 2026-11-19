@@ -17,6 +17,7 @@ import {
   Table2,
   UserX,
   Users,
+  PanelsTopLeft,
 } from "lucide-react";
 
 import { site, legal, MCA_URL } from "@/config/site";
@@ -78,6 +79,12 @@ const HIGHLIGHTS = [
     tint: "indigo",
     title: "Install it, use it offline",
     body: "Add it to your laptop or phone home screen. It opens in its own window, keeps working without internet, and saves your changes when you're back online.",
+  },
+  {
+    icon: PanelsTopLeft,
+    tint: "sky",
+    title: "Tabs for open pages",
+    body: "Every page you open gets a tab at the top, so you can jump between GST, Tasks and MCA in one click and close what you're done with.",
   },
 ];
 

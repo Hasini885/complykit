@@ -15,6 +15,7 @@ import { NotificationsBell } from "@/components/notifications-bell";
 import { Tip } from "@/components/shared/tip";
 import { CommandPalette, useCommandPalette } from "@/components/command-palette";
 import { MobileNav, TopNav } from "@/components/site-nav";
+import { PageTabs } from "@/components/page-tabs";
 
 /**
  * The top bar owns all navigation: inline links and section menus on desktop,
@@ -80,6 +81,9 @@ export function SiteHeader() {
             <AccountButton withDataPage />
           </div>
         </div>
+
+        {/* Every page opened gets a tab here, so switching between them is one click. */}
+        <PageTabs />
 
         <CommandPalette open={palette.open} onOpenChange={palette.setOpen} />
       </header>
