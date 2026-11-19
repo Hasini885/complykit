@@ -145,8 +145,11 @@ function matches(words, text) {
 /* Client register                                                     */
 /* ------------------------------------------------------------------ */
 
+/** Business name stays put next to S.No (64px wide) when the register scrolls sideways (screens 768px+). */
+const frozenProps = (col) => (col.frozen ? { className: "sheet-frozen sheet-frozen-last", style: { left: 64 } } : {});
+
 const REGISTER_COLS = [
-  { key: "name", label: "Business name", width: 280 },
+  { key: "name", label: "Business name", width: 280, frozen: true },
   { key: "signatory", label: "Signatory / Proprietor", width: 230 },
   { key: "email", label: "Email ID", width: 260 },
   { key: "mobile", label: "Mobile Number", width: 160 },
@@ -365,6 +368,7 @@ export function GstRegisterView() {
               <SheetHead
                 key={col.key}
                 req={col.req}
+                {...frozenProps(col)}
                 filter={col.secret ? undefined : table.propsFor(col.key, col.label, numbered)}
               >
                 {col.label}
@@ -389,7 +393,7 @@ export function GstRegisterView() {
                 <tr key={c.id} className={cn("group/row", dead && "opacity-50")}>
                   <SnoCell n={c.sno} onDelete={() => remove(c)} label={`Delete ${c.name || `client ${c.sno}`}`} />
                   {REGISTER_COLS.map((col, ci) => (
-                    <SheetCell key={col.key}>
+                    <SheetCell key={col.key} {...frozenProps(col)}>
                       {col.key === "folder" ? (
                         <span className="flex items-center pr-1">
                           <input
